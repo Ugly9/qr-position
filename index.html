@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#0b0d14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QR Position">
+  <meta name="description" content="QR Position pro DC2 a DC3">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>QR Position</title>
+  <style>
+    :root{
+      --bg:#080a10;--panel:#111520;--panel2:#171c29;--text:#f5f7ff;--muted:#9ba5bb;
+      --blue:#4da3ff;--purple:#8b5cf6;--line:rgba(255,255,255,.09);
+      --shadow:0 18px 55px rgba(0,0,0,.38);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:radial-gradient(900px 500px at 50% -100px,#192344 0%,#080a10 60%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{overflow-x:hidden}
+    button,input{font:inherit}
+    .app{min-height:100vh;min-height:100svh;display:flex;justify-content:center}
+    .shell{width:min(560px,100%);padding:20px 16px 28px}
+    .top{display:flex;align-items:center;gap:12px;margin:6px 0 22px}
+    .back{display:none;width:42px;height:42px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);color:#fff;font-size:23px}
+    .brand{font-weight:800;font-size:22px;letter-spacing:-.5px}
+    .sub{color:var(--muted);font-size:13px;margin-top:3px}
+    .hero{padding:22px 20px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,rgba(77,163,255,.14),rgba(139,92,246,.08) 45%,rgba(255,255,255,.025));box-shadow:var(--shadow);margin-bottom:16px}
+    .eyebrow{font-size:12px;color:#9dc9ff;text-transform:uppercase;letter-spacing:1.4px;font-weight:800}
+    h1{font-size:31px;line-height:1.05;margin:8px 0 10px;letter-spacing:-1.2px}
+    .hint{color:var(--muted);font-size:14px;line-height:1.45}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .dc{position:relative;min-height:168px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));padding:20px;text-align:left;color:#fff;box-shadow:var(--shadow);cursor:pointer;overflow:hidden}
+    .dc:before{content:"";position:absolute;width:130px;height:130px;border-radius:50%;right:-55px;top:-55px;background:rgba(77,163,255,.18);filter:blur(4px)}
+    .dc.dc3:before{background:rgba(139,92,246,.2)}
+    .dc strong{display:block;font-size:25px;position:relative}
+    .dc span{display:block;margin-top:9px;color:var(--muted);font-size:13px;position:relative}
+    .arrow{position:absolute;right:18px;bottom:17px;font-size:23px;color:#cdd5e8}
+    .panel{border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));padding:18px;box-shadow:var(--shadow)}
+    .fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:15px}
+    .field label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin:0 0 7px 4px;text-transform:uppercase;letter-spacing:.8px}
+    .field input{width:100%;height:48px;border-radius:14px;border:1px solid var(--line);background:#0c0f17;color:#fff;text-align:center;font-weight:800;font-size:18px;outline:none}
+    .field input:focus{border-color:rgba(77,163,255,.65);box-shadow:0 0 0 3px rgba(77,163,255,.1)}
+    .field input[readonly]{color:#9dc9ff}
+    .current{padding:13px 15px;border-radius:16px;background:rgba(77,163,255,.08);border:1px solid rgba(77,163,255,.18);margin-bottom:15px}
+    .current small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+    .current b{display:block;font-size:22px;margin-top:3px;letter-spacing:.3px}
+    .qr-wrap{background:#fff;border-radius:22px;padding:18px;display:flex;justify-content:center;align-items:center;min-height:310px}
+    #qrcode{width:270px;height:270px;display:flex;justify-content:center;align-items:center}
+    #qrcode canvas,#qrcode img{width:270px!important;height:270px!important;image-rendering:auto}
+    .qr-caption{text-align:center;color:var(--muted);font-size:12px;margin:11px 0 0}
+    .nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+    .nav button{height:52px;border-radius:16px;border:1px solid var(--line);background:#151a26;color:#fff;font-weight:800;cursor:pointer}
+    .nav button.primary{background:linear-gradient(135deg,#287ee8,#6d4be8);border:0}
+    .footer{margin-top:15px;text-align:center;color:#68738a;font-size:11px}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,120px);background:#161c29;border:1px solid var(--line);padding:11px 15px;border-radius:13px;box-shadow:var(--shadow);transition:.25s;z-index:20;color:#dce5f8;font-size:13px}
+    .toast.show{transform:translate(-50%,0)}
+    @media(max-width:390px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr 1fr}.fields .floor{grid-column:1/-1}.qr-wrap{min-height:270px}#qrcode,#qrcode canvas,#qrcode img{width:230px!important;height:230px!important}}
+  </style>
+</head>
+<body>
+<div class="app"><main class="shell">
+  <header class="top">
+    <button class="back" id="backBtn" aria-label="Zpět">‹</button>
+    <div><div class="brand">QR Position</div><div class="sub">DC2 • DC3</div></div>
+  </header>
+
+  <section id="home">
+    <div class="hero">
+      <div class="eyebrow">Warehouse tool</div>
+      <h1>Vyberte sklad</h1>
+      <div class="hint">Zvolte DC2 nebo DC3 a aplikace připraví QR kód pro konkrétní pozici.</div>
+    </div>
+    <div class="grid">
+      <button class="dc" data-dc="DC2"><strong>DC2</strong><span>Uličky 12–123<br>Pozice 1–168</span><i class="arrow">→</i></button>
+      <button class="dc dc3" data-dc="DC3"><strong>DC3</strong><span>Uličky 1–41<br>Pozice 1–148</span><i class="arrow">→</i></button>
+    </div>
+  </section>
+
+  <section id="position" style="display:none">
+    <div class="panel">
+      <div class="fields">
+        <div class="field"><label>Ulička</label><input id="aisle" inputmode="numeric" maxlength="3"></div>
+        <div class="field"><label>Pozice</label><input id="pos" inputmode="numeric" maxlength="3"></div>
+        <div class="field floor"><label>Podlaží</label><input id="floor" value="00" readonly></div>
+      </div>
+      <div class="current"><small>Aktivní pozice</small><b id="positionText">—</b></div>
+      <div class="qr-wrap"><div id="qrcode"></div></div>
+      <div class="qr-caption" id="qrText">—</div>
+      <div class="nav">
+        <button id="prev">← Předchozí</button>
+        <button id="next" class="primary">Další →</button>
+      </div>
+    </div>
+    <div class="footer" id="limits"></div>
+  </section>
+</main></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(() => {
+  const CFG = {
+    DC2:{minA:12,maxA:123,maxP:168,prefix:"CZSYR2"},
+    DC3:{minA:1,maxA:41,maxP:148,prefix:"CZSYR3"}
+  };
+  let dc=null, aisle=12, pos=1;
+  const home=document.getElementById('home'), position=document.getElementById('position');
+  const back=document.getElementById('backBtn'), a=document.getElementById('aisle'), p=document.getElementById('pos');
+  const floor=document.getElementById('floor'), q=document.getElementById('qrcode'), positionText=document.getElementById('positionText'), qrText=document.getElementById('qrText');
+  const toast=document.getElementById('toast');
+
+  function pad(n){return String(n).padStart(3,'0')}
+  function code(){return CFG[dc].prefix + pad(aisle) + pad(pos) + "00"}
+  function label(){return `${pad(aisle).slice(1)}-${pad(pos).slice(1)}-00`}
+  function clamp(){
+    const c=CFG[dc];
+    aisle=Math.max(c.minA,Math.min(c.maxA,Number(aisle)||c.minA));
+    pos=Math.max(1,Math.min(c.maxP,Number(pos)||1));
+  }
+  function render(){
+    clamp();
+    a.value=String(aisle).padStart(2,'0');
+    p.value=String(pos).padStart(2,'0');
+    floor.value="00";
+    positionText.textContent=label();
+    qrText.textContent=code();
+    q.innerHTML="";
+    if(window.QRCode){
+      new QRCode(q,{text:code(),width:270,height:270,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M});
+    }else{
+      q.innerHTML='<div style="color:#111;text-align:center;font-size:13px">QR modul se nenačetl. Připojte se jednou k internetu a obnovte stránku.</div>';
+    }
+    localStorage.setItem('qrpos',JSON.stringify({dc,aisle,pos}));
+  }
+  function openDC(which){
+    dc=which;
+    const saved=JSON.parse(localStorage.getItem('qrpos')||'null');
+    if(saved && saved.dc===dc){aisle=saved.aisle;pos=saved.pos}
+    else {aisle=CFG[dc].minA;pos=1}
+    home.style.display='none';position.style.display='block';back.style.display='block';
+    document.querySelector('.sub').textContent=dc;
+    document.getElementById('limits').textContent=`${dc}: uličky ${CFG[dc].minA}–${CFG[dc].maxA} • pozice 1–${CFG[dc].maxP} • podlaží vždy 00`;
+    render();
+  }
+  function goHome(){home.style.display='block';position.style.display='none';back.style.display='none';document.querySelector('.sub').textContent='DC2 • DC3'}
+  function step(delta){
+    const c=CFG[dc]; pos+=delta;
+    if(pos>c.maxP){pos=1;aisle++;if(aisle>c.maxA)aisle=c.minA}
+    if(pos<1){pos=c.maxP;aisle--;if(aisle<c.minA)aisle=c.maxA}
+    render();
+  }
+  function edit(which,val){
+    val=String(val).replace(/\D/g,'');
+    if(val==='') return;
+    if(which==='a') aisle=Number(val); else pos=Number(val);
+    render();
+  }
+  document.querySelectorAll('.dc').forEach(b=>b.addEventListener('click',()=>openDC(b.dataset.dc)));
+  back.addEventListener('click',goHome);
+  document.getElementById('prev').addEventListener('click',()=>step(-1));
+  document.getElementById('next').addEventListener('click',()=>step(1));
+  a.addEventListener('change',()=>edit('a',a.value));
+  p.addEventListener('change',()=>edit('p',p.value));
+  let sx=0,sy=0;
+  position.addEventListener('touchstart',e=>{sx=e.changedTouches[0].screenX;sy=e.changedTouches[0].screenY},{passive:true});
+  position.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].screenX-sx,dy=e.changedTouches[0].screenY-sy;
+    if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.3){step(dx<0?1:-1)}
+  },{passive:true});
+
+  window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+})();
+</script>
+</body>
+</html>
