@@ -128,7 +128,7 @@ window.saveEditedReport=async function(){
   if(!res.ok){const t=await res.text();throw new Error(t||'update_failed')}
   const r={...st.report,dc:st.dc,sec:st.sec,items:structuredCloneSafe(st.items)};
   r.shareUrl=location.origin+location.pathname+'?r='+encodeURIComponent(r.share_token);r.remote=true;
-  await safeDbPut(r);reports=reports.map(x=>x.id===r.id?r:x);st.report=r;st.editingReport=false;viewReport(r.id);toast('Report aktualizován.');
+  await safeDbPut(r);if(reports.some(x=>x.id===r.id))reports=reports.map(x=>x.id===r.id?r:x);else reports.unshift(r);st.report=r;st.editingReport=false;viewReport(r.id);toast('Report aktualizován.');
  }catch(e){console.error(e);toast('Report se nepodařilo upravit. Zkus znovu.')}
 };
 window.deleteReport=async function(){if(!st.report||!confirm('Smazat celý Report?'))return;const id=st.report.id;try{await dbDelete(id);reports=reports.filter(r=>r.id!==id);st.report=null;reportsScreen()}catch(e){toast('Report se nepodařilo smazat.')}};
@@ -164,7 +164,10 @@ async function openSharedFromURL(){
    if(!data?.report||!Array.isArray(data.items)||!data.items.length) throw new Error('invalid');
    const r={id:data.report.id,dc:data.report.dc,sec:data.report.section,created:Number(data.report.created),share_token:token,shareUrl:location.origin+location.pathname+'?r='+encodeURIComponent(token),remote:true,items:data.items.map(x=>({id:x.id,action:x.action,comment:x.comment||'',photo:x.photo}))};
    document.title=`Layout Report ${r.dc} ${r.sec}`;
-   render(`<div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen"><div class="eyebrow">Shared Layout Report</div>${reportHTML(r,true)}<button class="primary" style="margin-top:12px" onclick="copyReportRich()">📋 Kopírovat celý Report</button></div>`,true);st.report=r;return true;
+   st.report=r;
+   if(!reports.some(x=>x.id===r.id)){reports.unshift(r);safeDbPut(r).catch(()=>{});}
+   render(`<div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen"><div class="eyebrow">Shared Layout Report</div>${reportHTML(r,true)}<button class="primary" style="margin-top:12px" onclick="editSavedReport()">✎ Upravit Report</button><button class="secondary" style="margin-top:9px" onclick="groupSavedReport()">📦 Seskupit podle Action</button><button class="secondary" style="margin-top:9px" onclick="shareReport()">📤 Odeslat odkaz</button><button class="secondary" style="margin-top:9px" onclick="copyReportRich()">📋 Kopírovat celý Report</button></div>${nav('reports')}`);
+   return true;
   }catch(e){console.error(e);render(`<div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen"><div class="card"><h2>Report nelze otevřít</h2><p class="muted">Odkaz je neplatný, neúplný nebo Report už není dostupný.</p></div></div>`,true);return true}
  }
  if(h.startsWith('#legacy=')){
@@ -173,11 +176,11 @@ async function openSharedFromURL(){
  return false
 }
 async function init(){
- try{if(await openSharedFromURL())return}catch(e){console.error(e)}
  try{
   await Promise.race([openDB(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('db_timeout')),2500))]);
   reports=await Promise.race([dbGetAll(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('db_read_timeout')),2500))]);
  }catch(e){console.warn('Local storage unavailable, using temporary session:',e);reports=[];db=null}
+ try{if(await openSharedFromURL())return}catch(e){console.error(e)}
  home();
 }
 
