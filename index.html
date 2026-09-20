@@ -137,9 +137,11 @@
   }
   function openDC(which){
     dc=which;
-    const saved=JSON.parse(localStorage.getItem('qrpos')||'null');
-    if(saved && saved.dc===dc){aisle=saved.aisle;pos=saved.pos}
-    else {aisle=CFG[dc].minA;pos=1}
+    let saved=null;
+    try{saved=JSON.parse(localStorage.getItem('qrpos')||'null')}catch(e){saved=null}
+    if(saved && saved.dc===dc && Number.isFinite(Number(saved.aisle)) && Number.isFinite(Number(saved.pos))){
+      aisle=Number(saved.aisle);pos=Number(saved.pos)
+    }else {aisle=CFG[dc].minA;pos=1}
     home.style.display='none';position.style.display='block';back.style.display='block';
     document.querySelector('.sub').textContent=dc;
     document.getElementById('limits').textContent=`${dc}: uličky ${CFG[dc].minA}–${CFG[dc].maxA} • pozice 1–${CFG[dc].maxP} • podlaží vždy 00`;
