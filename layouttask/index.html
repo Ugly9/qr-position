@@ -39,6 +39,7 @@ function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open
 function dbGetAll(){return new Promise((resolve,reject)=>{const tx=db.transaction('reports','readonly');const r=tx.objectStore('reports').getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error)})}
 function dbPut(r){return new Promise((resolve,reject)=>{const tx=db.transaction('reports','readwrite');tx.objectStore('reports').put(r);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
 function dbDelete(id){return new Promise((resolve,reject)=>{const tx=db.transaction('reports','readwrite');tx.objectStore('reports').delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+async function safeDbPut(r){try{if(db)await dbPut(r)}catch(e){console.warn('Local report cache unavailable:',e)}}
 function sortedReports(){return reports.slice().sort((a,b)=>b.created-a.created)}
 function reportRow(r){return `<div class="item clickable" onclick="viewReport('${js(r.id)}')"><div class="grow"><div class="itemTitle">${esc(r.dc)} · ${esc(r.sec)}</div><div class="itemMeta">${new Date(r.created).toLocaleString('cs-CZ')} · ${r.items.length} foto</div></div><span style="font-size:22px;color:#78aaff">›</span></div>`}
 window.home=function(){resetDraft();const rs=sortedReports().slice(0,3);render(`<div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen hero"><div class="eyebrow">Warehouse layout reports</div><h1>Layout<span>Task</span></h1><p class="muted">Rychle vytvoř report přímo ze skladu.</p><div class="grid" style="margin-top:18px"><button class="dc" onclick="chooseSection('DC2')"><span class="iconbig">▣</span><b>DC2</b><small>A · B · C · D · E</small></button><button class="dc purple" onclick="chooseSection('DC3')"><span class="iconbig">▣</span><b>DC3</b><small>2 sekce</small></button></div><div class="card"><div class="cardTitle"><strong>Poslední Reports</strong><button class="linkBtn" onclick="reportsScreen()">Všechny</button></div>${rs.map(reportRow).join('')||'<div class="empty">Zatím žádný report.</div>'}</div></div>${nav('home')}`)};
@@ -93,7 +94,7 @@ window.createReport=async function(){
   if(!res.ok){const t=await res.text();throw new Error(t||'save_failed')}
   const data=await res.json();
   const r={id,dc:st.dc,sec:st.sec,items:structuredCloneSafe(st.items),created,shareUrl:location.origin+location.pathname+'?r='+encodeURIComponent(data.token),share_token:data.token,remote:true};
-  await dbPut(r); reports.push(r); st.report=r; st.editingReport=false; successScreen(r);
+  await safeDbPut(r); reports.push(r); st.report=r; st.editingReport=false; successScreen(r);
  }catch(e){console.error(e);toast('Report se nepodařilo uložit. Zkus znovu.')}};
 function structuredCloneSafe(v){return JSON.parse(JSON.stringify(v))}
 function successScreen(r){render(shell('Report vytvořen',`<div class="card success"><div class="successIcon">✓</div><h2 style="margin:4px 0">Report je hotový</h2><p class="muted">${esc(r.dc)} · ${esc(r.sec)} · ${r.items.length} foto</p><button class="primary" onclick="shareReport()">📤 Odeslat odkaz na report</button><button class="secondary" style="margin-top:9px" onclick="copyReportRich()">📋 Kopírovat celý Report</button><div class="shareRow"><button class="secondary" onclick="copyReportLink()">Copy Link</button><button class="secondary" onclick="viewReport('${js(r.id)}')">Open Report</button></div></div><button class="ghost" onclick="home()">← Home</button>`,null))}
@@ -127,7 +128,7 @@ window.saveEditedReport=async function(){
   if(!res.ok){const t=await res.text();throw new Error(t||'update_failed')}
   const r={...st.report,dc:st.dc,sec:st.sec,items:structuredCloneSafe(st.items)};
   r.shareUrl=location.origin+location.pathname+'?r='+encodeURIComponent(r.share_token);r.remote=true;
-  await dbPut(r);reports=reports.map(x=>x.id===r.id?r:x);st.report=r;st.editingReport=false;viewReport(r.id);toast('Report aktualizován.');
+  await safeDbPut(r);reports=reports.map(x=>x.id===r.id?r:x);st.report=r;st.editingReport=false;viewReport(r.id);toast('Report aktualizován.');
  }catch(e){console.error(e);toast('Report se nepodařilo upravit. Zkus znovu.')}
 };
 window.deleteReport=async function(){if(!st.report||!confirm('Smazat celý Report?'))return;const id=st.report.id;try{await dbDelete(id);reports=reports.filter(r=>r.id!==id);st.report=null;reportsScreen()}catch(e){toast('Report se nepodařilo smazat.')}};
