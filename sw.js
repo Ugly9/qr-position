@@ -1,4 +1,4 @@
-const CACHE="qr-position-v4";
+const CACHE="qr-position-v5";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js"];
 
 self.addEventListener("install",event=>{
@@ -17,8 +17,16 @@ self.addEventListener("activate",event=>{
   );
 });
 
+function isLayoutTask(url){
+  return url.pathname.includes("/layouttask/");
+}
+
 self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;
+
+  // LayoutTask must always be served directly from GitHub Pages.
+  // Never let the QR Position service worker cache or replace it.
+  if(isLayoutTask(new URL(event.request.url)))return;
 
   if(event.request.mode==="navigate"){
     event.respondWith(
