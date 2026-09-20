@@ -1,0 +1,10 @@
+{
+  "name":"QR Position DC2/DC3",
+  "short_name":"QR Position",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#080a10",
+  "theme_color":"#0b0d14",
+  "lang":"cs",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
