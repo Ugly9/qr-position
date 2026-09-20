@@ -114,7 +114,7 @@
 
   function pad(n){return String(n).padStart(3,'0')}
   function code(){return CFG[dc].prefix + pad(aisle) + pad(pos) + "00"}
-  function label(){return `${pad(aisle).slice(1)}-${pad(pos).slice(1)}-00`}
+  function label(){return `${String(aisle).padStart(2,'0')}-${String(pos).padStart(2,'0')}-00`}
   function clamp(){
     const c=CFG[dc];
     aisle=Math.max(c.minA,Math.min(c.maxA,Number(aisle)||c.minA));
