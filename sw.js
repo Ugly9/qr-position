@@ -1,4 +1,4 @@
-const CACHE="qr-position-v2";
+const CACHE="qr-position-v3";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js"];
 
 self.addEventListener("install",event=>{
