@@ -18,9 +18,13 @@
       --shadow:0 18px 55px rgba(0,0,0,.38);
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;min-height:100%;background:radial-gradient(900px 500px at 50% -100px,#192344 0%,#080a10 60%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    body{overflow-x:hidden}
+    html,body{margin:0;width:100%;min-height:100%;background:#080a10;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    html{background:#080a10}
+    body{overflow-x:hidden;min-height:100vh;min-height:100dvh;background:radial-gradient(900px 500px at 50% -100px,#192344 0%,#080a10 60%);-webkit-user-select:none;user-select:none}
     button,input{font:inherit}
+    button{touch-action:manipulation;-webkit-appearance:none;appearance:none}
+    .app{min-height:100vh;min-height:100dvh}
+    .shell{position:relative;z-index:1}
     .app{min-height:100vh;min-height:100svh;display:flex;justify-content:center}
     .shell{width:min(560px,100%);padding:20px 16px 28px}
     .top{display:flex;align-items:center;gap:12px;margin:6px 0 22px}
@@ -32,7 +36,7 @@
     h1{font-size:31px;line-height:1.05;margin:8px 0 10px;letter-spacing:-1.2px}
     .hint{color:var(--muted);font-size:14px;line-height:1.45}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .dc{position:relative;min-height:168px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));padding:20px;text-align:left;color:#fff;box-shadow:var(--shadow);cursor:pointer;overflow:hidden}
+    .dc{position:relative;z-index:2;pointer-events:auto;min-height:168px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));padding:20px;text-align:left;color:#fff;box-shadow:var(--shadow);cursor:pointer;overflow:hidden}
     .dc:before{content:"";position:absolute;width:130px;height:130px;border-radius:50%;right:-55px;top:-55px;background:rgba(77,163,255,.18);filter:blur(4px)}
     .dc.dc3:before{background:rgba(139,92,246,.2)}
     .dc strong{display:block;font-size:25px;position:relative}
@@ -52,9 +56,9 @@
     #qrcode canvas,#qrcode img{width:270px!important;height:270px!important;image-rendering:auto}
     .qr-caption{text-align:center;color:var(--muted);font-size:12px;margin:11px 0 0}
     .nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
-    .nav button{height:52px;border-radius:16px;border:1px solid var(--line);background:#151a26;color:#fff;font-weight:800;cursor:pointer}
+    .nav button{position:relative;z-index:2;height:52px;pointer-events:auto;border-radius:16px;border:1px solid var(--line);background:#151a26;color:#fff;font-weight:800;cursor:pointer}
     .nav button.primary{background:linear-gradient(135deg,#287ee8,#6d4be8);border:0}
-    .home-btn{width:100%;height:50px;margin-top:10px;border-radius:16px;border:1px solid var(--line);background:#0f131d;color:#cdd5e8;font-weight:800;cursor:pointer}
+    .home-btn{position:relative;z-index:2;width:100%;height:50px;pointer-events:auto;margin-top:10px;border-radius:16px;border:1px solid var(--line);background:#0f131d;color:#cdd5e8;font-weight:800;cursor:pointer}
     .footer{margin-top:15px;text-align:center;color:#68738a;font-size:11px}
     .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,120px);background:#161c29;border:1px solid var(--line);padding:11px 15px;border-radius:13px;box-shadow:var(--shadow);transition:.25s;z-index:20;color:#dce5f8;font-size:13px}
     .toast.show{transform:translate(-50%,0)}
@@ -162,7 +166,11 @@
     if(which==='a') aisle=Number(val); else pos=Number(val);
     render();
   }
-  document.querySelectorAll('.dc').forEach(b=>b.addEventListener('click',()=>openDC(b.dataset.dc)));
+  document.querySelectorAll('.dc').forEach(b=>{
+    const open=()=>openDC(b.dataset.dc);
+    b.addEventListener('click',open);
+    b.addEventListener('pointerup',e=>{if(e.pointerType!=="mouse")open()});
+  });
   back.addEventListener('click',goHome);
   document.getElementById('homeBtn').addEventListener('click',goHome);
   document.getElementById('prev').addEventListener('click',()=>step(-1));
