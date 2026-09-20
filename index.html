@@ -99,7 +99,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="./qrcode.min.js"></script>
 <script>
 (() => {
   const CFG = {
@@ -131,7 +131,7 @@
     if(window.QRCode){
       new QRCode(q,{text:code(),width:270,height:270,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M});
     }else{
-      q.innerHTML='<div style="color:#111;text-align:center;font-size:13px">QR modul se nenačetl. Připojte se jednou k internetu a obnovte stránku.</div>';
+      q.innerHTML='<div style="color:#111;text-align:center;font-size:13px">QR modul se nenačetl. Obnovte stránku.</div>';
     }
     localStorage.setItem('qrpos',JSON.stringify({dc,aisle,pos}));
   }
