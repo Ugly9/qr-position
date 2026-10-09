@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d14">
+<title>QR Position – Volné pozice (TEST)</title>
+<style>
+:root{color-scheme:dark;--bg:#080a10;--panel:#111521;--line:#282e3d;--muted:#a0a8bc;--blue:#3184f5;--purple:#694be8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(850px 430px at 50% -120px,#1a2443 0%,var(--bg) 68%);color:#f6f7fb;font:16px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:760px;margin:auto;padding:24px 16px 48px}.eyebrow{font-size:12px;letter-spacing:.18em;color:#9fc3ff;font-weight:800}.header,.panel,.street-card,.position-card{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,#151a29,#0d1018);padding:22px;margin-bottom:16px}.header h1{font-size:clamp(28px,7vw,42px);margin:8px 0}.muted{color:var(--muted);line-height:1.5}.warning{background:#392d17;border:1px solid #6f5628;color:#ffe0a0;border-radius:14px;padding:12px;margin:14px 0;font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.btn,.warehouse{border:1px solid var(--line);border-radius:17px;background:#171b28;color:#f6f7fb;padding:16px;font:inherit;font-weight:750;cursor:pointer;touch-action:manipulation}.warehouse{text-align:left;min-height:130px;background:linear-gradient(140deg,#171d2c,#10131b)}.warehouse strong{display:block;font-size:28px;margin-bottom:8px}.btn:active,.warehouse:active{transform:scale(.99)}.primary{background:linear-gradient(130deg,var(--blue),var(--purple));border:0}.secondary{background:#171b28}.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.hidden{display:none!important}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}.topline button{flex:0 0 auto}.tag{font-size:12px;border:1px solid #3a4255;border-radius:99px;padding:6px 10px;color:#cbd4e8}.tag.good{color:#a4f0c0;border-color:#2f7852}.tag.busy{color:#ffd99b;border-color:#795b28}.street-card{margin-bottom:10px;padding:16px}.street-title{display:flex;justify-content:space-between;gap:10px;align-items:center}.street-title h3{margin:0;font-size:20px}.count{font-size:23px;font-weight:850}.bar{height:6px;background:#272d3b;border-radius:9px;margin:12px 0 0;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--purple))}.label{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:800}.bigpos{font-size:clamp(30px,8vw,44px);font-weight:900;letter-spacing:.02em;margin:5px 0 14px}.qrwrap{background:#fff;border-radius:18px;padding:12px;display:flex;align-items:center;justify-content:center;min-height:230px}.qrwrap canvas,.qrwrap img{max-width:100%;height:auto!important}.code{text-align:center;color:var(--muted);margin:12px 0;overflow-wrap:anywhere}.footer-note{text-align:center;color:#778197;font-size:12px;margin-top:22px}.checkline{display:flex;gap:10px;align-items:center;padding:12px 0}.checkline input{width:22px;height:22px;accent-color:#3d8af5}.small{font-size:13px}.listhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 10px}.listhead h2{font-size:20px;margin:0}@media(min-width:600px){main{padding-top:40px}.qrwrap{min-height:300px}}
+</style>
+</head>
+<body>
+<main>
+<section id="home">
+  <div class="header"><div class="eyebrow">WAREHOUSE TOOL · TEST</div><h1>Volné pozice</h1><div class="muted">Prioritní uličky a navigace na volná místa.</div></div>
+  <div class="warning"><strong>TESTOVACÍ DATA</strong><br>Toto je samostatná ukázka s fiktivním seznamem. Zatím není propojena se skutečným souborem ani se zařízeními ostatních pracovníků.</div>
+  <div class="grid">
+    <button class="warehouse" data-dc="DC2"><strong>DC2</strong><span class="muted">Uličky 12–123<br>Pozice 1–168</span></button>
+    <button class="warehouse" data-dc="DC3"><strong>DC3</strong><span class="muted">Uličky 1–41<br>Pozice 1–148</span></button>
+  </div>
+  <div class="footer-note">Samostatná testovací verze · stabilní aplikace se nemění</div>
+</section>
+
+<section id="streets" class="hidden">
+  <div class="topline"><button class="btn secondary" id="streetBack">← Zpět</button><div><div class="eyebrow">VOLNÉ POZICE · TEST</div><strong id="streetDc">DC2</strong></div><span class="tag" id="streetTotal">0 pozic</span></div>
+  <div class="warning" id="offlineNotice">Ukázkový seznam. Offline režim použije poslední uložený seznam; sdílení změn vyžaduje připojení a společnou databázi.</div>
+  <div class="row"><button class="btn secondary" id="refresh">↻ Aktualizovat</button><button class="btn primary" id="startTop">Otevřít prioritní uličku →</button></div>
+  <div class="listhead"><h2>Priorita uliček</h2><span class="muted small">Nejvíce volných míst</span></div>
+  <div id="streetList"></div>
+</section>
+
+<section id="positions" class="hidden">
+  <div class="topline"><button class="btn secondary" id="posBack">← Uličky</button><div><div class="eyebrow" id="posDc">DC2</div><strong id="posStreet">Ulička 52</strong></div><span class="tag" id="posCounter">1 / 1</span></div>
+  <div class="panel">
+    <div class="row"><div><div class="label">AKTUÁLNÍ POZICE</div><div class="bigpos" id="positionLabel">52-014-00</div></div><span class="tag good">Volná</span></div>
+    <div class="qrwrap" id="qr"></div><div class="code" id="qrText"></div>
+    <div class="row"><button class="btn secondary" id="prev">← Předchozí</button><button class="btn primary" id="next">Další →</button></div>
+    <div class="checkline"><input type="checkbox" id="working"><label for="working">Pracuji v této uličce</label></div>
+    <div class="row"><button class="btn secondary" id="skip">Přeskočit uličku ↷</button><button class="btn primary" id="done">Pozice zpracována ✓</button></div>
+  </div>
+  <div class="footer-note">Demo: zpracovaná pozice se odstraní pouze z tohoto testovacího seznamu.</div>
+</section>
+</main>
+<script src="./qrcode.min.js"></script>
+<script>
+const demo={
+ DC2:[{street:52,positions:[14,18,21,29,31,42,55,63,71,88,93,104]},{street:31,positions:[4,8,12,17,22,27,36,44]},{street:67,positions:[3,9,15,24,39]},{street:44,positions:[6,19,33]}],
+ DC3:[{street:33,positions:[5,11,18,27,34,42,55,61,72,88]},{street:21,positions:[3,7,14,29,38,44]},{street:12,positions:[6,19,25,31]},{street:7,positions:[2,13]}]
+};
+let dc="DC2", data=[], aisleIndex=0,posIndex=0, skipped=new Set(), busy=new Set();
+const $=id=>document.getElementById(id);
+function show(id){["home","streets","positions"].forEach(x=>$(x).classList.toggle("hidden",x!==id));window.scrollTo(0,0)}
+function codeFor(street,pos){return (dc==="DC2"?"CZSYR2":"CZSYR3")+String(street).padStart(3,"0")+String(pos).padStart(3,"0")+"00"}
+function labelFor(street,pos){return String(street).padStart(2,"0")+"-"+String(pos).padStart(2,"0")+"-00"}
+function ordered(){return data.filter(x=>x.positions.length&&!skipped.has(x.street)&&!busy.has(x.street)).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street)}
+function openDC(which){dc=which;data=demo[dc].map(x=>({street:x.street,positions:[...x.positions]}));skipped=new Set();busy=new Set();renderStreets();show("streets")}
+function renderStreets(){
+ $("streetDc").textContent=dc;$("streetTotal").textContent=data.reduce((n,x)=>n+x.positions.length,0)+" pozic";
+ const sorted=data.filter(x=>x.positions.length).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street);
+ $("streetList").innerHTML="";
+ sorted.forEach(x=>{const isSkipped=skipped.has(x.street),isBusy=busy.has(x.street);const card=document.createElement("div");card.className="street-card";card.innerHTML='<div class="street-title"><h3>Ulička '+x.street+'</h3><div class="count">'+x.positions.length+'</div></div><div class="muted small">volných pozic</div><div class="bar"><span style="width:'+Math.max(4,x.positions.length/Math.max(1,sorted[0]?.positions.length||1)*100)+'%"></span></div><div class="row" style="margin-top:12px"><span class="tag '+(isBusy?"busy":isSkipped?"":"good")+'">'+(isBusy?"V práci":isSkipped?"Přeskočeno":"Volná")+'</span><button class="btn primary" '+((isBusy||isSkipped)?"disabled":"")+' data-open="'+x.street+'">Otevřít →</button></div>';card.querySelector("button").addEventListener("click",()=>openStreet(x.street));$("streetList").appendChild(card)});
+ $("startTop").disabled=ordered().length===0;
+}
+function openStreet(street){aisleIndex=data.findIndex(x=>x.street===street);posIndex=0;showPosition()}
+function current(){return data[aisleIndex]}
+function showPosition(){
+ const a=current();if(!a||!a.positions.length){renderStreets();show("streets");return}
+ $("posDc").textContent=dc;$("posStreet").textContent="Ulička "+a.street;$("posCounter").textContent=(posIndex+1)+" / "+a.positions.length;
+ const p=a.positions[posIndex];$("positionLabel").textContent=labelFor(a.street,p);$("qrText").textContent=codeFor(a.street,p);$("qr").innerHTML="";
+ if(typeof QRCode==="function"){new QRCode($("qr"),{text:codeFor(a.street,p),width:270,height:270,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M})}else{$("qr").textContent="QR knihovna není načtena"}
+ $("working").checked=busy.has(a.street);
+}
+function nextPosition(delta){const a=current();if(!a)return;const n=posIndex+delta;if(n>=0&&n<a.positions.length){posIndex=n;showPosition();return}const next=ordered().find(x=>x.street!==a.street);if(next){openStreet(next.street)}else{renderStreets();show("streets")}}
+function completePosition(){const a=current();if(!a)return;a.positions.splice(posIndex,1);if(!a.positions.length){busy.delete(a.street);skipped.delete(a.street);renderStreets();const next=ordered()[0];if(next)openStreet(next.street);else show("streets");return}posIndex=Math.min(posIndex,a.positions.length-1);renderStreets();showPosition()}
+document.querySelectorAll("[data-dc]").forEach(b=>b.addEventListener("click",()=>openDC(b.dataset.dc)));
+$("streetBack").onclick=()=>show("home");$("posBack").onclick=()=>{renderStreets();show("streets")};
+$("startTop").onclick=()=>{const first=ordered()[0];if(first)openStreet(first.street)};
+$("refresh").onclick=()=>{const wasOnline=navigator.onLine; $("offlineNotice").textContent=wasOnline?"Demo seznam znovu načten. Ve skutečné verzi se zde načte aktuální seznam ze sdíleného úložiště.":"Bez internetu: používáte poslední uložený seznam; data nemusí být aktuální.";};
+$("prev").onclick=()=>nextPosition(-1);$("next").onclick=()=>nextPosition(1);$("done").onclick=completePosition;
+$("skip").onclick=()=>{const a=current();if(!a)return;skipped.add(a.street);renderStreets();const next=ordered()[0];if(next)openStreet(next.street);else show("streets")};
+$("working").onchange=e=>{const a=current();if(!a)return;if(e.target.checked)busy.add(a.street);else busy.delete(a.street);renderStreets();};
+window.addEventListener("online",()=>{$("offlineNotice").textContent="Připojení obnoveno. V demo režimu se synchronizace se serverem neprovádí."});
+window.addEventListener("offline",()=>{$("offlineNotice").textContent="Offline: používáte lokální demo seznam; stav ostatních pracovníků není dostupný."});
+let touchX=0;document.addEventListener("touchstart",e=>{touchX=e.changedTouches[0].clientX},{passive:true});document.addEventListener("touchend",e=>{if($("positions").classList.contains("hidden"))return;const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>65)nextPosition(dx<0?1:-1)},{passive:true});
+</script>
+</body></html>
