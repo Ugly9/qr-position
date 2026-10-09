@@ -60,8 +60,6 @@
     .nav button.primary{background:linear-gradient(135deg,#287ee8,#6d4be8);border:0}
     .home-btn{position:relative;z-index:2;width:100%;height:50px;pointer-events:auto;margin-top:10px;border-radius:16px;border:1px solid var(--line);background:#0f131d;color:#cdd5e8;font-weight:800;cursor:pointer}
     .footer{margin-top:15px;text-align:center;color:#68738a;font-size:11px}
-    .feature-btn{width:100%;margin-top:14px;min-height:62px;border:1px solid rgba(77,163,255,.3);border-radius:20px;background:linear-gradient(135deg,rgba(77,163,255,.17),rgba(139,92,246,.14));color:#fff;text-align:left;padding:16px 18px;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;touch-action:manipulation}.feature-btn small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:4px}
-    .feature-view{margin-top:14px}.feature-view h2{font-size:23px;margin:8px 0}.feature-view .muted{color:var(--muted);font-size:13px;line-height:1.45}.feature-view .action{min-height:48px;border-radius:14px;border:1px solid var(--line);background:#171c29;color:#fff;padding:12px;font-weight:750;width:100%;cursor:pointer;touch-action:manipulation}.feature-view .action.primary{background:linear-gradient(135deg,#287ee8,#6d4be8);border:0}.feature-view .row{display:flex;gap:9px;margin:12px 0}.feature-view .row>*{flex:1;min-width:0}.feature-view .street-card{padding:14px;border:1px solid var(--line);border-radius:17px;margin-top:10px;background:rgba(255,255,255,.035)}.feature-view .street-card h3{margin:0;font-size:18px}.feature-view .count{font-size:22px;font-weight:850}.feature-view .qrbox{background:#fff;border-radius:18px;padding:12px;min-height:250px;display:flex;align-items:center;justify-content:center;margin:12px 0}.feature-view .qrbox canvas,.feature-view .qrbox img{max-width:100%;height:auto!important}.feature-view .status{border-radius:13px;padding:11px;background:rgba(255,190,70,.12);border:1px solid rgba(255,190,70,.22);color:#f5dca5;font-size:12px;margin:12px 0}.feature-view .posname{font-size:30px;font-weight:900;overflow-wrap:anywhere}.feature-view input[type=file]{width:100%;color:var(--muted);margin:10px 0}
     .toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,120px);background:#161c29;border:1px solid var(--line);padding:11px 15px;border-radius:13px;box-shadow:var(--shadow);transition:.25s;z-index:20;color:#dce5f8;font-size:13px}
     .toast.show{transform:translate(-50%,0)}
     @media(max-width:390px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr 1fr}.fields .floor{grid-column:1/-1}.qr-wrap{min-height:270px}#qrcode,#qrcode canvas,#qrcode img{width:230px!important;height:230px!important}}
@@ -83,27 +81,6 @@
     <div class="grid">
       <button class="dc" data-dc="DC2"><strong>DC2</strong><span>Uličky 12–123<br>Pozice 1–168</span><i class="arrow">→</i></button>
       <button class="dc dc3" data-dc="DC3"><strong>DC3</strong><span>Uličky 1–41<br>Pozice 1–148</span><i class="arrow">→</i></button>
-    </div>
-    <button class="feature-btn" id="volneEntry"><span>Volné pozice<small>Přehled a navigace na volná místa</small></span><span style="font-size:24px">→</span></button>
-  </section>
-
-  <section id="volne" class="feature-view" style="display:none">
-    <div class="panel">
-      <button class="action" id="volneHome">← Zpět na QR Position</button>
-      <div class="eyebrow" style="margin-top:18px">TESTOVACÍ FUNKCE</div>
-      <h2>Volné pozice</h2>
-      <p class="muted">Nahrajte soubor mapy skladu. Importovaný seznam bude uložen pouze v tomto zařízení.</p>
-      <div class="status">Testovací verze: sdílení mezi telefony a PC zatím není aktivní. Offline režim používá poslední uložený seznam.</div>
-      <label class="muted" for="volneFile">Mapa skladu (Excel / CSV)</label>
-      <input id="volneFile" type="file" accept=".xlsx,.xls,.csv">
-      <div class="muted" id="volneImportStatus">Zatím nebyl importován žádný soubor. Nahrajte soubor pro použití reálných dat.</div>
-      <div class="row"><button class="action" id="volneRefresh">↻ Aktualizovat</button><button class="action primary" id="volneStart">Otevřít prioritní uličku →</button></div>
-      <div id="volneWarehousePick" class="grid" style="margin-top:12px">
-        <button class="dc" data-volne-dc="DC2"><strong>DC2</strong><span>Uličky 12–123<br>Pozice 1–168</span><i class="arrow">→</i></button>
-        <button class="dc dc3" data-volne-dc="DC3"><strong>DC3</strong><span>Uličky 1–41<br>Pozice 1–148</span><i class="arrow">→</i></button>
-      </div>
-      <div id="volneStreetView" style="display:none"><div class="row"><button class="action" id="volneChangeDC">← Změnit склад</button><strong id="volneSelectedDC"></strong></div><h2>Priorita uliček</h2><p class="muted">Nejprve ulička s největším počtem zbývajících volných pozic.</p><div id="volneStreetList"></div></div>
-      <div id="volnePositionView" style="display:none"><div class="row"><button class="action" id="volneBackStreets">← Uličky</button><span class="muted" id="volnePosCount"></span></div><div class="eyebrow" style="margin-top:12px" id="volnePosWarehouse"></div><div class="posname" id="volnePosLabel"></div><div class="qrbox" id="volneQR"></div><div class="muted" id="volneQRText" style="text-align:center;overflow-wrap:anywhere"></div><div class="row"><button class="action" id="volnePrev">← Předchozí</button><button class="action primary" id="volneNext">Další →</button></div><div class="row"><button class="action" id="volneSkip">Přeskočit uličku ↷</button><button class="action primary" id="volneDone">Pozice zpracována ✓</button></div><label class="muted" style="display:flex;gap:10px;align-items:center;margin-top:12px"><input type="checkbox" id="volneWorking"> Pracuji v této uličce</label></div>
     </div>
   </section>
 
@@ -128,7 +105,6 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="./qrcode.min.js"></script>
 <script>
 (() => {
@@ -207,104 +183,6 @@
     const dx=e.changedTouches[0].screenX-sx,dy=e.changedTouches[0].screenY-sy;
     if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.3){step(dx<0?1:-1)}
   },{passive:true});
-
-
-  // Volné pozice is an isolated feature. The original DC2/DC3 QR workflow above stays unchanged.
-  const v = {dc:null, lists:{DC2:null,DC3:null}, skipped:new Set(), working:new Set(), street:0, pos:0};
-  const byId=id=>document.getElementById(id);
-  function showVolneSection(name){
-    byId('home').style.display=name==='home'?'block':'none';
-    byId('position').style.display=name==='position'?'block':'none';
-    byId('volne').style.display=name==='volne'?'block':'none';
-    byId('backBtn').style.display=name==='position'?'block':'none';
-    window.scrollTo(0,0);
-  }
-  function vCurrent(){return (v.lists[v.dc]||[]).find(x=>x.street===v.street)||null}
-  function vOrdered(){return (v.lists[v.dc]||[]).filter(x=>x.positions.length&&!v.skipped.has(x.street)&&!v.working.has(x.street)).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street)}
-  function vCode(street,pos){return (v.dc==='DC2'?'CZSYR2':'CZSYR3')+String(street).padStart(3,'0')+String(pos).padStart(3,'0')+'00'}
-  function vLabel(street,pos){return String(street).padStart(2,'0')+'-'+String(pos).padStart(2,'0')+'-00'}
-  function vRenderStreets(){
-    byId('volneSelectedDC').textContent=v.dc;
-    byId('volneWarehousePick').style.display='none';byId('volneStreetView').style.display='block';byId('volnePositionView').style.display='none';
-    const list=byId('volneStreetList');list.innerHTML='';
-    const streets=(v.lists[v.dc]||[]).filter(x=>x.positions.length).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street);
-    if(!streets.length){list.innerHTML='<p class="muted">V tomto skladu zatím nejsou načteny žádné pozice. Nahrajte soubor mapy skladu.</p>';return}
-    streets.forEach(x=>{
-      const skipped=v.skipped.has(x.street),working=v.working.has(x.street);
-      const card=document.createElement('div');card.className='street-card';
-      const head=document.createElement('div');head.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
-      const title=document.createElement('h3');title.textContent='Ulička '+x.street;
-      const count=document.createElement('span');count.className='count';count.textContent=x.positions.length;
-      head.append(title,count);card.append(head);
-      const note=document.createElement('p');note.className='muted';note.textContent=working?'V práci':skipped?'Přeskočeno':'volných pozic';card.append(note);
-      const row=document.createElement('div');row.className='row';
-      const open=document.createElement('button');open.className='action primary';open.textContent='Otevřít →';open.disabled=skipped||working;open.onclick=()=>vOpenStreet(x.street);
-      const skip=document.createElement('button');skip.className='action';skip.textContent='Přeskočit';skip.disabled=skipped||working;skip.onclick=()=>{v.skipped.add(x.street);vRenderStreets()};
-      row.append(open,skip);card.append(row);list.append(card);
-    });
-  }
-  function vOpenDC(dc){
-    v.dc=dc;v.skipped=new Set();v.working=new Set();
-    if(!v.lists[dc])vLoadLocal(dc);
-    byId('volneWarehousePick').style.display='none';vRenderStreets();
-  }
-  function vOpenStreet(street){v.street=street;v.pos=0;vShowPosition()}
-  function vShowPosition(){
-    const a=vCurrent();if(!a||!a.positions.length){vRenderStreets();return}
-    byId('volneWarehousePick').style.display='none';byId('volneStreetView').style.display='none';byId('volnePositionView').style.display='block';
-    const p=a.positions[v.pos];byId('volnePosWarehouse').textContent=v.dc+' · Ulička '+a.street;byId('volnePosLabel').textContent=vLabel(a.street,p);byId('volnePosCount').textContent=(v.pos+1)+' / '+a.positions.length;byId('volneQRText').textContent=vCode(a.street,p);
-    const qr=byId('volneQR');qr.innerHTML='';
-    if(window.QRCode)new QRCode(qr,{text:vCode(a.street,p),width:250,height:250,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});else qr.textContent='QR knihovna není načtena.';
-    byId('volneWorking').checked=v.working.has(a.street);
-  }
-  function vStep(delta){
-    const a=vCurrent();if(!a)return;const next=v.pos+delta;
-    if(next>=0&&next<a.positions.length){v.pos=next;vShowPosition();return}
-    const other=vOrdered().find(x=>x.street!==a.street);if(other){vOpenStreet(other.street)}else{vRenderStreets()}
-  }
-  function vDone(){
-    const a=vCurrent();if(!a)return;a.positions.splice(v.pos,1);
-    if(!a.positions.length){v.working.delete(a.street);v.skipped.delete(a.street);const next=vOrdered()[0];if(next)vOpenStreet(next.street);else vRenderStreets();return}
-    v.pos=Math.min(v.pos,a.positions.length-1);vRenderStreets();vShowPosition();vSaveLocal();
-  }
-  function vSaveLocal(){try{localStorage.setItem('volnePositionTestLists',JSON.stringify(v.lists))}catch(e){}}
-  function vLoadLocal(dc){try{const saved=JSON.parse(localStorage.getItem('volnePositionTestLists')||'null');if(saved&&saved[dc])v.lists[dc]=saved[dc]}catch(e){}}
-  byId('volneEntry').addEventListener('click',()=>{showVolneSection('volne');byId('volneWarehousePick').style.display='grid';byId('volneStreetView').style.display='none';byId('volnePositionView').style.display='none'});
-  byId('volneHome').onclick=()=>showVolneSection('home');
-  document.querySelectorAll('[data-volne-dc]').forEach(b=>b.addEventListener('click',()=>vOpenDC(b.dataset.volneDc)));
-  byId('volneChangeDC').onclick=()=>{byId('volneWarehousePick').style.display='grid';byId('volneStreetView').style.display='none';byId('volnePositionView').style.display='none'};
-  byId('volneBackStreets').onclick=()=>vRenderStreets();
-  byId('volneStart').onclick=()=>{if(!v.dc){byId('volneImportStatus').textContent='Nejprve vyberte DC2 nebo DC3.';return}const first=vOrdered()[0];if(first)vOpenStreet(first.street);else byId('volneImportStatus').textContent='Žádná dostupná ulička.'};
-  byId('volnePrev').onclick=()=>vStep(-1);byId('volneNext').onclick=()=>vStep(1);byId('volneDone').onclick=vDone;
-  byId('volneSkip').onclick=()=>{const a=vCurrent();if(!a)return;v.skipped.add(a.street);const next=vOrdered()[0];if(next)vOpenStreet(next.street);else vRenderStreets()};
-  byId('volneWorking').onchange=e=>{const a=vCurrent();if(!a)return;if(e.target.checked)v.working.add(a.street);else v.working.delete(a.street);vSaveLocal();vRenderStreets();vShowPosition()};
-  byId('volneRefresh').onclick=()=>{vLoadLocal(v.dc);if(v.dc)vRenderStreets();byId('volneImportStatus').textContent=navigator.onLine?'Aktualizace dokončena z posledního lokálně uloženého seznamu. Testovací verze nemá společnou databázi.':'Offline: používáte poslední seznam uložený v tomto zařízení.'};
-  byId('volneFile').addEventListener('change',async e=>{
-    const file=e.target.files&&e.target.files[0];if(!file)return;
-    if(!window.XLSX){byId('volneImportStatus').textContent='Excel modul se nenačetl. Připojte se k internetu a obnovte stránku.';return}
-    byId('volneImportStatus').textContent='Načítám a kontroluji soubor…';
-    try{
-      const book=XLSX.read(await file.arrayBuffer(),{type:'array'});const rows=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{defval:''});if(!rows.length)throw Error('Soubor neobsahuje řádky.');
-      const keys=Object.keys(rows[0]);const key=n=>keys.find(k=>String(k).trim().toLowerCase()===n.toLowerCase());
-      const kp=key('Pozice'),kf=key('Prázdná'),kw=key('Sklad');if(!kp||!kf||!kw)throw Error('Chybí sloupce Pozice, Prázdná nebo Sklad.');
-      const buckets={DC2:new Map(),DC3:new Map()};let ignored=0;
-      rows.forEach(r=>{
-        if(String(r[kf]).trim().toLowerCase()!=='ano'){ignored++;return}
-        const m=String(r[kp]).trim().match(/^(\d{1,3})-(\d{1,3})-(\d{2})$/);if(!m){ignored++;return}
-        const warehouse=String(r[kw]).trim(),street=Number(m[1]),pos=Number(m[2]),floor=m[3];
-        const dc=warehouse==='3'?'DC2':warehouse==='6'?'DC3':null;
-        if(!dc||floor!=='00'||(dc==='DC2'&&(street<12||street>123||pos<1||pos>168))||(dc==='DC3'&&(street<1||street>41||pos<1||pos>148))){ignored++;return}
-        if(!buckets[dc].has(street))buckets[dc].set(street,new Set());buckets[dc].get(street).add(pos);
-      });
-      const result={};for(const dc of ['DC2','DC3'])result[dc]=[...buckets[dc]].map(([street,set])=>({street,positions:[...set].sort((a,b)=>a-b)})).sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street);
-      if(!result.DC2.length&&!result.DC3.length)throw Error('Nenalezeny žádné volné pozice pro DC2/DC3.');
-      v.lists=result;vSaveLocal();if(v.dc)vRenderStreets();
-      byId('volneImportStatus').textContent='Import OK — DC2: '+result.DC2.reduce((n,x)=>n+x.positions.length,0)+' pozic; DC3: '+result.DC3.reduce((n,x)=>n+x.positions.length,0)+' pozic. Ignorované řádky: '+ignored+'. Uloženo v tomto zařízení.';
-    }catch(err){byId('volneImportStatus').textContent='Import se nepodařil: '+err.message}
-  });
-  let vTouchX=0,vTouchY=0;
-  byId('volnePositionView').addEventListener('touchstart',e=>{vTouchX=e.changedTouches[0].screenX;vTouchY=e.changedTouches[0].screenY},{passive:true});
-  byId('volnePositionView').addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-vTouchX,dy=e.changedTouches[0].screenY-vTouchY;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.3)vStep(dx<0?1:-1)},{passive:true});
 
   window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=3').catch(()=>{}); });
 })();
