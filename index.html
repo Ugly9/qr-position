@@ -176,7 +176,7 @@
     b.addEventListener('click',open);
     b.addEventListener('pointerup',e=>{if(e.pointerType!=="mouse")open()});
   });
-  back.addEventListener('click',goHome);
+  back.addEventListener('click',()=>{if(document.getElementById('vqr').style.display==='block'){vShow('vstreets')}else if(document.getElementById('vstreets').style.display==='block'){vShow('vhome')}else if(document.getElementById('vhome').style.display==='block'){goHome()}else{goHome()}});
   document.getElementById('homeBtn').addEventListener('click',goHome);
   document.getElementById('prev').addEventListener('click',()=>step(-1));
   document.getElementById('next').addEventListener('click',()=>step(1));
