@@ -9,6 +9,7 @@ async function seed(){if((await allRows()).length)return;const rows=[];for(const
 async function init(){await seed();return allFree()}
 async function markOccupied(warehouse,aisle,position){await req('qr_free_positions?warehouse=eq.'+encodeURIComponent(warehouse)+'&aisle=eq.'+aisle+'&position=eq.'+position,{method:'PATCH',body:JSON.stringify({occupied:true,updated_at:new Date().toISOString()})});return true}
 async function refresh(){return allFree()}
-async function resetFromRaw(){await req('qr_free_positions?select=warehouse,aisle,position',{method:'DELETE'});await seed();return allFree()}
-window.QRPositionSync={init,refresh,markOccupied,resetFromRaw};
+async function replaceAll(rows){await req('qr_free_positions?warehouse=neq.__none__',{method:'DELETE'});for(let i=0;i<rows.length;i+=300){await req('qr_free_positions?on_conflict=warehouse,aisle,position',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+300).map(x=>({warehouse:x.warehouse,aisle:x.aisle,position:x.position,occupied:false,updated_at:new Date().toISOString()})))});}return allFree()}
+async function resetFromRaw(){await req('qr_free_positions?warehouse=neq.__none__',{method:'DELETE'});await seed();return allFree()}
+window.QRPositionSync={init,refresh,markOccupied,resetFromRaw,replaceAll};
 })();
