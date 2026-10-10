@@ -116,7 +116,7 @@ $('file').addEventListener('change',async e=>{
    skipped.clear();working.clear();activeStreet=null;save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl ověřen na serveru. Vyberte uličku.</div>';
    if(mismatch){
-     $('importStatus').textContent='⚠ Server uložil seznam, ale kontrola nesouhlasí: v souboru '+syncRows.length+', на сервері '+actual.length+'. На екрані показано саме дані сервера.';
+     $('importStatus').textContent='⚠ Server uložil seznam, ale kontrola nesouhlasí: v souboru '+syncRows.length+', na serveru '+actual.length+'. Na obrazovce jsou zobrazeny právě serverové údaje.';
      setSyncBadge('POZOR: '+actual.length+' POZIC');
    }else{
      $('importStatus').textContent='✓ Import ověřen: DC2 '+totalFor('DC2')+' pozic; DC3 '+totalFor('DC3')+' pozic. Ignorované řádky: '+ignored+'.';
@@ -134,7 +134,6 @@ $('file').addEventListener('change',async e=>{
    fileInput.value='';
  }
 });
-renderStats();if(dc)renderStreets();$('positionPane').innerHTML='<div class="empty">Nový seznam byl načten. Vyberte uličku.</div>';$('importStatus').textContent='Import úspěšný: DC2 '+totalFor('DC2')+' pozic; DC3 '+totalFor('DC3')+' pozic. Ignorované řádky: '+ignored+'. Starý seznam byl nahrazen.'}catch(err){$('importStatus').textContent='Import se nezdařil: '+err.message+' — předchozí seznam zůstal zachován.'}});
 renderStats();
 (async()=>{
  const revision=pcListRevision;
