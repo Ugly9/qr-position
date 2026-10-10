@@ -110,7 +110,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=19"></script><script src="./qr-working-guard.js?v=3"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=20"></script><script src="./qr-working-guard.js?v=4"></script>
 <script>
 (() => {
   const CFG = {
@@ -262,19 +262,27 @@ document.getElementById('vrefresh').onclick=vUpdateNow;
 document.getElementById('vworking').onclick=async()=>{
  if(vWorkingButtonBusy)return;
  vWorkingButtonBusy=true;
- const aisle=va,b=document.getElementById('vworking');b.disabled=true;
+ const aisle=va,b=document.getElementById('vworking');
  const same=x=>x.warehouse===vdc&&Number(x.aisle)===Number(aisle);
+ const wasMarked=!!vWorkingRow(aisle),desired=!wasMarked,id=vWorkerId();
+ b.disabled=true;
+ // Update local display immediately; server confirmation follows.
+ vWorkingAisles=desired
+   ?vWorkingAisles.filter(x=>!same(x)).concat({warehouse:vdc,aisle:Number(aisle),worker_id:id,updated_at:new Date().toISOString()})
+   :vWorkingAisles.filter(x=>!same(x));
+ vUpdateWorkingButton();
+ document.getElementById('vqrstatus').textContent=desired?'Ulička se označuje…':'Označení se ruší…';
  try{
-   const current=vWorkingRow(aisle);
-   const result=current?await QRPositionSync.clearWorkingAisle(vdc,aisle):await QRPositionSync.markWorkingAisle(vdc,aisle);
+   const result=desired?await QRPositionSync.markWorkingAisle(vdc,aisle):await QRPositionSync.clearWorkingAisle(vdc,aisle);
    if(result&&result.ok===false&&!result.local)throw new Error(result.error||'Server odmítl změnu');
    vWorkingAisles=await QRPositionSync.getWorkingAisles();
    vUpdateWorkingButton();
    const pending=vRead('qr-working-pending-v1',[]).some(x=>same(x));
-   vStatus(pending?'☁ Změna čeká na potvrzení serverem.':'✓ Server změnu potvrdil.',!pending);
+   vStatus(pending?'☁ Změna se zobrazuje lokálně a čeká na potvrzení serverem.':'✓ Server změnu potvrdil.',!pending);
    document.getElementById('vqrstatus').textContent=pending?'Změna čeká na synchronizaci.':'Změna potvrzena serverem.';
  }catch(e){
    try{vWorkingAisles=await QRPositionSync.getWorkingAisles()}catch(_){}
+   vUpdateWorkingButton();
    const pending=vRead('qr-working-pending-v1',[]).some(x=>same(x));
    vStatus(pending?'☁ Změna čeká na synchronizaci.':'✕ Změnu se nepodařilo uložit: '+(e.message||e),false);
    document.getElementById('vqrstatus').textContent=pending?'Změna čeká na synchronizaci.':'Chyba synchronizace: '+(e.message||e);
@@ -291,7 +299,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=19').catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=20').catch(()=>{}); });
 })();
 </script>
 </body>
