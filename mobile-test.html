@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a10"><title>QR Position — Mobile TEST</title>
+<style>
+:root{color-scheme:dark;--bg:#080a10;--panel:#121827;--line:#293246;--muted:#a1abc0;--blue:#2786f7;--pink:#ec78b2;--green:#31c875}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(700px 360px at 50% -100px,#1b2b50,var(--bg) 70%);color:#f5f7ff;font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.app{max-width:520px;margin:auto;padding:20px 16px 34px}.top{display:flex;align-items:center;gap:12px;margin-bottom:22px}.back{display:none;border:1px solid var(--line);background:#151b29;color:#fff;border-radius:13px;width:42px;height:42px;font-size:24px}.brand{font-size:22px;font-weight:850;letter-spacing:-.5px}.sub{font-size:12px;color:var(--muted);margin-top:3px}.demo{background:#342817;border:1px solid #6d5127;color:#ffdda0;border-radius:12px;padding:9px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;margin-bottom:16px;text-align:center}
+.hero,.card{border:1px solid var(--line);border-radius:23px;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.018));padding:19px;box-shadow:0 15px 38px #0004}.eyebrow{font-size:11px;color:#9ccaff;font-weight:800;letter-spacing:.15em}.hero h1{font-size:30px;line-height:1.08;margin:8px 0}.muted{color:var(--muted);line-height:1.5}.warehouses{display:grid;gap:12px;margin-top:14px}.warehouse{position:relative;text-align:left;color:white;border:1px solid var(--line);border-radius:19px;background:#141b2a;padding:19px;min-height:112px}.warehouse b{font-size:24px;display:block}.warehouse small{display:block;color:var(--muted);margin-top:7px;line-height:1.45}.warehouse .arrow{position:absolute;right:17px;top:42%;font-size:25px}.blue{border-color:#315d91}.pink{border-color:#75445f}
+h2{font-size:21px;margin:0 0 7px}.subhead{font-size:13px;color:var(--muted);margin-bottom:16px}.list{display:grid;gap:8px}.item{display:flex;align-items:center;gap:12px;text-align:left;color:#f5f7ff;background:#141b29;border:1px solid #252e40;border-radius:14px;padding:14px;width:100%;min-height:51px}.item.active{background:#123e75;border-color:#2786f7}.item .n{display:grid;place-items:center;background:#273246;border-radius:50%;width:29px;height:29px;flex-shrink:0;font-weight:800}.item .label{flex:1}.item .count{color:#8fc4ff;font-weight:800}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}.btn{border:1px solid var(--line);border-radius:14px;background:#202a3b;color:white;font-weight:800;padding:14px 10px;min-height:49px}.btn.primary{background:linear-gradient(130deg,#2786f7,#416de4);border:0}.btn.good{background:#173c2b;border-color:#246847}.positionBox{background:#101725;border:1px solid #283348;border-radius:17px;padding:16px;text-align:center}.posLabel{font-size:12px;color:var(--muted)}.posCode{font-size:28px;font-weight:900;margin:5px 0 13px;letter-spacing:.02em}.qr{margin:0 auto;background:#fff;border-radius:9px;padding:10px;width:min(260px,100%);min-height:230px;display:grid;place-items:center}.qr canvas,.qr img{max-width:100%;height:auto!important}.qrText{font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin-top:12px}.note{font-size:11px;color:#78859c;text-align:center;margin-top:18px;line-height:1.5}.success{border:1px solid #256845;background:#10271d;border-radius:18px;padding:20px;text-align:center;margin-bottom:14px}.check{margin:0 auto 10px;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--green);font-size:30px;color:#062113}.hidden{display:none!important}
+@media(min-width:650px){body:before{content:"Mobilní testovací prototyp";display:block;text-align:center;color:#9ca8be;padding:12px;font-size:12px}.app{margin:18px auto 30px;border:1px solid #344057;border-radius:32px;max-width:430px;min-height:800px}}
+</style></head>
+<body><main class="app">
+<header class="top"><button id="back" class="back" aria-label="Zpět">‹</button><div><div class="brand">QR Position</div><div class="sub" id="sub">DC2 • DC3</div></div></header>
+<div class="demo">SAMOSTATNÁ MOBILNÍ TESTOVACÍ VERZE</div>
+<section id="home"><div class="hero"><div class="eyebrow">WAREHOUSE TOOL</div><h1>Vyberte sklad</h1><div class="muted">Vyber sklad, uličku a pozici. Otevři QR kód, přejdi na další pozici nebo označ pozici jako zpracovanou.</div></div><div class="warehouses">
+<button class="warehouse blue" data-dc="DC2"><b>DC2</b><small>Uličky 12–123<br>Pozice 1–168 · podlaží 00</small><span class="arrow">›</span></button>
+<button class="warehouse pink" data-dc="DC3"><b>DC3</b><small>Uličky 1–41<br>Pozice 1–148 · podlaží 00</small><span class="arrow">›</span></button>
+</div></section>
+<section id="aisles" class="hidden"><h2>Vyberte uličku</h2><div class="subhead" id="aisleHint"></div><div id="aisleList" class="list"></div></section>
+<section id="positions" class="hidden"><h2 id="positionTitle">Vyberte pozici</h2><div class="subhead" id="positionHint"></div><div id="positionList" class="list"></div></section>
+<section id="qrview" class="hidden"><div class="card"><div class="posLabel">AKTIVNÍ POZICE</div><div class="posCode" id="posCode">—</div><div class="positionBox"><div id="qr" class="qr"></div><div id="qrText" class="qrText"></div></div><div class="actions"><button class="btn" id="backToList">Seznam pozic</button><button class="btn primary" id="next">Další pozice →</button></div><button class="btn good" id="done" style="width:100%;margin-top:9px">✓ Pozice zpracována</button></div></section>
+<section id="complete" class="hidden"><div class="success"><div class="check">✓</div><h2 id="completeTitle">Pozice zpracována</h2><div class="muted" id="completeText"></div></div><button class="btn primary" id="continue" style="width:100%">Pokračovat →</button><button class="btn" id="toAisles" style="width:100%;margin-top:9px">Zpět na uličky</button></section>
+<div class="note">TEST · Údaje o zpracovaných pozicích se ukládají pouze v tomto prohlížeči. Produkční mobilní QR Position se tímto nemění. Volné pozice zůstávají v samostatné PC-verzi.</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(()=>{const cfg={DC2:{minA:12,maxA:123,maxP:168,prefix:'CZSYR2'},DC3:{minA:1,maxA:41,maxP:148,prefix:'CZSYR3'}};
+let dc='DC2',aisle=12,pos=1,view='home';const $=id=>document.getElementById(id);
+const sections=['home','aisles','positions','qrview','complete'];
+function show(id){sections.forEach(s=>$(s).classList.toggle('hidden',s!==id));view=id;$('back').style.display=id==='home'?'none':'block';$('sub').textContent=id==='home'?'DC2 • DC3':dc+(id==='home'?'':' · Ulička '+aisle)}
+function pad(n){return String(n).padStart(3,'0')}
+function label(a=aisle,p=pos){return pad(a)+'-'+pad(p)+'-00'}
+function code(a=aisle,p=pos){return cfg[dc].prefix+pad(a)+pad(p)+'00'}
+function doneSet(){try{return JSON.parse(localStorage.getItem('qr-mobile-test-done')||'{}')}catch(e){return {}}}
+function saveDone(k){const d=doneSet();d[dc+'-'+k]=true;localStorage.setItem('qr-mobile-test-done',JSON.stringify(d))}
+function openDC(d){dc=d;aisle=cfg[d].minA;renderAisles();show('aisles')}
+function renderAisles(){const c=cfg[dc];$('aisleHint').textContent=dc+' · uličky '+c.minA+'–'+c.maxA;const list=$('aisleList');list.innerHTML='';for(let n=c.minA;n<=c.maxA;n++){const b=document.createElement('button');b.className='item';b.innerHTML='<span class="n">'+(n-c.minA+1)+'</span><span class="label">Ulička '+n+'</span><span class="count">›</span>';b.onclick=()=>{aisle=n;renderPositions();show('positions')};list.append(b)}}
+function renderPositions(){const c=cfg[dc],done=doneSet();$('positionTitle').textContent=dc+' · Ulička '+aisle;$('positionHint').textContent='Vyberte pozici · podlaží 00';const list=$('positionList');list.innerHTML='';for(let n=1;n<=c.maxP;n++){const key=label(aisle,n),isDone=!!done[dc+'-'+key];const b=document.createElement('button');b.className='item'+(n===pos?' active':'');b.innerHTML='<span class="n">'+(isDone?'✓':n)+'</span><span class="label">'+key+'</span><span class="count">'+(isDone?'Hotovo':'›')+'</span>';b.onclick=()=>{pos=n;renderQR();show('qrview')};list.append(b)}}
+function renderQR(){$('posCode').textContent=label();$('qrText').textContent=code();$('qr').innerHTML='';if(window.QRCode)new QRCode($('qr'),{text:code(),width:220,height:220,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});else $('qr').textContent='QR knihovna se nenačetla.'}
+function nextPos(){if(pos<cfg[dc].maxP){pos++}else if(aisle<cfg[dc].maxA){aisle++;pos=1;renderPositions()}else{show('complete');$('completeTitle').textContent='Sklad dokončen';$('completeText').textContent='V tomto demonstračním rozsahu už nejsou další pozice.';return}renderQR();show('qrview')}
+document.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>openDC(b.dataset.dc));
+$('back').onclick=()=>{if(view==='qrview')show('positions');else if(view==='positions')show('aisles');else show('home')};
+$('backToList').onclick=()=>{renderPositions();show('positions')};$('next').onclick=nextPos;
+$('done').onclick=()=>{saveDone(label());$('completeTitle').textContent='Pozice zpracována';$('completeText').textContent='Pozice '+label()+' označena jako zpracovaná v této testovací verzi.';$('continue').textContent='Další pozice →';show('complete')};
+$('continue').onclick=()=>{if($('completeTitle').textContent==='Sklad dokončen'){show('home');return}nextPos()};
+$('toAisles').onclick=()=>{renderAisles();show('aisles')};
+})();
+</script></body></html>
