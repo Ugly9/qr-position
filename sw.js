@@ -45,7 +45,7 @@ self.addEventListener("fetch",event=>{
 
   // Always fetch application scripts/styles from the network first. A stale
   // cached JavaScript file can make the UI disagree with confirmed server data.
-  if (/\\.(js|css)$/.test(new URL(event.request.url).pathname)) {
+  if (/\.(js|css)$/.test(new URL(event.request.url).pathname)) {
     event.respondWith(
       fetch(event.request, {cache:"no-cache"})
         .then(resp => {
