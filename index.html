@@ -233,7 +233,7 @@ document.getElementById('vdonenext').onclick=vNext;
 document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('vstreets')};
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
-  window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=9').catch(()=>{}); });
+  window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=10').catch(()=>{}); });
 })();
 </script>
 </body>
