@@ -24,26 +24,29 @@
     while (Date.now() < deadline) {
       const current = readLease();
       if (!current || Number(current.until) < Date.now()) {
+        let acquired = false;
         try {
           localStorage.setItem(LOCK_KEY, JSON.stringify({ token, until: Date.now() + 10000 }));
           const check = readLease();
-          if (check && check.token === token) {
-            const heartbeat = setInterval(() => {
-              const latest = readLease();
-              if (latest && latest.token === token) {
-                localStorage.setItem(LOCK_KEY, JSON.stringify({ token, until: Date.now() + 10000 }));
-              }
-            }, 2500);
-            try {
-              return await task();
-            } finally {
-              clearInterval(heartbeat);
-              const latest = readLease();
-              if (latest && latest.token === token) localStorage.removeItem(LOCK_KEY);
-            }
-          }
+          acquired = !!check && check.token === token;
         } catch (_) {
-          // Keep trying until the lease deadline; then return a clear error.
+          acquired = false;
+        }
+        if (acquired) {
+          const heartbeat = setInterval(() => {
+            const latest = readLease();
+            if (latest && latest.token === token) {
+              try { localStorage.setItem(LOCK_KEY, JSON.stringify({ token, until: Date.now() + 10000 })); }
+              catch (_) {}
+            }
+          }, 2500);
+          try {
+            return await task();
+          } finally {
+            clearInterval(heartbeat);
+            const latest = readLease();
+            if (latest && latest.token === token) localStorage.removeItem(LOCK_KEY);
+          }
         }
       }
       await pause(80 + Math.floor(Math.random() * 80));
