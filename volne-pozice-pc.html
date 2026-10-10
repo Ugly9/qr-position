@@ -20,7 +20,8 @@ const INITIAL={DC2:parseCompact(RAW.DC2),DC3:parseCompact(RAW.DC3)};
 let lists=clone(INITIAL),dc=null,activeStreet=null,positionIndex=0,skipped=new Set(),working=new Set(),sharedWorking=[];
 function clone(o){return JSON.parse(JSON.stringify(o))}
 const $=id=>document.getElementById(id);
-function save(){try{localStorage.setItem('volnePozicePcLists',JSON.stringify(lists));localStorage.setItem('volnePozicePcSkipped',JSON.stringify([...skipped]))}catch(e){}}\nfunction isSharedWorking(street){return sharedWorking.some(x=>x.warehouse===dc&&Number(x.aisle)===Number(street))}
+function save(){try{localStorage.setItem('volnePozicePcLists',JSON.stringify(lists));localStorage.setItem('volnePozicePcSkipped',JSON.stringify([...skipped]))}catch(e){}}
+function isSharedWorking(street){return sharedWorking.some(x=>x.warehouse===dc&&Number(x.aisle)===Number(street))}
 function totalFor(d){return (lists[d]||[]).reduce((n,s)=>n+s.positions.length,0)}
 function ordered(){return (lists[dc]||[]).filter(s=>s.positions.length&&!skipped.has(s.street)&&!working.has(s.street)).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street)}
 function qrCode(street,pos){return (dc==='DC2'?'CZSYR2':'CZSYR3')+String(street).padStart(3,'0')+String(pos).padStart(3,'0')+'00'}
