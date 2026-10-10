@@ -237,7 +237,7 @@ async function vToggleWorking(aisle,control,desiredChecked){
    if(document.getElementById('vqr').style.display==='block')vUpdateWorkingButton();
  }
 }
-async function vWarehouse(async function vWarehouse(d){vdc=d;if(navigator.onLine){try{vrows=await QRPositionSync.refresh();vListExists=await QRPositionSync.hasList();vReady=true;vApplyPending();if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}}catch(e){if(!vReady)await vInit()}}else if(!vReady)await vInit();await vRefresh();vShow('vstreets')}
+async function vWarehouse(d){vdc=d;if(navigator.onLine){try{vrows=await QRPositionSync.refresh();vListExists=await QRPositionSync.hasList();vReady=true;vApplyPending();if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}}catch(e){if(!vReady)await vInit()}}else if(!vReady)await vInit();await vRefresh();vShow('vstreets')}
 function vRow(){return vrows.find(x=>x.warehouse===vdc&&Number(x.aisle)===Number(va)&&Number(x.position)===Number(vp)&&!x.occupied)}
 function vLabel(r){return String(r.aisle).padStart(3,'0')+'-'+String(r.position).padStart(3,'0')+'-00'}
 function vPayload(r){return (r.warehouse==='DC2'?'CZSYR2':'CZSYR3')+String(r.aisle).padStart(3,'0')+String(r.position).padStart(3,'0')+'00'}
@@ -252,7 +252,7 @@ async function vMark(){const r=vRow();if(!r)return;const b=document.getElementBy
 document.getElementById('openVolne').onclick=async()=>{vShow('vhome');if(navigator.onLine){try{vrows=await QRPositionSync.refresh();vListExists=await QRPositionSync.hasList();vReady=true;vApplyPending();if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}vStatus(vListExists?(vrows.length?'✓ Seznam volných pozic načten a ověřen online.':'Seznam existuje, ale nejsou v něm žádné volné pozice.'):'⚠ Chybí seznam volných pozic. Nahrajte jej z PC a potom stiskněte Aktualizovat.',!!vrows.length)}catch(e){if(!vReady)await vInit()}}else if(!vReady)await vInit()};
 document.querySelectorAll('[data-vdc]').forEach(b=>b.onclick=()=>vWarehouse(b.dataset.vdc));
 async function vRefreshWorkingOnly(){try{vWorkingAisles=await QRPositionSync.getWorkingAisles();vUpdateWorkingControls();if(document.getElementById('vqr').style.display==='block')vUpdateWorkingButton()}catch(e){}}
-setInterval(()=>{setInterval(()=>{if(vReady&&navigator.onLine&&['vhome','vstreets','vqr'].some(id=>document.getElementById(id).style.display==='block'))vRefreshWorkingOnly()},3000);
+setInterval(()=>{if(vReady&&navigator.onLine&&['vhome','vstreets','vqr'].some(id=>document.getElementById(id).style.display==='block'))vRefreshWorkingOnly()},3000);
 document.getElementById('vrefresh').onclick=vUpdateNow;
 document.getElementById('vworking').onclick=async()=>{
  if(vWorkingButtonBusy)return;
