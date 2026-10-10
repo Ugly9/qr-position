@@ -1,7 +1,7 @@
 (function(){
 const URL='https://hsrznmfeqajffrleeyly.supabase.co';
 const KEY='sb_publishable_lQBoAETsI3XjQV21G4mpIQ_2xBzbsBT';
-async function req(path,options={}){const r=await fetch(URL+'/rest/v1/'+path,{...options,headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})}});if(!r.ok)throw new Error('Sync error '+r.status+' '+(await r.text()).slice(0,180));return r.status===204?null:r.json().catch(()=>null)}
+async function req(path,options={}){const headers={apikey:KEY,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})};delete headers.Authorization;const r=await fetch(URL+'/rest/v1/'+path,{...options,headers});if(!r.ok){const detail=(await r.text()).slice(0,300);throw new Error('Supabase '+r.status+' ('+path+'): '+detail)}return r.status===204?null:r.json().catch(()=>null)}
 function parse(raw){const out=[];for(const part of (raw||'').split(';')){const [a,values]=part.split(':');if(!a||!values)continue;for(const token of values.split(',')){const m=token.match(/^(\d+)(?:-(\d+))?$/);if(!m)continue;for(let p=+m[1];p<=+(m[2]||m[1]);p++)out.push({warehouse:'',aisle:+a,position:p,occupied:false})}}return out}
 async function allFree(){let out=[],offset=0;while(true){const part=await req('qr_free_positions?select=warehouse,aisle,position,occupied&occupied=eq.false&order=warehouse,aisle,position&limit=1000&offset='+offset);out=out.concat(part||[]);if(!part||part.length<1000)break;offset+=1000}return out}
 async function allRows(){const r=await req('qr_free_positions?select=warehouse,aisle,position,occupied&limit=1');return r||[]}
