@@ -1,4 +1,4 @@
-const CACHE="qr-position-v26";
+const CACHE="qr-position-v27";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js","./qr-working-guard.js"];
 
 self.addEventListener("install",event=>{
@@ -30,7 +30,7 @@ self.addEventListener("fetch",event=>{
 
   if(event.request.mode==="navigate"){
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, {cache:"no-cache"})
         .then(resp=>{
           if(resp.ok){
             const copy=resp.clone();
