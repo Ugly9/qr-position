@@ -201,10 +201,10 @@ function vShow(id){vIds.forEach(x=>document.getElementById(x).style.display=x===
 async function vInit(){if(vLoading)return vLoading;vLoading=(async()=>{try{vrows=await QRPositionSync.init();vListExists=await QRPositionSync.hasList();vReady=true;vApplyPending();if(vListExists){vSaveCache();vStatus(vrows.length?'✓ Seznam volných pozic načten a ověřen online.':'Seznam existuje, ale nejsou v něm žádné volné pozice.',!!vrows.length)}else{vrows=[];try{localStorage.removeItem(V_CACHE)}catch(e){}vStatus('⚠ Chybí seznam volných pozic. Nahrajte jej z PC a potom stiskněte Aktualizovat.',false)}return true}catch(e){vReady=vLoadCache();if(vReady){vApplyPending();vStatus('Offline režim: zobrazuji poslední uložený seznam. Synchronizace neproběhla.',false)}else vStatus('Seznam volných pozic chybí a v telefonu není uložená kopie. Připojte internet a nahrajte seznam z PC.',false);return vReady}})();try{return await vLoading}finally{vLoading=null}}
 function vFree(){return vrows.filter(x=>x.warehouse===vdc)}
 function vCounts(){let m={};vFree().forEach(x=>m[x.aisle]=(m[x.aisle]||0)+1);return Object.keys(m).map(Number).map(aisle=>({aisle,count:m[aisle]})).sort((a,b)=>b.count-a.count||a.aisle-b.aisle)}
-let vWorkingAisles=[];const vWorkingToggleBusy=new Set();
+let vWorkingAisles=[];const vWorkingToggleBusy=new Set();let vWorkingButtonBusy=false;
 function vWorkerId(){return QRPositionSync.getWorkerId?QRPositionSync.getWorkerId():(localStorage.getItem('qr-working-worker-id')||'')}
 function vWorkingRow(a){return vWorkingAisles.find(x=>x.warehouse===vdc&&Number(x.aisle)===Number(a))}
-function vUpdateWorkingButton(){const b=document.getElementById('vworking');const row=vWorkingRow(va);b.textContent=row?'☑ Pracuji zde — zrušit označení':'☐ Pracuji v této uličce';b.disabled=false}
+function vUpdateWorkingButton(){const b=document.getElementById('vworking');const row=vWorkingRow(va);b.textContent=row?'☑ Pracuji zde — zrušit označení':'☐ Pracuji v této uličce';b.disabled=vWorkingButtonBusy}
 async function vRefresh(){try{vWorkingAisles=await QRPositionSync.getWorkingAisles()}catch(e){/* Při dočasné chybě zachovej poslední známé označení pracovních uliček. */}const root=document.getElementById('vlist');root.innerHTML='';const a=vCounts();document.getElementById('vtitle').textContent=vdc+' — Volné pozice';let empty=document.getElementById('vempty');if(!empty){empty=document.createElement('div');empty.id='vempty';empty.className='vempty';root.parentNode.insertBefore(empty,root.nextSibling)}if(vListExists===false){empty.textContent='Seznam volných pozic chybí. Nahrajte nebo obnovte seznam na PC a potom stiskněte „Aktualizovat volné pozice“. V telefonu nejsou žádná aktuální data.';empty.style.display='block'}else if(!a.length){empty.textContent='Pro '+vdc+' není v seznamu žádná volná pozice. Zkontrolujte seznam na PC a aktualizujte data.';empty.style.display='block'}else{empty.style.display='none'}a.forEach((s,i)=>{const row=vWorkingRow(s.aisle);const el=document.createElement('div');el.className='vitem'+(row?' working':'');el.dataset.aisle=s.aisle;el.innerHTML='<span class="rank">'+(i+1)+'</span><span class="vlabel">Ulička '+s.aisle+(row?' · PRACUJE SE':'')+'</span><span class="count">'+s.count+'</span><label class="vcheck"><input type="checkbox" aria-label="Pracuji v uličce '+s.aisle+'" '+(!!row?'checked':'')+' '+'> Pracuji</label><span aria-hidden="true">→</span>';el.onclick=()=>vOpen(s.aisle);const label=el.querySelector('label');label.onclick=e=>e.stopPropagation();const cb=el.querySelector('input');cb.disabled=vWorkingToggleBusy.has(String(vdc)+'|'+Number(s.aisle));cb.onclick=e=>e.stopPropagation();cb.onchange=async e=>{e.stopPropagation();await vToggleWorking(s.aisle,cb)};root.appendChild(el)});document.getElementById('vcount').textContent='Volných pozic celkem: '+vFree().length}
 async function vFlushPendingOccupied(){const pending=vPendingOccupied(),keep=[];for(const item of pending){try{await QRPositionSync.markOccupied(item.warehouse,item.aisle,item.position)}catch(e){keep.push(item)}}localStorage.setItem(V_OCC_PENDING,JSON.stringify(keep));return keep.length}
 async function vUpdateNow(){const b=document.getElementById('vrefresh');b.disabled=true;b.textContent='⟳ Aktualizuji…';try{if(!navigator.onLine)throw new Error('offline');const pendingLeft=await vFlushPendingOccupied();vrows=await QRPositionSync.refresh();vListExists=await QRPositionSync.hasList();vReady=true;vApplyPending();if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}await vRefresh();const workPending=vRead('qr-working-pending-v1',[]).length;vStatus((pendingLeft||workPending)?'⚠ Seznam aktualizován; čeká na odeslání: '+pendingLeft+' obsazení, '+workPending+' označení uliček.':'✓ Volné pozice úspěšně aktualizovány '+new Date().toLocaleTimeString()+'.',pendingLeft===0&&workPending===0)}catch(e){const cached=vLoadCache();if(cached){vApplyPending();await vRefresh();vStatus('⚠ Server nedostupný. Zobrazuji poslední uložená data; synchronizace neproběhla.',false)}else vStatus('✕ Aktualizace se nepodařila a lokální seznam není uložen.',false)}finally{b.disabled=false;b.textContent='↻ Aktualizovat volné pozice'}}
@@ -259,7 +259,30 @@ document.querySelectorAll('[data-vdc]').forEach(b=>b.onclick=()=>vWarehouse(b.da
 async function vRefreshWorkingOnly(){try{vWorkingAisles=await QRPositionSync.getWorkingAisles();document.querySelectorAll('#vlist .vitem').forEach(b=>{const aisle=Number(b.dataset.aisle);if(vWorkingToggleBusy.has(String(vdc)+'|'+aisle))return;const row=vWorkingRow(aisle);b.classList.toggle('working',!!row);const label=b.querySelector('.vlabel');if(label)label.textContent='Ulička '+aisle+(row?' · PRACUJE SE':'');const cb=b.querySelector('input');if(cb){cb.checked=!!row;cb.disabled=false}});if(document.getElementById('vqr').style.display==='block')vUpdateWorkingButton()}catch(e){}}
 setInterval(()=>{if(vReady&&navigator.onLine&&['vhome','vstreets','vqr'].some(id=>document.getElementById(id).style.display==='block'))vRefreshWorkingOnly()},3000);
 document.getElementById('vrefresh').onclick=vUpdateNow;
-document.getElementById('vworking').onclick=async()=>{const aisle=va,current=vWorkingRow(aisle),b=document.getElementById('vworking');b.disabled=true;try{const result=current?await QRPositionSync.clearWorkingAisle(vdc,aisle):await QRPositionSync.markWorkingAisle(vdc,aisle);vWorkingAisles=await QRPositionSync.getWorkingAisles();vUpdateWorkingButton();const pending=vRead('qr-working-pending-v1',[]).some(x=>x.warehouse===vdc&&Number(x.aisle)===Number(aisle));vStatus(pending?'Změna čeká na synchronizaci.':'Změna synchronizována.',!pending)}catch(e){document.getElementById('vqrstatus').textContent='Změna čeká na synchronizaci.'}finally{b.disabled=false}};
+document.getElementById('vworking').onclick=async()=>{
+ if(vWorkingButtonBusy)return;
+ vWorkingButtonBusy=true;
+ const aisle=va,b=document.getElementById('vworking');b.disabled=true;
+ const same=x=>x.warehouse===vdc&&Number(x.aisle)===Number(aisle);
+ try{
+   const current=vWorkingRow(aisle);
+   const result=current?await QRPositionSync.clearWorkingAisle(vdc,aisle):await QRPositionSync.markWorkingAisle(vdc,aisle);
+   if(result&&result.ok===false&&!result.local)throw new Error(result.error||'Server odmítl změnu');
+   vWorkingAisles=await QRPositionSync.getWorkingAisles();
+   vUpdateWorkingButton();
+   const pending=vRead('qr-working-pending-v1',[]).some(x=>same(x));
+   vStatus(pending?'☁ Změna čeká na potvrzení serverem.':'✓ Server změnu potvrdil.',!pending);
+   document.getElementById('vqrstatus').textContent=pending?'Změna čeká na synchronizaci.':'Změna potvrzena serverem.';
+ }catch(e){
+   try{vWorkingAisles=await QRPositionSync.getWorkingAisles()}catch(_){}
+   const pending=vRead('qr-working-pending-v1',[]).some(x=>same(x));
+   vStatus(pending?'☁ Změna čeká na synchronizaci.':'✕ Změnu se nepodařilo uložit: '+(e.message||e),false);
+   document.getElementById('vqrstatus').textContent=pending?'Změna čeká na synchronizaci.':'Chyba synchronizace: '+(e.message||e);
+ }finally{
+   vWorkingButtonBusy=false;
+   vUpdateWorkingButton();
+ }
+};
 document.getElementById('vmark').onclick=vMark;document.getElementById('vnext').onclick=vNext;
 document.getElementById('vstreet').onclick=async()=>{const s=vCounts().find(x=>x.aisle!==va);if(s)await vOpen(s.aisle);else vShow('vstreets')};
 document.getElementById('vback').onclick=async()=>{await vRefresh();vShow('vstreets')};
