@@ -1,4 +1,4 @@
-const CACHE="qr-position-v20";
+const CACHE="qr-position-v21";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js"];
 
 self.addEventListener("install",event=>{
