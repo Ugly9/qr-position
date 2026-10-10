@@ -58,12 +58,24 @@
     return localLease(task);
   }
 
+  function hasPendingWork() {
+    try {
+      const rows = JSON.parse(localStorage.getItem("qr-working-pending-v1") || "[]");
+      return Array.isArray(rows) && rows.length > 0;
+    } catch (_) { return false; }
+  }
+
   let localReadPromise = null;
   ["markWorkingAisle", "clearWorkingAisle", "getWorkingAisles"].forEach(name => {
     if (typeof api[name] !== "function") return;
     const original = api[name].bind(api);
     api[name] = function (...args) {
-      if (name === "getWorkingAisles" && localReadPromise) return localReadPromise;
+      if (name === "getWorkingAisles") {
+        if (localReadPromise) return localReadPromise;
+        // Routine polling with an empty queue is read-only, so do not serialize
+        // all refreshes from many open tabs unnecessarily.
+        if (!hasPendingWork()) return original(...args);
+      }
       const operation = withSharedLock(() => original(...args));
       if (name === "getWorkingAisles") {
         localReadPromise = Promise.resolve(operation);
