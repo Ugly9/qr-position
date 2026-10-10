@@ -202,6 +202,29 @@ function vPayload(r){return (r.warehouse==='DC2'?'CZSYR2':'CZSYR3')+String(r.ais
 function vRender(){const r=vRow();if(!r)return;document.getElementById('vhead').textContent=vdc+' · Ulička '+va;document.getElementById('vlabel').textContent=vLabel(r);document.getElementById('vtext').textContent=vPayload(r);const q=document.getElementById('vcode');q.innerHTML='';if(window.QRCode)new QRCode(q,{text:vPayload(r),width:230,height:230,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});document.getElementById('vqrstatus').textContent='Pozice '+(vFree().filter(x=>x.aisle===va).sort((a,b)=>a.position-b.position).findIndex(x=>x.position===vp)+1)+' v uličce.'}
 async function vOpen(a){va=a;const r=vFree().filter(x=>x.aisle===a).sort((x,y)=>x.position-y.position)[0];if(!r){await vRefresh();vShow('vstreets');return}vp=r.position;vRender();vShow('vqr')}
 async function vNext(){await vRefresh();const n=vFree().filter(x=>x.aisle===va&&x.position>vp).sort((a,b)=>a.position-b.position)[0];if(n){vp=n.position;vRender();vShow('vqr');return}const s=vCounts().find(x=>x.aisle!==va);if(s)await vOpen(s.aisle);else vShow('vstreets')}
+async function vSwipe(delta){
+  if(document.getElementById('vqr').style.display!=='block')return;
+  await vRefresh();
+  const list=vFree().slice().sort((a,b)=>a.aisle-b.aisle||a.position-b.position);
+  if(!list.length){vShow('vstreets');return}
+  let i=list.findIndex(x=>x.aisle===va&&x.position===vp);
+  if(i<0)i=delta>0?-1:0;
+  const next=list[(i+delta+list.length)%list.length];
+  va=next.aisle;vp=next.position;vRender();vShow('vqr');
+}
+let vTouchX=0,vTouchY=0;
+const vqrScreen=document.getElementById('vqr');
+vqrScreen.addEventListener('touchstart',e=>{
+  if(e.changedTouches.length){vTouchX=e.changedTouches[0].clientX;vTouchY=e.changedTouches[0].clientY}
+},{passive:true});
+vqrScreen.addEventListener('touchend',e=>{
+  if(!e.changedTouches.length)return;
+  const dx=e.changedTouches[0].clientX-vTouchX,dy=e.changedTouches[0].clientY-vTouchY;
+  if(Math.abs(dx)>=55&&Math.abs(dx)>Math.abs(dy)*1.25){
+    e.preventDefault();
+    vSwipe(dx<0?1:-1);
+  }
+},{passive:false});
 async function vMark(){const r=vRow();if(!r)return;const b=document.getElementById('vmark');b.disabled=true;try{await QRPositionSync.markOccupied(vdc,va,vp);vrows=vrows.filter(x=>!(x.warehouse===vdc&&x.aisle===va&&x.position===vp));document.getElementById('vdonetext').textContent='Pozice '+vLabel(r)+' byla označena jako obsazená. Změna je sdílena s verzí pro PC.';vShow('vdone')}catch(e){document.getElementById('vqrstatus').textContent='Uložení se nepodařilo. Zkontrolujte připojení.'}finally{b.disabled=false}}
 document.getElementById('openVolne').onclick=()=>vShow('vhome');document.querySelectorAll('[data-vdc]').forEach(b=>b.onclick=()=>vWarehouse(b.dataset.vdc));document.getElementById('vmark').onclick=vMark;document.getElementById('vnext').onclick=vNext;document.getElementById('vstreet').onclick=async()=>{await vRefresh();const s=vCounts().find(x=>x.aisle!==va);if(s)await vOpen(s.aisle);else vShow('vstreets')};document.getElementById('vback').onclick=async()=>{await vRefresh();vShow('vstreets')};document.getElementById('vdonenext').onclick=vNext;document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('vstreets')};
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
