@@ -293,7 +293,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=22').catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=23').catch(()=>{}); });
 })();
 </script>
 </body>
