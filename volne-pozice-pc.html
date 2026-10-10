@@ -75,7 +75,7 @@ $('delete').onclick=async()=>{
    lists={DC2:[],DC3:[]};skipped.clear();working.clear();sharedWorking=[];activeStreet=null;
    save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl smazán a server potvrdil 0 pozic.</div>';
-   $('importStatus').textContent='✓ Server potvrdil smazання seznamу. Počet pozic: 0.';
+   $('importStatus').textContent='✓ Server potvrdil smazání seznamu. Počet pozic: 0.';
    setSyncBadge('SEZNAM: 0 POZIC');
    alert('Seznam byl smazán ze serveru. Počet záznamů: 0.');
  }catch(e){
@@ -116,7 +116,7 @@ $('file').addEventListener('change',async e=>{
    skipped.clear();working.clear();activeStreet=null;save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl ověřen na serveru. Vyberte uličku.</div>';
    if(mismatch){
-     $('importStatus').textContent='⚠ Server uložil seznam, ale ověření не збіглося: у файлі '+syncRows.length+', на сервері '+actual.length+'. На екрані показано саме дані сервера.';
+     $('importStatus').textContent='⚠ Server uložil seznam, ale kontrola nesouhlasí: v souboru '+syncRows.length+', на сервері '+actual.length+'. На екрані показано саме дані сервера.';
      setSyncBadge('POZOR: '+actual.length+' POZIC');
    }else{
      $('importStatus').textContent='✓ Import ověřen: DC2 '+totalFor('DC2')+' pozic; DC3 '+totalFor('DC3')+' pozic. Ignorované řádky: '+ignored+'.';
@@ -164,7 +164,7 @@ setInterval(async()=>{
    renderStats();if(dc){renderStreets();if(activeStreet)renderPosition();if($('occupiedList').style.display!=='none')await renderOccupied()}
    setSyncBadge('SYNCHRONIZOVÁNO · '+shared.length+' POZIC');
  }catch(e){
-   if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA ОНОВЛЕННЯ');
+   if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA OBNOVENÍ');
  }
 },5000);
 </script></body></html>
