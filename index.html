@@ -110,7 +110,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=15"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=16"></script>
 <script>
 (() => {
   const CFG = {
@@ -205,7 +205,7 @@ async function vNext(){await vRefresh();const n=vFree().filter(x=>x.aisle===va&&
 async function vMark(){const r=vRow();if(!r)return;const b=document.getElementById('vmark');b.disabled=true;try{await QRPositionSync.markOccupied(vdc,va,vp);vrows=vrows.filter(x=>!(x.warehouse===vdc&&x.aisle===va&&x.position===vp));document.getElementById('vdonetext').textContent='Pozice '+vLabel(r)+' byla označena jako obsazená. Změna je sdílena s verzí pro PC.';vShow('vdone')}catch(e){document.getElementById('vqrstatus').textContent='Uložení se nepodařilo. Zkontrolujte připojení.'}finally{b.disabled=false}}
 document.getElementById('openVolne').onclick=()=>vShow('vhome');document.querySelectorAll('[data-vdc]').forEach(b=>b.onclick=()=>vWarehouse(b.dataset.vdc));document.getElementById('vmark').onclick=vMark;document.getElementById('vnext').onclick=vNext;document.getElementById('vstreet').onclick=async()=>{await vRefresh();const s=vCounts().find(x=>x.aisle!==va);if(s)await vOpen(s.aisle);else vShow('vstreets')};document.getElementById('vback').onclick=async()=>{await vRefresh();vShow('vstreets')};document.getElementById('vdonenext').onclick=vNext;document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('vstreets')};
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
-  window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=6').catch(()=>{}); });
+  window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=7').catch(()=>{}); });
 })();
 </script>
 </body>
