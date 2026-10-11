@@ -50,6 +50,9 @@ self.addEventListener("fetch",event=>{
   // Always fetch application scripts/styles from the network first. A stale
   // cached JavaScript file can make the UI disagree with confirmed server data.
   if (/\.(js|css)$/.test(new URL(event.request.url).pathname)) {
+    const unversionedUrl = new URL(event.request.url);
+    unversionedUrl.search = "";
+    unversionedUrl.hash = "";
     event.respondWith(
       fetch(event.request, {cache:"no-cache"})
         .then(resp => {
@@ -59,7 +62,7 @@ self.addEventListener("fetch",event=>{
           }
           return resp;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match(unversionedUrl.href)))
     );
     return;
   }
