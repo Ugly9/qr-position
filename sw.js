@@ -1,4 +1,4 @@
-const CACHE="qr-position-v40";
+const CACHE="qr-position-v41";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js","./qr-working-guard.js"];
 
 self.addEventListener("install",event=>{
@@ -29,16 +29,20 @@ self.addEventListener("fetch",event=>{
   if(isLayoutTask(new URL(event.request.url)))return;
 
   if(event.request.mode==="navigate"){
+    const url = new URL(event.request.url);
+    const isAppHome = url.origin === self.location.origin &&
+      (url.pathname.endsWith("/") || url.pathname.endsWith("/index.html"));
+    const cacheKey = isAppHome ? "./index.html" : event.request;
     event.respondWith(
       fetch(event.request, {cache:"no-cache"})
         .then(resp=>{
           if(resp.ok){
             const copy=resp.clone();
-            caches.open(CACHE).then(cache=>cache.put("./index.html",copy));
+            caches.open(CACHE).then(cache=>cache.put(cacheKey,copy));
           }
           return resp;
         })
-        .catch(()=>caches.match("./index.html"))
+        .catch(()=>caches.match(cacheKey))
     );
     return;
   }
