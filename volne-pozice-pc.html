@@ -86,11 +86,15 @@ $('delete').onclick=async()=>{
  $('file').disabled=true;
  pcListMutation=true;
  const revision=++pcListRevision;
- $('importStatus').textContent='Mažu seznam na serveru a ověřuji výsledek…';
- setSyncBadge('MAZÁNÍ SEZNAMU…');
+ $('importStatus').textContent='Ověřuji aktuální verzi a mažu seznam na serveru…';
+ setSyncBadge('OVĚŘENÍ PŘED MAZÁNÍM…');
  try{
-   if(!Number.isSafeInteger(pcServerMapRevision)||pcServerMapRevision<1)throw new Error('Není ověřena aktuální verze seznamu. Obnovte stránku a opakujte smazání.');
-   await window.QRPositionSync.clearAll(pcServerMapRevision);
+   // Always use a fresh server snapshot; never trust a revision left by polling/cache.
+   const before=await window.QRPositionSync.getSnapshot();
+   pcServerMapRevision=before.map_revision;pcServerDataRevision=before.data_revision;
+   $('importStatus').textContent='Mažu seznam na serveru ('+before.rows.length+' záznamů) a ověřuji wynik…';
+   setSyncBadge('MAZÁNÍ SEZNAMU…');
+   await window.QRPositionSync.clearAll(before.map_revision);
    const snapshot=await window.QRPositionSync.getSnapshot();
    const serverCount=snapshot.rows.length;
    if(snapshot.freeRows.length!==0||serverCount!==0)throw new Error('Server po smazání potvrzuje '+serverCount+' záznamů, očekáváno 0. Volných: '+snapshot.freeRows.length+'.');
@@ -104,7 +108,7 @@ $('delete').onclick=async()=>{
    alert('Seznam byl smazán ze serveru. Počet záznamů: 0.');
  }catch(e){
    const errorText=String(e&&e.message||e);
-   $('importStatus').textContent=errorText.includes('LIST_REVISION_CONFLICT')?'⚠ Smazání zablokováno: jiná otevřená stránka již změnila seznam. Obnovte stránku a zkuste to znovu.':'✕ Smazání nešlo ověřit: '+errorText;
+   $('importStatus').textContent=errorText.includes('LIST_REVISION_CONFLICT')?'⚠ Список змінився під час видалення. Дані не перезаписано; натисніть видалення ще раз.':'✕ Smazání nešlo ověřit: '+errorText;
    setSyncBadge('CHYBA OVĚŘENÍ');
    try{
      const snapshot=await window.QRPositionSync.getSnapshot();
@@ -113,7 +117,7 @@ $('delete').onclick=async()=>{
      try{await refreshWorkingAisles()}catch(_){sharedWorking=[]}
      $('importStatus').textContent+=' Server nyní obsahuje '+snapshot.rows.length+' záznamů, volných: '+snapshot.freeRows.length+'.';
      setSyncBadge('SERVER: '+snapshot.freeRows.length+'/'+snapshot.rows.length);
-   }catch(_){}
+   }catch(readError){$('importStatus').textContent+=' Nelze ověřit server: '+String(readError&&readError.message||readError);}
  }finally{
    if(pcListRevision===revision)pcListMutation=false;
    b.disabled=false;
