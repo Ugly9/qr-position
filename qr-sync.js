@@ -29,5 +29,5 @@ async function replaceAll(rows){if(!Array.isArray(rows))throw new Error('Nový s
 async function clearAll(){return replaceAll([])}
 async function resetFromRaw(){const rows=[];for(const d of ['DC2','DC3'])for(const x of parse(window.QR_FREE_RAW[d]))rows.push({warehouse:d,aisle:x.aisle,position:x.position});return replaceAll(rows)}
 async function hasList(){return (await allRows()).length>0}
-window.QRPositionSync={init,refresh,allOccupied,markOccupied,resetFromRaw,replaceAll,clearAll,getListRevision:readDataRevision,getMapRevision:readListRevision,getWorkingAisles,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll};
+window.QRPositionSync={init,refresh,allOccupied,markOccupied,resetFromRaw,replaceAll,clearAll,getListRevision:readDataRevision,getMapRevision:readListRevision,getWorkingAisles,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll,allPositions:stableRecords};
 })();
