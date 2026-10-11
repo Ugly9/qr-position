@@ -92,7 +92,7 @@ $('delete').onclick=async()=>{
    // Always use a fresh server snapshot; never trust a revision left by polling/cache.
    const before=await window.QRPositionSync.getSnapshot();
    pcServerMapRevision=before.map_revision;pcServerDataRevision=before.data_revision;
-   $('importStatus').textContent='Mažu seznam na serveru ('+before.rows.length+' záznamů) a ověřuji wynik…';
+   $('importStatus').textContent='Mažu seznam na serveru ('+before.rows.length+' záznamů) a ověřuji výsledek…';
    setSyncBadge('MAZÁNÍ SEZNAMU…');
    await window.QRPositionSync.clearAll(before.map_revision);
    const snapshot=await window.QRPositionSync.getSnapshot();
