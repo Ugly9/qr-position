@@ -110,7 +110,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=32"></script><script src="./qr-working-guard.js?v=10"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=33"></script><script src="./qr-working-guard.js?v=11"></script>
 <script>
 (() => {
   const CFG = {
@@ -253,7 +253,7 @@ let vTouchX=0,vTouchY=0;const vqrScreen=document.getElementById('vqr');
 vqrScreen.addEventListener('touchstart',e=>{if(e.changedTouches.length){vTouchX=e.changedTouches[0].clientX;vTouchY=e.changedTouches[0].clientY}},{passive:true});
 vqrScreen.addEventListener('touchend',e=>{if(!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-vTouchX,dy=e.changedTouches[0].clientY-vTouchY;if(Math.abs(dx)>=55&&Math.abs(dx)>Math.abs(dy)*1.25){e.preventDefault();vSwipe(dx<0?1:-1)}},{passive:false});
 async function vMark(){const r=vRow();if(!r)return;const b=document.getElementById('vmark');b.disabled=true;const revision=Number(vLastListRevision);const item={warehouse:vdc,aisle:va,position:vp,map_revision:revision};let synced=false;try{if(!Number.isSafeInteger(revision)||revision<1){vStatus('Verzi mapy se nepodařilo ověřit. Připojte internet a aktualizujte seznam před označením.',false);return}if(navigator.onLine){try{await QRPositionSync.markOccupied(vdc,va,vp,revision);synced=true}catch(e){if(vIsMapConflict(e)){try{const snapshot=await QRPositionSync.getSnapshot();vSetSnapshot(snapshot);if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(_){}}await vRefresh()}catch(_){}vShow('vstreets');vStatus('Mapa se změnila nebo tato pozice již není volná. Seznam byl obnoven; vyberte pozici znovu.',false);return}}}if(!synced){const p=vPendingOccupied().filter(x=>Number(x.map_revision)===revision);if(!p.some(x=>x.warehouse===item.warehouse&&Number(x.aisle)===Number(item.aisle)&&Number(x.position)===Number(item.position)))p.push(item);try{localStorage.setItem(V_OCC_PENDING,JSON.stringify(p))}catch(e){vStatus('Offline změnu se nepodařilo uložit do telefonu. Pozice nebyla potvrzena.',false);return}}vrows=vrows.filter(x=>!(x.warehouse===item.warehouse&&x.aisle===item.aisle&&x.position===item.position));vApplyPending();vSaveCache();document.getElementById('vdonetext').textContent='Pozice '+vLabel(r)+(synced?' byla označena jako obsazená a uložena na server.':' byla lokálně označena jako obsazená pro ověřenou verzi mapy. Změna čeká na synchronizaci.');vShow('vdone');vStatus(synced?'Obsazená pozice byla uložena na server.':'Obsazení je uloženo v telefonu a čeká na synchronizaci.',synced)}finally{b.disabled=false}}
-document.getElementById('openVolne').onclick=async()=>{vShow('vhome');if(navigator.onLine){try{vrows=await QRPositionSync.refresh();vListExists=await QRPositionSync.hasList();vLastListRevision=await QRPositionSync.getListRevision();vReady=true;vApplyPending();if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}vStatus(vListExists?(vrows.length?'✓ Seznam volných pozic načten a ověřen online.':'Seznam existuje, ale nejsou v něm žádné volné pozice.'):'⚠ Chybí seznam volných pozic. Nahrajte jej z PC a potom stiskněte Aktualizovat.',!!vrows.length)}catch(e){if(!vReady)await vInit()}}else if(!vReady)await vInit()};
+document.getElementById('openVolne').onclick=async()=>{vShow('vhome');if(navigator.onLine){try{const snapshot=await QRPositionSync.getSnapshot();vSetSnapshot(snapshot);if(vListExists)vSaveCache();else{try{localStorage.removeItem(V_CACHE)}catch(e){}}await vRefresh();vStatus(vListExists?(vrows.length?'✓ Seznam volných pozic načten a ověřen online.':'Seznam existuje, ale nejsou v něm žádné volné pozice.'):'⚠ Server potvrzuje, že seznam neexistuje. Nahrajte novou mapu z PC.',vListExists&&vrows.length>0)}catch(e){if(!vReady)await vInit();else vStatus('✕ Načtení serveru se nepodařilo: '+String(e&&e.message||e),false)}}else if(!vReady)await vInit()};
 document.querySelectorAll('[data-vdc]').forEach(b=>b.onclick=()=>vWarehouse(b.dataset.vdc));
 let vWorkingRefreshBusy=false;
 async function vRefreshWorkingOnly(){
@@ -326,7 +326,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=37').catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=38').catch(()=>{}); });
 })();
 </script>
 </body>
