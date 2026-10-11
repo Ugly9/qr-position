@@ -127,13 +127,14 @@ $('file').addEventListener('change',async e=>{
  $('importStatus').textContent='Načítám, kontroluji a zapisují nový seznam…';
  setSyncBadge('NAHRÁVÁNÍ MAPY…');
  try{
+   const expectedServerRevision=await window.QRPositionSync.getListRevision();
    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
    const parsed=parseUpload(rows),result=parsed.result,ignored=parsed.ignored;
    const syncRows=[];
    Object.keys(result).forEach(d=>result[d].forEach(s=>s.positions.forEach(p=>syncRows.push({warehouse:d,aisle:s.street,position:p}))));
    if(!syncRows.length)throw new Error('Po filtraci Prázdná = Ano a podlaží 00 nezůstaly žádné pozice.');
-   await window.QRPositionSync.replaceAll(syncRows);
+   await window.QRPositionSync.replaceAll(syncRows,expectedServerRevision);
    const actualAll=await window.QRPositionSync.allPositions();
    const actual=actualAll.filter(x=>!x.occupied);
    const expectedKeys=new Set(syncRows.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
