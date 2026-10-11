@@ -110,7 +110,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=39"></script><script src="./qr-working-guard.js?v=15"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=40"></script><script src="./qr-working-guard.js?v=15"></script>
 <script>
 (() => {
   const CFG = {
@@ -247,8 +247,10 @@ function vRender(){const r=vRow();if(!r)return;document.getElementById('vhead').
 async function vOpen(a){va=Number(a);const r=vFree().filter(x=>Number(x.aisle)===va).sort((x,y)=>x.position-y.position)[0];if(!r){vShow('vstreets');return}vp=r.position;vRender();vShow('vqr')}
 function vNextUnmarkedAisle(excludeAisle){return vCounts().find(x=>Number(x.aisle)!==Number(excludeAisle)&&!vWorkingRow(x.aisle))||null}
 function vNoUnmarkedAisles(){vStatus('Všechny uličky s volnými pozicemi jsou označené jako pracovní. Počkejte, až se některá uvolní, nebo zrušte její označení.',false);vShow('vstreets')}
-async function vNext(){const n=vFree().filter(x=>Number(x.aisle)===Number(va)&&x.position>vp).sort((a,b)=>a.position-b.position)[0];if(n){vp=n.position;vRender();vShow('vqr');return}const s=vNextUnmarkedAisle(va);if(s){await vOpen(s.aisle);return}await vRefresh();vNoUnmarkedAisles()}
-async function vSwipe(delta){if(document.getElementById('vqr').style.display!=='block')return;const list=vFree().slice().sort((a,b)=>a.aisle-b.aisle||a.position-b.position);if(!list.length){vShow('vstreets');return}let i=list.findIndex(x=>x.aisle===va&&x.position===vp);if(i<0)i=delta>0?-1:0;const next=list[(i+delta+list.length)%list.length];va=next.aisle;vp=next.position;vRender();vShow('vqr')}
+function vAislePair(aisle){aisle=Number(aisle);if(vdc==='DC2')return aisle%2===0?aisle:aisle-1;if(aisle===1)return 1;return aisle%2===0?aisle:aisle-1}
+function vNavigationRows(){return vFree().slice().sort((a,b)=>{const pa=vAislePair(a.aisle),pb=vAislePair(b.aisle);if(pa!==pb)return pa-pb;return Number(a.position)-Number(b.position)||Number(a.aisle)-Number(b.aisle)})}
+async function vNext(){const list=vNavigationRows();const i=list.findIndex(x=>Number(x.aisle)===Number(va)&&Number(x.position)===Number(vp));if(i>=0&&i+1<list.length){va=Number(list[i+1].aisle);vp=Number(list[i+1].position);vRender();vShow('vqr');return}const s=vNextUnmarkedAisle(va);if(s){await vOpen(s.aisle);return}await vRefresh();vNoUnmarkedAisles()}
+async function vSwipe(delta){if(document.getElementById('vqr').style.display!=='block')return;const list=vNavigationRows();if(!list.length){vShow('vstreets');return}let i=list.findIndex(x=>Number(x.aisle)===Number(va)&&Number(x.position)===Number(vp));if(i<0)i=delta>0?-1:0;const next=list[(i+delta+list.length)%list.length];va=Number(next.aisle);vp=Number(next.position);vRender();vShow('vqr')}
 let vTouchX=0,vTouchY=0;const vqrScreen=document.getElementById('vqr');
 vqrScreen.addEventListener('touchstart',e=>{if(e.changedTouches.length){vTouchX=e.changedTouches[0].clientX;vTouchY=e.changedTouches[0].clientY}},{passive:true});
 vqrScreen.addEventListener('touchend',e=>{if(!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-vTouchX,dy=e.changedTouches[0].clientY-vTouchY;if(Math.abs(dx)>=55&&Math.abs(dx)>Math.abs(dy)*1.25){e.preventDefault();vSwipe(dx<0?1:-1)}},{passive:false});
@@ -327,7 +329,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=44').catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=45').catch(()=>{}); });
 })();
 </script>
 </body>
