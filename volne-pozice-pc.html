@@ -127,6 +127,12 @@ $('delete').onclick=async()=>{
 $('file').addEventListener('change',async e=>{
  const f=e.target.files&&e.target.files[0];if(!f)return;
  if(!window.XLSX){$('importStatus').textContent='Excel knihovna není načtena. Připojte se k internetu a obnovte stránku.';return}
+if(!window.QRPositionSync||typeof window.QRPositionSync.getListRevision!=='function'||typeof window.QRPositionSync.replaceAll!=='function'){
+   $('importStatus').textContent='✕ Synchronizační skript není načten. Soubor nebyl nahrán; obnovte stránku a zkuste to znovu.';
+   setSyncBadge('CHYBÍ SYNCHRONIZACE');
+   e.target.value='';
+   return;
+  }
  pcListMutation=true;
  const revision=++pcListRevision;
  const fileInput=$('file');fileInput.disabled=true;
@@ -200,7 +206,42 @@ renderStats();
    setSyncBadge('CHYBA SPOJENÍ');
  }
 })();
+let pcRefreshBusy=false,pcLastWorkingRefresh=0;
 setInterval(async()=>{
+ if(!window.QRPositionSync||pcListMutation||pcRefreshBusy)return;
+ const revision=pcListRevision;
+ pcRefreshBusy=true;
+ try{
+  const version=await window.QRPositionSync.getVersion();
+  if(pcListMutation||revision!==pcListRevision)return;
+  const mapChanged=pcServerMapRevision!==null&&pcServerMapRevision!==version.map_revision;
+  const dataChanged=pcServerDataRevision!==null&&pcServerDataRevision!==version.data_revision;
+  if(!mapChanged&&!dataChanged){
+   if(Date.now()-pcLastWorkingRefresh>=15000){
+    await refreshWorkingAisles();
+    pcLastWorkingRefresh=Date.now();
+    if(pcListMutation||revision!==pcListRevision)return;
+    if(dc)renderStreets();
+   }
+   return;
+  }
+  const snapshot=await window.QRPositionSync.getSnapshot();
+  if(pcListMutation||revision!==pcListRevision)return;
+  if(mapChanged){sharedWorking=[];try{localStorage.removeItem('qr-working-cache-v1')}catch(_){}}
+  await refreshWorkingAisles();
+  pcLastWorkingRefresh=Date.now();
+  if(pcListMutation||revision!==pcListRevision)return;
+  pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
+  lists=mapSharedRows(snapshot.freeRows);
+  renderStats();
+  if(dc){renderStreets();if(activeStreet)renderPosition();if($('occupiedList').style.display!=='none')await renderOccupied()}
+  setSyncBadge(snapshot.map_exists?'SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC':'SEZNAM NEEXISTUJE');
+ }catch(e){
+  if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA OBNOVENÍ');
+ }finally{
+  pcRefreshBusy=false;
+ }
+},5000);
  if(!window.QRPositionSync||pcListMutation)return;
  const revision=pcListRevision;
  try{
