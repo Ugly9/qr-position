@@ -94,7 +94,8 @@ $('delete').onclick=async()=>{
  try{
    await window.QRPositionSync.clearAll();
    const verify=await window.QRPositionSync.refresh();
-   if(verify.length!==0)throw new Error('Server po smazání stále vrací '+verify.length+' volných pozic.');
+   const serverCount=await window.QRPositionSync.countAll();
+   if(verify.length!==0||serverCount!==0)throw new Error('Server po smazání potvrzuje '+serverCount+' záznamů, očekáváno 0. Volných: '+verify.length+'.');
    lists={DC2:[],DC3:[]};skipped.clear();working.clear();sharedWorking=[];activeStreet=null;
    save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl smazán a server potvrdil 0 pozic.</div>';
@@ -107,9 +108,10 @@ $('delete').onclick=async()=>{
    setSyncBadge('CHYBA OVĚŘENÍ');
    try{
      const actual=await window.QRPositionSync.refresh();
+     const total=await window.QRPositionSync.countAll();
      lists=mapSharedRows(actual);save();renderStats();if(dc)renderStreets();
-     $('importStatus').textContent+=' Aktuální počet na serveru: '+actual.length+'.';
-     setSyncBadge('SERVER: '+actual.length+' POZIC');
+     $('importStatus').textContent+=' Server nyní obsahuje '+total+' záznamů, volných: '+actual.length+'.';
+     setSyncBadge('SERVER: '+actual.length+'/'+total);
    }catch(_){}
  }finally{
    if(pcListRevision===revision)pcListMutation=false;
