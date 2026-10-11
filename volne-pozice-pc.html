@@ -177,7 +177,9 @@ renderStats();
 (async()=>{
  const revision=pcListRevision;
  try{
+   const cachedMapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0);
    const snapshot=await window.QRPositionSync.getSnapshot();
+   if(cachedMapRevision>0&&cachedMapRevision!==snapshot.map_revision){sharedWorking=[];try{localStorage.removeItem('qr-working-cache-v1')}catch(_){}}
    await refreshWorkingAisles();
    if(pcListMutation||revision!==pcListRevision)return;
    pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
@@ -199,6 +201,7 @@ setInterval(async()=>{
  const revision=pcListRevision;
  try{
    const snapshot=await window.QRPositionSync.getSnapshot();
+   if(pcServerMapRevision!==null&&pcServerMapRevision!==snapshot.map_revision){sharedWorking=[];try{localStorage.removeItem('qr-working-cache-v1')}catch(_){}}
    await refreshWorkingAisles();
    if(pcListMutation||revision!==pcListRevision)return;
    pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
