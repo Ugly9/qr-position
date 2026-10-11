@@ -14,9 +14,9 @@
 <div id="streetList" class="street-list"><div class="empty">Vyberte sklad vlevo. Uličky se seřadí podle počtu volných pozic.</div></div>
 <div id="positionPane"><div class="empty">Vyberte uličku vlevo. Zobrazí se pozice označené v mobilní verzi jako obsazené.</div></div>
 </div></section></div></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=31"></script><script src="./qr-working-guard.js?v=10"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=32"></script><script src="./qr-working-guard.js?v=10"></script>
 <script>
-let lists={DC2:[],DC3:[]},dc=null,activeStreet=null,positionIndex=0,skipped=new Set(),working=new Set(),sharedWorking=[],pcListRevision=0,pcListMutation=false,pcWorkingToggleBusy=new Set();
+let lists={DC2:[],DC3:[]},dc=null,activeStreet=null,positionIndex=0,skipped=new Set(),working=new Set(),sharedWorking=[],pcListRevision=0,pcListMutation=false,pcServerMapRevision=null,pcServerDataRevision=null,pcWorkingToggleBusy=new Set();
 function clone(o){return JSON.parse(JSON.stringify(o))}
 function mapSharedRows(shared){
   const out={DC2:[],DC3:[]};
@@ -72,7 +72,7 @@ let positionViewSequence=0;
 async function renderPosition(){const sequence=++positionViewSequence,root=$('positionPane');if(!activeStreet){root.innerHTML='<div class="empty">Najeďte nebo klikněte na uličku vlevo. Zobrazí se pozice označené na telefonu jako obsazené.</div>';return}const street=Number(activeStreet),free=(lists[dc]||[]).find(x=>Number(x.street)===street),freeCount=free?free.positions.length:0;root.innerHTML='<div class="empty">Načítám obsazené pozice…</div>';try{const all=await window.QRPositionSync.allOccupied();if(sequence!==positionViewSequence||Number(activeStreet)!==street)return;occupiedRows=all;const rows=all.filter(x=>x.warehouse===dc&&Number(x.aisle)===street).sort((a,b)=>a.position-b.position);root.innerHTML='';const head=document.createElement('div');head.className='occupied-head';const title=document.createElement('h2');title.style.margin='0';title.textContent='Ulička '+street;const badge=document.createElement('span');badge.className='badge';badge.textContent=freeCount+' volných pozic';head.append(title,badge);root.append(head);const sub=document.createElement('div');sub.className='muted';sub.style.margin='10px 0 14px';sub.textContent='Pozice označené jako obsazené: '+rows.length;root.append(sub);if(!rows.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='V této uličce zatím není žádná pozice označená jako obsazená.';root.append(empty)}else{const pills=document.createElement('div');pills.className='occupied-positions';rows.forEach(r=>{const pill=document.createElement('span');pill.className='occupied-position';pill.textContent=String(r.aisle).padStart(2,'0')+'-'+String(r.position).padStart(2,'0')+'-00';pills.append(pill)});root.append(pills)}const info=document.createElement('div');info.className='status';info.style.marginTop='14px';info.textContent='Seznam se obnovuje automaticky. Všechny obsazené pozice lze zobrazit tlačítkem nahoře.';root.append(info)}catch(e){if(sequence!==positionViewSequence)return;root.innerHTML='<div class="empty">Obsazené pozice se nepodařilo načíst. Zkontrolujte připojení a zkuste Aktualizovat.</div>'}}
 function step(delta){const s=(lists[dc]||[]).find(x=>x.street===activeStreet);if(!s)return;const n=positionIndex+delta;if(n>=0&&n<s.positions.length){positionIndex=n;renderPosition();return}const next=ordered().find(x=>x.street!==activeStreet);if(next)openStreet(next.street);else{$('positionPane').innerHTML='<div class="empty">Všechny dostupné uličky jsou dokončeny nebo přeskočeny.</div>';renderStreets()}}
 async function refreshWorkingAisles(){sharedWorking=await window.QRPositionSync.getWorkingAisles();return sharedWorking}
-async function completePosition(){const s=(lists[dc]||[]).find(x=>x.street===activeStreet);if(!s)return;const p=s.positions[positionIndex];try{await window.QRPositionSync.markOccupied(dc,s.street,p)}catch(e){alert('Не вдалося synchronizovat pozici. Zkontrolujte internet a zkuste to znovu.');return}s.positions.splice(positionIndex,1);if(!s.positions.length){const warehouse=dc,aisle=Number(s.street),wasShared=sharedWorking.some(x=>x.warehouse===warehouse&&Number(x.aisle)===aisle);working.delete(aisle);skipped.delete(aisle);if(wasShared){sharedWorking=sharedWorking.filter(x=>!(x.warehouse===warehouse&&Number(x.aisle)===aisle));try{await window.QRPositionSync.clearWorkingAisle(warehouse,aisle);await refreshWorkingAisles()}catch(_){}}const next=ordered()[0];save();renderStats();if(next)openStreet(next.street);else{activeStreet=null;renderStreets();$('positionPane').innerHTML='<div class="empty">V tomto skladu už nejsou žádné volné pozice.</div>'}return}positionIndex=Math.min(positionIndex,s.positions.length-1);save();renderStats();renderStreets();renderPosition()}
+async function completePosition(){const s=(lists[dc]||[]).find(x=>x.street===activeStreet);if(!s)return;const p=s.positions[positionIndex];try{await window.QRPositionSync.markOccupied(dc,s.street,p,pcServerMapRevision)}catch(e){if(/MAP_REVISION_CONFLICT|POSITION_NOT_FOUND|MISSING_MAP_REVISION/.test(String(e&&e.message||e))){try{const snapshot=await window.QRPositionSync.getSnapshot();pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;lists=mapSharedRows(snapshot.freeRows);sharedWorking=[];save();renderStats();if(dc)renderStreets()}catch(_){}}alert('Pozici se nepodařilo potvrdit na serveru. Seznam byl znovu ověřen, pokud byl dostupný. Zkuste vybrat pozici znovu.');return}s.positions.splice(positionIndex,1);if(!s.positions.length){const warehouse=dc,aisle=Number(s.street),wasShared=sharedWorking.some(x=>x.warehouse===warehouse&&Number(x.aisle)===aisle);working.delete(aisle);skipped.delete(aisle);if(wasShared){sharedWorking=sharedWorking.filter(x=>!(x.warehouse===warehouse&&Number(x.aisle)===aisle));try{await window.QRPositionSync.clearWorkingAisle(warehouse,aisle);await refreshWorkingAisles()}catch(_){}}const next=ordered()[0];save();renderStats();if(next)openStreet(next.street);else{activeStreet=null;renderStreets();$('positionPane').innerHTML='<div class="empty">V tomto skladu už nejsou žádné volné pozice.</div>'}return}positionIndex=Math.min(positionIndex,s.positions.length-1);save();renderStats();renderStreets();renderPosition()}
 let occupiedRows=[];
 async function renderOccupied(){const root=$('occupiedList');if(!root)return;root.innerHTML='<div class="empty">Načítám označené pozice…</div>';try{occupiedRows=await window.QRPositionSync.allOccupied();const rows=occupiedRows.filter(x=>x.warehouse===dc).sort((a,b)=>a.aisle-b.aisle||a.position-b.position);if(!rows.length){root.innerHTML='<div class="empty">V '+dc+' zatím není žádná označená pozice, kde už byl box.</div>';return}const groups=new Map();rows.forEach(r=>{if(!groups.has(Number(r.aisle)))groups.set(Number(r.aisle),[]);groups.get(Number(r.aisle)).push(Number(r.position))});root.innerHTML='';const summary=document.createElement('div');summary.className='status';summary.textContent='Označených pozic: '+rows.length+' · Uliček: '+groups.size;root.append(summary);groups.forEach((positions,aisle)=>{const card=document.createElement('div');card.className='occupied-aisle';const head=document.createElement('div');head.className='occupied-head';const name=document.createElement('span');name.textContent='Ulička '+aisle;const count=document.createElement('span');count.textContent=positions.length+' pozic';head.append(name,count);card.append(head);const pills=document.createElement('div');pills.className='occupied-positions';positions.sort((a,b)=>a-b).forEach(pos=>{const pill=document.createElement('span');pill.className='occupied-position';pill.textContent=String(aisle).padStart(2,'0')+'-'+String(pos).padStart(2,'0')+'-00';pills.append(pill)});card.append(pills);root.append(card)})}catch(e){root.innerHTML='<div class="empty">Označené pozice se nepodařilo načíst. Zkontrolujte připojení a zkuste Aktualizovat.</div>'}}
 function parseUpload(rows){if(!rows.length)throw Error('Soubor nemá žádné datové řádky.');const keys=Object.keys(rows[0]);const key=n=>keys.find(k=>String(k).trim().toLowerCase()===n.toLowerCase());const kp=key('Pozice'),kf=key('Prázdná'),kw=key('Sklad');if(!kp||!kf||!kw)throw Error('Chybí sloupce Pozice, Prázdná nebo Sklad.');const buckets={DC2:new Map(),DC3:new Map()};let ignored=0;rows.forEach(r=>{if(String(r[kf]).trim().toLowerCase()!=='ano'){ignored++;return}const m=String(r[kp]).trim().match(/^(\d{1,3})-(\d{1,3})-(\d{2})$/);if(!m){ignored++;return}const street=+m[1],pos=+m[2],floor=m[3],w=String(r[kw]).trim();const d=w==='3'?'DC2':w==='6'?'DC3':null;if(!d||floor!=='00'||(d==='DC2'&&(street<12||street>123||pos<1||pos>168))||(d==='DC3'&&(street<1||street>41||pos<1||pos>148))){ignored++;return}if(!buckets[d].has(street))buckets[d].set(street,new Set());buckets[d].get(street).add(pos)});const result={};for(const d of ['DC2','DC3'])result[d]=[...buckets[d]].map(([street,set])=>({street,positions:[...set].sort((a,b)=>a-b)})).sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street);if(!result.DC2.length&&!result.DC3.length)throw Error('Nenalezeny žádné volné pozice.');return {result,ignored}}
@@ -89,12 +89,14 @@ $('delete').onclick=async()=>{
  $('importStatus').textContent='Mažu seznam na serveru a ověřuji výsledek…';
  setSyncBadge('MAZÁNÍ SEZNAMU…');
  try{
-   await window.QRPositionSync.clearAll();
-   const verify=await window.QRPositionSync.refresh();
-   const serverCount=await window.QRPositionSync.countAll();
-   if(verify.length!==0||serverCount!==0)throw new Error('Server po smazání potvrzuje '+serverCount+' záznamů, očekáváno 0. Volných: '+verify.length+'.');
-   lists={DC2:[],DC3:[]};skipped.clear();working.clear();activeStreet=null;
-   try{await refreshWorkingAisles()}catch(_){}
+   if(!Number.isSafeInteger(pcServerMapRevision)||pcServerMapRevision<1)throw new Error('Není ověřena aktuální verze seznamu. Obnovte stránku a opakujte smazání.');
+   await window.QRPositionSync.clearAll(pcServerMapRevision);
+   const snapshot=await window.QRPositionSync.getSnapshot();
+   const serverCount=snapshot.rows.length;
+   if(snapshot.freeRows.length!==0||serverCount!==0)throw new Error('Server po smazání potvrzuje '+serverCount+' záznamů, očekáváno 0. Volných: '+snapshot.freeRows.length+'.');
+   pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
+   lists={DC2:[],DC3:[]};sharedWorking=[];skipped.clear();working.clear();activeStreet=null;
+   try{await refreshWorkingAisles()}catch(_){sharedWorking=[]}
    save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl smazán a server potvrdil 0 pozic.</div>';
    $('importStatus').textContent='✓ Server potvrdil smazání seznamu. Počet pozic: 0.';
@@ -105,11 +107,12 @@ $('delete').onclick=async()=>{
    $('importStatus').textContent=errorText.includes('LIST_REVISION_CONFLICT')?'⚠ Smazání zablokováno: jiná otevřená stránka již změnila seznam. Obnovte stránku a zkuste to znovu.':'✕ Smazání nešlo ověřit: '+errorText;
    setSyncBadge('CHYBA OVĚŘENÍ');
    try{
-     const actual=await window.QRPositionSync.refresh();
-     const total=await window.QRPositionSync.countAll();
-     lists=mapSharedRows(actual);save();renderStats();if(dc)renderStreets();
-     $('importStatus').textContent+=' Server nyní obsahuje '+total+' záznamů, volných: '+actual.length+'.';
-     setSyncBadge('SERVER: '+actual.length+'/'+total);
+     const snapshot=await window.QRPositionSync.getSnapshot();
+     pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
+     lists=mapSharedRows(snapshot.freeRows);save();renderStats();if(dc)renderStreets();
+     try{await refreshWorkingAisles()}catch(_){sharedWorking=[]}
+     $('importStatus').textContent+=' Server nyní obsahuje '+snapshot.rows.length+' záznamů, volných: '+snapshot.freeRows.length+'.';
+     setSyncBadge('SERVER: '+snapshot.freeRows.length+'/'+snapshot.rows.length);
    }catch(_){}
  }finally{
    if(pcListRevision===revision)pcListMutation=false;
@@ -135,12 +138,16 @@ $('file').addEventListener('change',async e=>{
    Object.keys(result).forEach(d=>result[d].forEach(s=>s.positions.forEach(p=>syncRows.push({warehouse:d,aisle:s.street,position:p}))));
    if(!syncRows.length)throw new Error('Po filtraci Prázdná = Ano a podlaží 00 nezůstaly žádné pozice.');
    await window.QRPositionSync.replaceAll(syncRows,expectedServerRevision);
-   const actualAll=await window.QRPositionSync.allPositions();
-   const actual=actualAll.filter(x=>!x.occupied);
+   const snapshot=await window.QRPositionSync.getSnapshot();
+   const actualAll=snapshot.rows;
+   const actual=snapshot.freeRows;
+   pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
    const expectedKeys=new Set(syncRows.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
    const actualKeys=new Set(actualAll.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
-   const mismatch=expectedKeys.size!==actualKeys.size||[...expectedKeys].some(k=>!actualKeys.has(k));
+   const actualFreeKeys=new Set(actual.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
+   const mismatch=actualAll.length!==syncRows.length||actualKeys.size!==syncRows.length||actual.length!==syncRows.length||[...expectedKeys].some(k=>!actualKeys.has(k)||!actualFreeKeys.has(k))||actualAll.some(x=>x.occupied);
    lists=mapSharedRows(actual);
+   sharedWorking=[];
    skipped.clear();working.clear();activeStreet=null;save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl ověřen na serveru. Vyberte uličku.</div>';
    if(mismatch){
@@ -151,9 +158,9 @@ $('file').addEventListener('change',async e=>{
      setSyncBadge('SYNCHRONIZOVÁNO · '+actual.length+' POZIC');
    }
  }catch(err){
-   let actual=null;
-   try{actual=await window.QRPositionSync.refresh()}catch(_){}
-   if(Array.isArray(actual)){lists=mapSharedRows(actual);save();renderStats();if(dc)renderStreets();setSyncBadge('SERVER: '+actual.length+' POZIC')}
+   let snapshot=null;
+   try{snapshot=await window.QRPositionSync.getSnapshot()}catch(_){}
+   if(snapshot){pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;lists=mapSharedRows(snapshot.freeRows);save();renderStats();if(dc)renderStreets();setSyncBadge('SERVER: '+snapshot.freeRows.length+' VOLNÝCH')}
    else setSyncBadge('CHYBA SPOJENÍ');
    const errorText=String(err&&err.message||err);
    $('importStatus').textContent=errorText.includes('LIST_REVISION_CONFLICT')?'⚠ Seznam mezitím změnila jiná otevřená stránka. Načetl jsem aktuální stav ze serveru; obnovte stránku a zvolte soubor znovu.':'✕ Import/ověření se nezdařilo: '+errorText+'. Aktuální seznam zobrazený na PC byl načten ze serveru, pokud byl dostupný.';
@@ -168,13 +175,14 @@ renderStats();
 (async()=>{
  const revision=pcListRevision;
  try{
-   const shared=await window.QRPositionSync.init();
+   const snapshot=await window.QRPositionSync.getSnapshot();
    await refreshWorkingAisles();
    if(pcListMutation||revision!==pcListRevision)return;
-   lists=mapSharedRows(shared);
+   pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
+   lists=mapSharedRows(snapshot.freeRows);
    save();renderStats();if(dc)renderStreets();if(dc)renderOccupied();
-   $('importStatus').textContent='✓ Společný seznam načten a ověřen ze serveru. Volných pozic: '+shared.length+'.';
-   setSyncBadge('SYNCHRONIZOVÁNO · '+shared.length+' POZIC');
+   $('importStatus').textContent='✓ Společný seznam načten a ověřen ze serveru. Volných pozic: '+snapshot.freeRows.length+'.';
+   setSyncBadge('SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC');
  }catch(e){
    if(pcListMutation||revision!==pcListRevision)return;
    lists={DC2:[],DC3:[]};renderStats();
@@ -186,12 +194,13 @@ setInterval(async()=>{
  if(!window.QRPositionSync||pcListMutation)return;
  const revision=pcListRevision;
  try{
-   const shared=await window.QRPositionSync.refresh();
+   const snapshot=await window.QRPositionSync.getSnapshot();
    await refreshWorkingAisles();
    if(pcListMutation||revision!==pcListRevision)return;
-   lists=mapSharedRows(shared);
+   pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
+   lists=mapSharedRows(snapshot.freeRows);
    renderStats();if(dc){renderStreets();if(activeStreet)renderPosition();if($('occupiedList').style.display!=='none')await renderOccupied()}
-   setSyncBadge('SYNCHRONIZOVÁNO · '+shared.length+' POZIC');
+   setSyncBadge('SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC');
  }catch(e){
    if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA OBNOVENÍ');
  }
