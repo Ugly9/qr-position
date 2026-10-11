@@ -110,7 +110,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=27"></script><script src="./qr-working-guard.js?v=10"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=28"></script><script src="./qr-working-guard.js?v=10"></script>
 <script>
 (() => {
   const CFG = {
@@ -325,7 +325,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=32').catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=33').catch(()=>{}); });
 })();
 </script>
 </body>
