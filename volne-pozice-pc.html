@@ -96,7 +96,8 @@ $('delete').onclick=async()=>{
    const verify=await window.QRPositionSync.refresh();
    const serverCount=await window.QRPositionSync.countAll();
    if(verify.length!==0||serverCount!==0)throw new Error('Server po smazání potvrzuje '+serverCount+' záznamů, očekáváno 0. Volných: '+verify.length+'.');
-   lists={DC2:[],DC3:[]};skipped.clear();working.clear();sharedWorking=[];activeStreet=null;
+   lists={DC2:[],DC3:[]};skipped.clear();working.clear();activeStreet=null;
+   try{await refreshWorkingAisles()}catch(_){}
    save();renderStats();if(dc)renderStreets();
    $('positionPane').innerHTML='<div class="empty">Seznam byl smazán a server potvrdil 0 pozic.</div>';
    $('importStatus').textContent='✓ Server potvrdil smazání seznamu. Počet pozic: 0.';
@@ -136,9 +137,10 @@ $('file').addEventListener('change',async e=>{
    Object.keys(result).forEach(d=>result[d].forEach(s=>s.positions.forEach(p=>syncRows.push({warehouse:d,aisle:s.street,position:p}))));
    if(!syncRows.length)throw new Error('Po filtraci Prázdná = Ano a podlaží 00 nezůstaly žádné pozice.');
    await window.QRPositionSync.replaceAll(syncRows);
-   const actual=await window.QRPositionSync.refresh();
+   const actualAll=await window.QRPositionSync.allPositions();
+   const actual=actualAll.filter(x=>!x.occupied);
    const expectedKeys=new Set(syncRows.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
-   const actualKeys=new Set(actual.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
+   const actualKeys=new Set(actualAll.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
    const mismatch=expectedKeys.size!==actualKeys.size||[...expectedKeys].some(k=>!actualKeys.has(k));
    lists=mapSharedRows(actual);
    skipped.clear();working.clear();activeStreet=null;save();renderStats();if(dc)renderStreets();
