@@ -214,7 +214,8 @@ setInterval(async()=>{
  try{
   const version=await window.QRPositionSync.getVersion();
   if(pcListMutation||revision!==pcListRevision)return;
-  const mapChanged=pcServerMapRevision!==null&&pcServerMapRevision!==version.map_revision;
+  const mapChanged=pcServerMapRevision===null||pcServerMapRevision!==version.map_revision;
+  const dataChanged=pcServerDataRevision===null||pcServerDataRevision!==version.data_revision;
   const dataChanged=pcServerDataRevision!==null&&pcServerDataRevision!==version.data_revision;
   if(!mapChanged&&!dataChanged){
    if(Date.now()-pcLastWorkingRefresh>=15000){
