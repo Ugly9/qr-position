@@ -242,19 +242,4 @@ setInterval(async()=>{
   pcRefreshBusy=false;
  }
 },5000);
- if(!window.QRPositionSync||pcListMutation)return;
- const revision=pcListRevision;
- try{
-   const snapshot=await window.QRPositionSync.getSnapshot();
-   if(pcServerMapRevision!==null&&pcServerMapRevision!==snapshot.map_revision){sharedWorking=[];try{localStorage.removeItem('qr-working-cache-v1')}catch(_){}}
-   await refreshWorkingAisles();
-   if(pcListMutation||revision!==pcListRevision)return;
-   pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
-   lists=mapSharedRows(snapshot.freeRows);
-   renderStats();if(dc){renderStreets();if(activeStreet)renderPosition();if($('occupiedList').style.display!=='none')await renderOccupied()}
-   setSyncBadge(snapshot.map_exists?'SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC':'SEZNAM NEEXISTUJE');
- }catch(e){
-   if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA OBNOVENÍ');
- }
-},5000);
 </script></body></html>
