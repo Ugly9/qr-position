@@ -39,33 +39,32 @@ const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem('volnePozicePcLists',JSON.stringify(lists));localStorage.setItem('volnePozicePcSkipped',JSON.stringify([...skipped]))}catch(e){}}
 function isSharedWorking(street){return sharedWorking.some(x=>x.warehouse===dc&&Number(x.aisle)===Number(street))}
 function totalFor(d){return (lists[d]||[]).reduce((n,s)=>n+s.positions.length,0)}
-function ordered(){return (lists[dc]||[]).filter(s=>s.positions.length&&!skipped.has(s.street)&&!working.has(s.street)).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street)}
+function aisleGroupFirst(aisle){aisle=Number(aisle);if(dc==='DC2')return aisle%2===0?aisle:aisle-1;if(aisle===1)return 1;return aisle%2===0?aisle:aisle-1}
+function groupedAisles(){const m=new Map();const all=new Set([...(lists[dc]||[]).map(s=>Number(s.street)),...sharedWorking.filter(x=>x.warehouse===dc).map(x=>Number(x.aisle))]);all.forEach(aisle=>{const first=aisleGroupFirst(aisle);if(!m.has(first))m.set(first,{first,aisles:[],count:0});const g=m.get(first);g.aisles.push(aisle);const row=(lists[dc]||[]).find(s=>Number(s.street)===aisle);if(row)g.count+=row.positions.length});return [...m.values()].map(g=>({...g,aisles:g.aisles.sort((a,b)=>a-b)})).sort((a,b)=>b.count-a.count||a.first-b.first)}
+function ordered(){const out=[];groupedAisles().forEach(g=>g.aisles.forEach(aisle=>{const s=(lists[dc]||[]).find(x=>Number(x.street)===aisle);if(s&&s.positions.length&&!skipped.has(s.street)&&!working.has(s.street))out.push(s)}));return out}
 function qrCode(street,pos){return (dc==='DC2'?'CZSYR2':'CZSYR3')+String(street).padStart(3,'0')+String(pos).padStart(3,'0')+'00'}
 function positionLabel(street,pos){return String(street).padStart(2,'0')+'-'+String(pos).padStart(2,'0')+'-00'}
 function renderStats(){$('total').textContent=totalFor('DC2')+totalFor('DC3');$('streetsN').textContent=lists.DC2.filter(s=>s.positions.length).length+lists.DC3.filter(s=>s.positions.length).length;$('remaining').textContent=dc?totalFor(dc):totalFor('DC2')+totalFor('DC3')}
 function selectDC(d){dc=d;activeStreet=null;positionIndex=0;skipped.clear();working.clear();$('dcLabel').textContent=d;$('streetList').innerHTML='';renderStats();renderStreets();renderPosition();if($('occupiedList').style.display!=='none')renderOccupied()}
-function renderStreets(){const root=$('streetList');root.innerHTML='';const all=(lists[dc]||[]).filter(s=>s.positions.length).slice().sort((a,b)=>b.positions.length-a.positions.length||a.street-b.street);const display=all.concat(sharedWorking.filter(x=>x.warehouse===dc&&!all.some(s=>Number(s.street)===Number(x.aisle))).map(x=>({street:Number(x.aisle),positions:[]})).sort((a,b)=>a.street-b.street));if(!display.length){root.innerHTML='<div class="empty">Žádné volné pozice v tomto skladu.</div>';return}display.forEach((s,i)=>{const isSkipped=skipped.has(s.street),isWorking=isSharedWorking(s.street);const el=document.createElement('div');el.className='street'+(activeStreet===s.street?' active':'')+(isWorking?' shared-working':'');el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label','Ulička '+s.street+', '+s.positions.length+' volných pozic');el.dataset.street=s.street;const top=document.createElement('div');top.className='street-top';const title=document.createElement('h3');title.textContent='Ulička '+s.street;const n=document.createElement('span');n.className='num';n.textContent=s.positions.length;top.append(title,n);el.append(top);const meta=document.createElement('div');meta.className='muted';meta.textContent=(all.length&&i===0?'PRIORITA 1 · ':'')+(isWorking?'Pracuje se zde':isSkipped?'Přeskočeno pro tuto relaci':'volných pozic');el.append(meta);const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('span');fill.style.width=(s.positions.length/Math.max(1,all[0]?all[0].positions.length:1)*100)+'%';bar.append(fill);el.append(bar);const label=document.createElement('label');label.className='work';const check=document.createElement('input');check.type='checkbox';check.checked=isWorking;check.disabled=pcWorkingToggleBusy.has(dc+'|'+Number(s.street));check.setAttribute('aria-label','Pracuji v uličce '+s.street);label.append(check,document.createTextNode('Pracuji v této uličce'));label.addEventListener('click',e=>e.stopPropagation());check.addEventListener('click',e=>e.stopPropagation());check.onchange=async()=>{
- const warehouse=dc,aisle=Number(s.street),key=warehouse+'|'+aisle;
- if(pcWorkingToggleBusy.has(key)){check.checked=isSharedWorking(aisle);return}
- pcWorkingToggleBusy.add(key);
- const requested=!!check.checked;check.disabled=true;
- setSharedWorkingLocally(aisle,requested);
- el.classList.toggle('shared-working',requested);
- meta.textContent=(i===0?'PRIORITA 1 · ':'')+(requested?'Pracuje se zde':'volných pozic');
- try{
-   const result=requested?await window.QRPositionSync.markWorkingAisle(warehouse,aisle):await window.QRPositionSync.clearWorkingAisle(warehouse,aisle);
-   if(result&&result.ok===false&&!result.local)throw new Error(result.error||'Server odmítl změnu');
-   await refreshWorkingAisles();
-   renderStreets();
-   $('importStatus').textContent=result&&result.local?'Změna čeká na potvrzení serverem.':'Označení uličky synchronizováno.';
- }catch(e){
-   try{await refreshWorkingAisles()}catch(_){}
-   renderStreets();
-   $('importStatus').textContent='Změnu uličky se nepodařilo potvrdit: '+(e.message||e);
- }finally{
-   pcWorkingToggleBusy.delete(key);
-   renderStreets();
- }};el.append(label);const show=()=>{if(Number(activeStreet)===Number(s.street))return;activeStreet=s.street;document.querySelectorAll('#streetList .street').forEach(x=>x.classList.toggle('active',Number(x.dataset.street)===Number(s.street)));renderPosition()};el.addEventListener('mouseenter',show);el.addEventListener('click',e=>{if(e.target===check||e.target===label)return;show()});el.addEventListener('focus',show);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show()}});root.append(el)})}
+function renderStreets(){
+ const root=$('streetList');root.innerHTML='';
+ const groups=groupedAisles().filter(g=>g.count>0||g.aisles.some(a=>isSharedWorking(a)));
+ if(!groups.length){root.innerHTML='<div class="empty">Žádné volné pozice v tomto skladu.</div>';return}
+ const maxCount=Math.max(1,...groups.map(g=>g.count));
+ groups.forEach((g,i)=>{
+  const workingAisles=g.aisles.filter(a=>isSharedWorking(a)),isWorking=workingAisles.length>0;
+  const active=activeStreet!==null&&g.aisles.includes(Number(activeStreet));
+  const titleText=g.aisles.length===1?'Ulička '+g.aisles[0]:'Uličky '+g.aisles[0]+'–'+g.aisles[g.aisles.length-1];
+  const el=document.createElement('div');el.className='street'+(active?' active':'')+(isWorking?' shared-working':'');el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',titleText+', '+g.count+' volných pozic');el.dataset.aisles=g.aisles.join(',');
+  const top=document.createElement('div');top.className='street-top';const title=document.createElement('h3');title.textContent=titleText;const n=document.createElement('span');n.className='num';n.textContent=g.count;top.append(title,n);el.append(top);
+  const meta=document.createElement('div');meta.className='muted';meta.textContent=(i===0?'PRIORITA 1 · ':'')+(isWorking?'Pracuje se v páru':'součet volných pozic v páru');el.append(meta);
+  const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('span');fill.style.width=(g.count/maxCount*100)+'%';bar.append(fill);el.append(bar);
+  const label=document.createElement('label');label.className='work';const check=document.createElement('input');check.type='checkbox';check.checked=isWorking;const keys=g.aisles.map(a=>dc+'|'+Number(a));check.disabled=keys.some(k=>pcWorkingToggleBusy.has(k));check.setAttribute('aria-label','Pracuji v '+titleText.toLowerCase());label.append(check,document.createTextNode('Pracuji v celém páru'));label.addEventListener('click',e=>e.stopPropagation());check.addEventListener('click',e=>e.stopPropagation());
+  check.onchange=async()=>{const requested=!!check.checked; if(keys.some(k=>pcWorkingToggleBusy.has(k))){renderStreets();return}keys.forEach(k=>pcWorkingToggleBusy.add(k));check.disabled=true;g.aisles.forEach(a=>{setSharedWorkingLocally(a,requested)});renderStreets();try{for(const aisle of g.aisles){const result=requested?await window.QRPositionSync.markWorkingAisle(dc,aisle):await window.QRPositionSync.clearWorkingAisle(dc,aisle);if(result&&result.ok===false&&!result.local)throw new Error(result.error||'Server odmítl změnu')}await refreshWorkingAisles();$('importStatus').textContent='Označení páru synchronizováno.'}catch(e){try{await refreshWorkingAisles()}catch(_){}$('importStatus').textContent='Změnu páru se nepodařilo potvrdit: '+(e.message||e)}finally{keys.forEach(k=>pcWorkingToggleBusy.delete(k));renderStreets()}};
+  el.append(label);const open=()=>{const next=g.aisles.find(a=>(lists[dc]||[]).some(s=>Number(s.street)===a&&s.positions.length));if(next!==undefined)openStreet(next)};el.addEventListener('mouseenter',open);el.addEventListener('click',e=>{if(e.target===check||e.target===label)return;open()});el.addEventListener('focus',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+  root.append(el)
+ })
+}
 function setSharedWorkingLocally(street,enabled){const key=x=>x.warehouse===dc&&Number(x.aisle)===Number(street);sharedWorking=enabled?sharedWorking.filter(x=>!key(x)).concat({warehouse:dc,aisle:Number(street),worker_id:window.QRPositionSync.getWorkerId?window.QRPositionSync.getWorkerId():'local',updated_at:new Date().toISOString()}):sharedWorking.filter(x=>!key(x))}
 function openStreet(street){activeStreet=street;positionIndex=0;renderStreets();renderPosition()}
 let positionViewSequence=0;
