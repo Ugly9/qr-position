@@ -181,8 +181,10 @@ renderStats();
    pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
    lists=mapSharedRows(snapshot.freeRows);
    save();renderStats();if(dc)renderStreets();if(dc)renderOccupied();
-   $('importStatus').textContent='✓ Společný seznam načten a ověřen ze serveru. Volných pozic: '+snapshot.freeRows.length+'.';
-   setSyncBadge('SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC');
+   $('importStatus').textContent=snapshot.map_exists
+     ?(snapshot.freeRows.length?'✓ Společný seznam načten a ověřen ze serveru. Volných pozic: '+snapshot.freeRows.length+'.':'✓ Mapa existuje, ale momentálně nejsou žádné volné pozice.')
+     :'⚠ Na serveru není seznam. Vyberte nový soubor Excel a nahrajte novou mapu.';
+   setSyncBadge(snapshot.map_exists?'SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC':'SEZNAM NEEXISTUJE');
  }catch(e){
    if(pcListMutation||revision!==pcListRevision)return;
    lists={DC2:[],DC3:[]};renderStats();
@@ -200,7 +202,7 @@ setInterval(async()=>{
    pcServerMapRevision=snapshot.map_revision;pcServerDataRevision=snapshot.data_revision;
    lists=mapSharedRows(snapshot.freeRows);
    renderStats();if(dc){renderStreets();if(activeStreet)renderPosition();if($('occupiedList').style.display!=='none')await renderOccupied()}
-   setSyncBadge('SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC');
+   setSyncBadge(snapshot.map_exists?'SYNCHRONIZOVÁNO · '+snapshot.freeRows.length+' POZIC':'SEZNAM NEEXISTUJE');
  }catch(e){
    if(!pcListMutation&&revision===pcListRevision)setSyncBadge('CHYBA OBNOVENÍ');
  }
