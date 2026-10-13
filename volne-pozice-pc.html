@@ -6,7 +6,7 @@
 </style></head><body><main>
 <header class="head"><div><div class="eyebrow">WAREHOUSE TOOL · VOLNÉ POZICE</div><h1>QR Position — Volné pozice</h1><div class="muted">Společný seznam volných míst pro PC i mobilní verzi</div></div><div class="badge" id="syncBadge">NAČÍTÁM SPOLEČNÝ SEZNAM…</div></header>
 <div class="layout"><aside class="panel"><h2>1. Vyberte sklad</h2><div class="warehouse"><button class="btn" data-dc="DC2"><strong>DC2</strong><small>Uličky 12–123 · pozice 1–168</small></button><button class="btn" data-dc="DC3"><strong>DC3</strong><small>Uličky 1–41 · pozice 1–148</small></button></div>
-<div class="stats"><div class="stat"><b id="total">—</b><span>Volné pozice</span></div><div class="stat"><b id="streetsN">—</b><span>Uličky se místy</span></div><div class="stat"><b id="remaining">—</b><span>Zbývá pozic</span></div></div>
+<div class="stats"><div class="stat"><b id="total">—</b><span>Volné pozice celkem</span></div><div class="stat"><b id="dc2Total">—</b><span>Volné pozice DC2</span></div><div class="stat"><b id="dc3Total">—</b><span>Volné pozice DC3</span></div></div>
 <div class="row"><button class="btn" id="delete">Smazat seznam</button></div>
 <div class="upload"><strong>2. Nahrát novou mapu skladu</strong><div class="status">Nový soubor nahradí tento seznam až po úspěšné kontrole sloupců a dat.</div><input id="file" type="file" accept=".xlsx,.xls,.csv"><div class="status" id="importStatus">Ověřuji společný seznam na serveru…</div></div>
 <div class="status" style="margin-top:14px">Mapování podle souboru: Sklad 3 → DC2; Sklad 6 → DC3. Volná místa: Prázdná = Ano, podlaží 00. Nahrání mapy nahrazuje společný seznam pro PC i mobil.</div></aside>
@@ -47,7 +47,7 @@ function groupedAisles(){const m=new Map();const all=new Set([...(lists[dc]||[])
 function ordered(){const out=[];groupedAisles().forEach(g=>g.aisles.forEach(aisle=>{const s=(lists[dc]||[]).find(x=>Number(x.street)===aisle);if(s&&s.positions.length&&!skipped.has(s.street)&&!working.has(s.street))out.push(s)}));return out}
 function qrCode(street,pos){return (dc==='DC2'?'CZSYR2':'CZSYR3')+String(street).padStart(3,'0')+String(pos).padStart(3,'0')+'00'}
 function positionLabel(street,pos){return String(street).padStart(2,'0')+'-'+String(pos).padStart(2,'0')+'-00'}
-function renderStats(){$('total').textContent=totalFor('DC2')+totalFor('DC3');$('streetsN').textContent=lists.DC2.filter(s=>s.positions.length).length+lists.DC3.filter(s=>s.positions.length).length;$('remaining').textContent=dc?totalFor(dc):totalFor('DC2')+totalFor('DC3')}
+function renderStats(){$('total').textContent=totalFor('DC2')+totalFor('DC3');$('dc2Total').textContent=totalFor('DC2');$('dc3Total').textContent=totalFor('DC3')}
 function selectDC(d){dc=d;activeStreet=null;positionIndex=0;skipped.clear();working.clear();$('dcLabel').textContent=d;$('streetList').innerHTML='';renderStats();renderStreets();renderPosition();if($('occupiedList').style.display!=='none')renderOccupied()}
 function renderStreets(){
  const root=$('streetList');root.innerHTML='';
