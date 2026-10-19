@@ -1,4 +1,4 @@
-const CACHE="qr-position-v72";
+const CACHE="qr-position-v73";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js","./qr-box-sync.js","./qr-working-guard.js"];
 
 self.addEventListener("install",event=>{
@@ -34,7 +34,7 @@ self.addEventListener("fetch",event=>{
       (url.pathname.endsWith("/") || url.pathname.endsWith("/index.html"));
     const cacheKey = isAppHome ? "./index.html" : event.request;
     event.respondWith(
-      fetch(event.request, {cache:"no-cache"})
+      fetch(new Request(event.request,{cache:"no-store"}))
         .then(resp=>{
           if(resp.ok){
             const copy=resp.clone();
@@ -54,7 +54,7 @@ self.addEventListener("fetch",event=>{
     unversionedUrl.search = "";
     unversionedUrl.hash = "";
     event.respondWith(
-      fetch(event.request, {cache:"no-cache"})
+      fetch(new Request(event.request,{cache:"no-store"}))
         .then(resp => {
           if (resp.ok) {
             const copy = resp.clone();
