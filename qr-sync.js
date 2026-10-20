@@ -9,7 +9,17 @@ let listRevision=null,dataRevision=null;
 async function readVersion(){const v=await req('rpc/get_qr_free_positions_version',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({})});const mapRevision=Number(v&&v.map_revision),dataRev=Number(v&&v.data_revision);if(!Number.isSafeInteger(mapRevision)||mapRevision<1||!Number.isSafeInteger(dataRev)||dataRev<1)throw new Error('Nepodařilo se ověřit verzi mapy na serveru.');try{localStorage.setItem('qr-map-revision-cache-v1',String(mapRevision))}catch(_){}return {map_revision:mapRevision,data_revision:dataRev}}
 async function readListRevision(){return (await readVersion()).map_revision}
 async function readDataRevision(){return (await readVersion()).data_revision}
-async function stableSnapshot(){for(let attempt=0;attempt<4;attempt++){const before=await readVersion();let rows=await allRecords();const after=await readVersion();if(before.map_revision===after.map_revision&&before.data_revision===after.data_revision){if(rows.length===0){const retry=await allRecords();const verify=await readVersion();if(verify.map_revision!==after.map_revision||verify.data_revision!==after.data_revision)continue;if(retry.length>0)rows=retry;}listRevision=after.map_revision;dataRevision=after.data_revision;return {rows,map_revision:after.map_revision,data_revision:after.data_revision}}}throw new Error('Seznam se během načítání změnil. Zkuste aktualizovat znovu.')}
+async function stableSnapshot(){
+ const response=await req('rpc/get_qr_free_positions_snapshot',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({})});
+ const snapshot=Array.isArray(response)?response[0]:response;
+ const mapRevision=Number(snapshot&&snapshot.map_revision),dataRev=Number(snapshot&&snapshot.data_revision);
+ if(!Number.isSafeInteger(mapRevision)||mapRevision<1||!Number.isSafeInteger(dataRev)||dataRev<1)throw new Error('Nepodařilo se ověřit konzistentní verzi mapy na serveru.');
+ if(!snapshot||!Array.isArray(snapshot.rows))throw new Error('Server nevrátil úplný snímek seznamu volných pozic.');
+ const rows=snapshot.rows.map(r=>({warehouse:String(r.warehouse),aisle:Number(r.aisle),position:Number(r.position),occupied:!!r.occupied}));
+ if(rows.some(r=>!['DC2','DC3'].includes(r.warehouse)||!Number.isSafeInteger(r.aisle)||!Number.isSafeInteger(r.position)))throw new Error('Server vrátil neplatná data seznamu volných pozic.');
+ listRevision=mapRevision;dataRevision=dataRev;
+ return {rows,map_revision:mapRevision,data_revision:dataRev};
+}
 async function stableRecords(){return (await stableSnapshot()).rows}
 async function getSnapshot(){const s=await stableSnapshot();return {...s,freeRows:s.rows.filter(x=>!x.occupied),map_exists:s.rows.length>0}}
 async function allFree(){return (await getSnapshot()).freeRows}
