@@ -10,10 +10,12 @@ async function save(payload){
  const expected=Number(payload&&payload.expectedRevision);
  if(!Number.isSafeInteger(expected)||expected<1)throw new Error('Chybí platná revize seznamu. Obnovte data a zkuste znovu.');
  if(expected!==Number(current.revision))throw new Error('Seznam mezitím změnilo jiné zařízení. Aktualizujte data a akci opakujte; staré údaje nebyly zapsány.');
+ if(current.cleared===true&&payload.allowRestore!==true&&((Array.isArray(payload.tasks)&&payload.tasks.length>0)||(Array.isArray(payload.masterTasks)&&payload.masterTasks.length>0)))throw new Error('Seznam byl smazán. Staré boxy nelze znovu uložit; nejprve nahrajte nový Excel soubor.');
  if(!Array.isArray(payload.tasks))throw new Error('Chybí platný seznam boxů.');
  const now=new Date().toISOString(),nextRevision=Number(current.revision)+1;
  const sourceByWarehouse=payload.categoriesByWarehouse||{},sourceCold=payload.coldSubtypeSettings||{};
  const nextPayload={
+  cleared:payload.cleared===true?true:(payload.allowRestore===true?false:current.cleared===true),
   tasks:payload.tasks,
   masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:(Array.isArray(current.masterTasks)?current.masterTasks:current.tasks),
   categories:{...defaults.categories,...(current.categories||{}),...(payload.categories||{})},
