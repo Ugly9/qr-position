@@ -281,6 +281,8 @@ $('deleteBoxPick').onclick=async()=>{
  boxPickMutationVersion++;
  try{
   const current=await QRBoxPickingSync.get();
+  const oldMasterCount=Array.isArray(current.masterTasks)?current.masterTasks.length:0;
+  const oldPublishedCount=Array.isArray(current.tasks)?current.tasks.length:0;
   const saved=await QRBoxPickingSync.save({
    tasks:[],masterTasks:[],expectedRevision:current.revision,
    categories:current.categories,
@@ -305,7 +307,7 @@ $('deleteBoxPick').onclick=async()=>{
   const published=Array.isArray(verified&&verified.tasks)?verified.tasks:[];
   const master=Array.isArray(verified&&verified.masterTasks)?verified.masterTasks:[];
   if(published.length!==0||master.length!==0||Number(verified.revision)<savedRevision){
-   throw Error('Server zatím nepotvrdил prázdné seznamy. Hlavní: '+master.length+', publikovaný: '+published.length+', ověřená revize: '+verified.revision+'. Zkuste aktualizaci serveru a opakujte mazání.');
+   throw Error('Server zatím nepotvrdil prázdné seznamy. Hlavní: '+master.length+', publikovaný: '+published.length+', ověřená revize: '+verified.revision+'. Zkuste aktualizaci serveru a opakujte mazání.');
   }
   tasks=[];publishedTasks=[];
   if(verified.categoriesByWarehouse)categorySettings={DC2:{...categorySettings.DC2,...verified.categoriesByWarehouse.DC2},DC3:{...categorySettings.DC3,...verified.categoriesByWarehouse.DC3}};
@@ -313,7 +315,7 @@ $('deleteBoxPick').onclick=async()=>{
   render();
   $('boxPickStatus').textContent='✓ Smazání potvrzeno serverem. Hlavní seznam: 0; publikovaný seznam telefonu: 0; ověřená revize '+verified.revision+'.';
   $('boxPickFreshness').textContent='Server potvrdil prázdné seznamy · revize '+verified.revision;
-  alert('Starý seznam byl úspěšně smazán ze serveru.\n\nHlavní seznam: 0 boxů.\nPublikovaný seznam telefonu: 0 boxů.\nRevize serveru: '+verified.revision+'.');
+  alert((oldMasterCount||oldPublishedCount?'Starý seznam byl úspěšně smazán ze serveru.':'Server potvrdil, že oba seznamy jsou prázdné.')+'\n\nPřed mazáním: hlavní '+oldMasterCount+' boxů, telefon '+oldPublishedCount+' boxů.\nPo mazání: hlavní 0 boxů, telefon 0 boxů.\nOvěřená revize serveru: '+verified.revision+'.');
  }catch(e){
   $('boxPickStatus').textContent='✕ Smazání nebylo potvrzeno serverem: '+String(e&&e.message||e);
  }finally{
