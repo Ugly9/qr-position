@@ -16,6 +16,8 @@ async function save(payload){
  const sourceByWarehouse=payload.categoriesByWarehouse||{},sourceCold=payload.coldSubtypeSettings||{};
  const nextPayload={
   cleared:payload.cleared===true?true:(payload.restoreToken==='EXPLICIT_EXCEL_IMPORT_V1'?false:current.cleared===true),
+  listGeneration:current.listGeneration,
+  ...(payload.restoreToken==='EXPLICIT_EXCEL_IMPORT_V1'?{restoreToken:payload.restoreToken}:{}),
   tasks:payload.tasks,
   masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:(Array.isArray(current.masterTasks)?current.masterTasks:current.tasks),
   categories:{...defaults.categories,...(current.categories||{}),...(payload.categories||{})},
