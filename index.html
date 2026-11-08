@@ -347,7 +347,7 @@ document.getElementById('vworking').onclick=async()=>{
    vUpdateWorkingButton();
  }
 };
-document.getElementById('vmark').onclick=vMark;document.getElementById('vnext').onclick=vNext;
+const vMarkButton=document.getElementById('vmark');if(vMarkButton)vMarkButton.onclick=vMark;document.getElementById('vnext').onclick=vNext;
 document.getElementById('vstreet').onclick=async()=>{const s=vNextUnmarkedAisle(va);if(s)await vOpen(s.aisle);else{await vRefresh();vNoUnmarkedAisles()}};
 document.getElementById('vback').onclick=async()=>{await vRefresh();vShow('vstreets')};
 document.getElementById('vdonenext').onclick=vNext;
