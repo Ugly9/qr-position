@@ -441,7 +441,7 @@ $('deleteBoxPick').onclick=async()=>{
    const sourceMaster=Array.isArray(currentState.masterTasks)?currentState.masterTasks:(Array.isArray(currentState.tasks)?currentState.tasks:[]);
    const doneById=new Map();
    for(const t of [...sourceMaster,...(currentState.tasks||[])])if(t.done)doneById.set(String(t.id),t);
-   const masterWithProgress=sourceMaster.map(t=>{const old=doneById.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
+   const masterWithProgress=sourceMaster.filter(t=>isPositionLevel00(t.position)).map(t=>{const old=doneById.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
    const selectedForPublish=masterWithProgress.filter(t=>passesWarehouseFilters(t,'DC2')||passesWarehouseFilters(t,'DC3'));
    if(!selectedForPublish.length){$('boxPickStatus').textContent='Publikování zastaveno: podle filtrů DC2 i DC3 není vybrán žádný box. Seznam v telefonu zůstal beze změny.';return}
    const categoriesByWarehouse={DC2:{...DEFAULT_CATEGORIES.DC2,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC2)||{}),...localCategories.DC2},DC3:{...DEFAULT_CATEGORIES.DC3,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC3)||{}),...localCategories.DC3}};
