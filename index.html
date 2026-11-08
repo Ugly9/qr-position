@@ -112,7 +112,23 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=52"></script><script src="./qr-box-sync.js?v=21"></script><script src="./qr-working-guard.js?v=16"></script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=52"></script><script src="./qr-box-sync.js?v=21"></script><script src="./qr-working-guard.js?v=16"></script><script>
+(function(){
+ const sync=window.QRBoxPickingSync;
+ if(!sync||sync.__level00SaveGuard)return;
+ const originalSave=sync.save.bind(sync);
+ const validPosition=value=>/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*00\s*$/.test(String(value??'').trim());
+ const invalidRows=rows=>(Array.isArray(rows)?rows:[]).filter(task=>!validPosition(task&&task.position));
+ sync.save=async function(payload){
+  const current=await sync.get();
+  const published=invalidRows(payload&&payload.tasks);
+  const master=invalidRows(Array.isArray(payload&&payload.masterTasks)?payload.masterTasks:(Array.isArray(current.masterTasks)?current.masterTasks:current.tasks));
+  if(published.length||master.length)throw new Error('Uložení zastaveno: '+published.length+' boxů v seznamu telefonu a '+master.length+' boxů v hlavním seznamu nemá pozici končící na -00. Boxy z jiného patra nelze publikovat ani potvrdit.');
+  return originalSave(payload);
+ };
+ sync.__level00SaveGuard=true;
+})();
+</script>
 <script>
 (() => {
   const CFG = {
