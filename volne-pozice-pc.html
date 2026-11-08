@@ -311,7 +311,7 @@ $('boxPickFile').onchange=async e=>{
   const headers=Object.keys(rows[0]);
   const normalizeHeader=value=>String(value??'').trim().toLocaleLowerCase('cs');
   const col=name=>headers.find(h=>normalizeHeader(h)===normalizeHeader(name));
-  const required=['Sklad','Zóna','Box','Pozice','Stav','Priorita','Cílový sklad'];
+  const required=['Sklad','Box','Pozice','Stav','Priorita'];
   const missing=required.filter(name=>!col(name));
   if(missing.length)throw Error('Chybí povinné sloupce: '+missing.join(', ')+'. Import nebyl proveden.');
   const rejectCounts={Sklad:0,Stav:0,Pozice:0,Box:0,Priorita:0};
@@ -320,7 +320,6 @@ $('boxPickFile').onchange=async e=>{
   for(let i=0;i<rows.length;i++){
    const row=rows[i];
    const warehouseRaw=String(row[col('Sklad')]??'').trim().toUpperCase();
-   const zoneRaw=String(row[col('Zóna')]??'').trim().replace(',','.');
    const position=String(row[col('Pozice')]??'').trim();
    const box=String(row[col('Box')]??'').trim();
    const statusRaw=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
