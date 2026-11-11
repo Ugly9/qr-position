@@ -280,7 +280,7 @@ setInterval(async()=>{
  }
 },5000);
 </script><script>
-(function(){const $=id=>document.getElementById(id);const FILTER_KEY='qrBoxPickingFiltersV2';const DEFAULT_CATEGORIES={DC2:{HOT:true,COLD:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,DC:true,MANUAL:true}},DEFAULT_COLD={DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}};let tasks=[],publishedTasks=[],selectedWarehouse='DC2',categorySettings=JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),coldSubtypeSettings=JSON.parse(JSON.stringify(DEFAULT_COLD));let settingsReady=false;function saveFilterSettings(){if(!settingsReady)return;try{localStorage.setItem(FILTER_KEY,JSON.stringify({selectedWarehouse,categorySettings,coldSubtypeSettings}))}catch(e){}}let boxSettingsSaveTimer=null,boxSettingsSaveRunning=false;function scheduleBoxSettingsSave(){if(!settingsReady)return;if(boxSettingsSaveTimer)clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=setTimeout(async()=>{if(boxSettingsSaveRunning)return;boxSettingsSaveRunning=true;try{await QRBoxPickingSync.saveWarehouse(selectedWarehouse,{categoriesByWarehouse:{[selectedWarehouse]:categorySettings[selectedWarehouse]},coldSubtypeSettings:{[selectedWarehouse]:coldSubtypeSettings[selectedWarehouse]}});const current=await QRBoxPickingSync.get();$('boxPickFreshness').textContent='Filtry '+selectedWarehouse+' uložené na serveru · revize '+current.revision}catch(e){$('boxPickStatus').textContent='Filtry nebyly uloženy na server: '+e.message+' Zkontrolujte připojení a obnovte data.'}finally{boxSettingsSaveRunning=false}},350)}function restoreFilterSettings(server){let saved=null;try{saved=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')}catch(e){}if(saved&&(saved.selectedWarehouse==='DC2'||saved.selectedWarehouse==='DC3'))selectedWarehouse=saved.selectedWarehouse;if(server){for(const d of ['DC2','DC3']){categorySettings[d]={...DEFAULT_CATEGORIES[d],...(server.categoriesByWarehouse&&server.categoriesByWarehouse[d]||{})};coldSubtypeSettings[d]={...DEFAULT_COLD[d],...(server.coldSubtypeSettings&&server.coldSubtypeSettings[d]||{})}}settingsReady=true;saveFilterSettings();return 'server (sdílené nastavení)'}if(saved){for(const d of ['DC2','DC3']){categorySettings[d]={...DEFAULT_CATEGORIES[d],...(saved.categorySettings&&saved.categorySettings[d]||{})};coldSubtypeSettings[d]={...DEFAULT_COLD[d],...(saved.coldSubtypeSettings&&saved.coldSubtypeSettings[d]||{})}}}settingsReady=true;return saved?'místní záloha':'výchozí nastavení'}const cats={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
+(function(){const $=id=>document.getElementById(id);const FILTER_KEY='qrBoxPickingFiltersV2';const DEFAULT_CATEGORIES={DC2:{HOT:true,COLD:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,DC:true,MANUAL:true}},DEFAULT_COLD={DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}};let tasks=[],publishedTasks=[],selectedWarehouse='DC2',categorySettings=JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),coldSubtypeSettings=JSON.parse(JSON.stringify(DEFAULT_COLD));let settingsReady=false;function saveFilterSettings(){if(!settingsReady)return;try{localStorage.setItem(FILTER_KEY,JSON.stringify({selectedWarehouse,categorySettings,coldSubtypeSettings}))}catch(e){}}let boxSettingsSaveTimer=null,boxSettingsSaveRunning=false;function scheduleBoxSettingsSave(){if(!settingsReady)return;const targetWarehouse=selectedWarehouse;if(boxSettingsSaveTimer)clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=setTimeout(async()=>{if(boxSettingsSaveRunning)return;boxSettingsSaveRunning=true;try{await QRBoxPickingSync.saveWarehouse(targetWarehouse,{categoriesByWarehouse:{[targetWarehouse]:categorySettings[targetWarehouse]},coldSubtypeSettings:{[targetWarehouse]:coldSubtypeSettings[targetWarehouse]}});const current=await QRBoxPickingSync.get();$('boxPickFreshness').textContent='Filtry '+targetWarehouse+' uložené na serveru · revize '+current.revision}catch(e){$('boxPickStatus').textContent='Filtry nebyly uloženy na server: '+e.message+' Zkontrolujte připojení a obnovte data.'}finally{boxSettingsSaveRunning=false}},350)}function restoreFilterSettings(server){let saved=null;try{saved=JSON.parse(localStorage.getItem(FILTER_KEY)||'null')}catch(e){}if(saved&&(saved.selectedWarehouse==='DC2'||saved.selectedWarehouse==='DC3'))selectedWarehouse=saved.selectedWarehouse;if(server){for(const d of ['DC2','DC3']){categorySettings[d]={...DEFAULT_CATEGORIES[d],...(server.categoriesByWarehouse&&server.categoriesByWarehouse[d]||{})};coldSubtypeSettings[d]={...DEFAULT_COLD[d],...(server.coldSubtypeSettings&&server.coldSubtypeSettings[d]||{})}}settingsReady=true;saveFilterSettings();return 'server (sdílené nastavení)'}if(saved){for(const d of ['DC2','DC3']){categorySettings[d]={...DEFAULT_CATEGORIES[d],...(saved.categorySettings&&saved.categorySettings[d]||{})};coldSubtypeSettings[d]={...DEFAULT_COLD[d],...(saved.coldSubtypeSettings&&saved.coldSubtypeSettings[d]||{})}}}settingsReady=true;return saved?'místní záloha':'výchozí nastavení'}const cats={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
 function tab(p){$('freePositionsView').classList.toggle('hidden',p);$('boxPickingView').classList.toggle('hidden',!p);$('tabFree').classList.toggle('primary',!p);$('tabPicking').classList.toggle('primary',p);if(p)load()}
 $('tabFree').onclick=()=>tab(false);$('tabPicking').onclick=()=>tab(true);$('boxPickRefreshButton').onclick=()=>load(true);setInterval(()=>{if(!$('boxPickingView').classList.contains('hidden')&&!document.hidden&&!$('boxPickFile').disabled&&!$('publishBoxPick').disabled&&!$('deleteBoxPick').disabled&&navigator.onLine)load(false)},5000);window.addEventListener('online',()=>{if(!$('boxPickingView').classList.contains('hidden'))load(false)});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('boxPickingView').classList.contains('hidden')&&navigator.onLine)load(false)});
 function chosen(){return Object.keys(categorySettings[selectedWarehouse]).filter(k=>categorySettings[selectedWarehouse][k])}
@@ -294,7 +294,7 @@ document.querySelectorAll('[data-box-warehouse]').forEach(b=>b.onclick=()=>selec
 function render(){let a=filtered(),g=new Map();a.forEach(t=>{let n=t.warehouse==='DC3'?(t.aisle%2===1?t.aisle:t.aisle-1):(t.aisle%2===0?t.aisle:t.aisle-1),k=t.warehouse+'|'+n;if(!g.has(k))g.set(k,[]);g.get(k).push(t)});$('boxPickCount').textContent=a.length;$('boxPickAisles').textContent=g.size;const doneIds=new Set([...tasks.filter(t=>t.done),...publishedTasks.filter(t=>t.done)].map(t=>String(t.id)));$('boxPickDone').textContent=a.filter(t=>doneIds.has(String(t.id))).length;$('boxPickPreview').innerHTML=[...g.entries()].sort((x,y)=>x[0].localeCompare(y[0],undefined,{numeric:true})).map(([k,v])=>'<div class="street"><div class="street-top"><h3>'+k.replace('|',' · Ulička ')+'–'+(Number(k.split('|')[1])+1)+'</h3><span class="box-pick-count">'+v.length+'</span></div><div class="muted">'+v.slice(0,5).map(t=>t.box+' ('+t.position+')').join(' · ')+(v.length>5?' …':'')+'</div></div>').join('')||'<div class="empty">Žádné boxy pro zvolený filtr.</div>'}
 $('boxPickFile').onchange=async e=>{
  const f=e.target.files?.[0];if(!f)return;
- const input=e.target;
+ const input=e.target,targetWarehouse=selectedWarehouse;
  if(!navigator.onLine){$('boxPickStatus').textContent='✕ Pro nahrání nového seznamu musí být aktivní připojení k serveru.';input.value='';return;}
  input.disabled=true;
  boxPickMutationVersion++;
@@ -336,7 +336,7 @@ $('boxPickFile').onchange=async e=>{
    if(reasons.length){reasons.forEach(reason=>rejectCounts[reason]++);continue;}
    const aisle=Number(match[1]),slot=Number(match[2]);
    const warehouse=warehouseRaw==='CZSYR2'?'DC2':'DC3';
-   if(warehouse!==selectedWarehouse){rejectCounts.Sklad++;continue;}
+   if(warehouse!==targetWarehouse){rejectCounts.Sklad++;continue;}
    const withinBounds=warehouse==='DC2'?(aisle>=12&&aisle<=123&&slot>=1&&slot<=168):(aisle>=1&&aisle<=41&&slot>=1&&slot<=148);
    if(!withinBounds){rejectCounts.Pozice++;continue;}
    const uniqueKey=warehouseRaw+'|'+box+'|'+position;
@@ -357,17 +357,17 @@ $('boxPickFile').onchange=async e=>{
   }
   let saved=null,lastError=null;
   for(let attempt=0;attempt<3&&!saved;attempt++){
-   try{saved=await QRBoxPickingSync.saveWarehouse(selectedWarehouse,{tasks:nextTasks,masterTasks:nextTasks,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});}
+   try{saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:nextTasks,masterTasks:nextTasks,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});}
    catch(error){lastError=error;const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(error&&error.message||error));if(!conflict||attempt===2)throw error;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)));}
   }
   if(!saved)throw lastError||Error('Server nepotvrdil import nového seznamu.');
-  const savedForWarehouse=saved.tasks.filter(t=>t.warehouse===selectedWarehouse),masterForWarehouse=saved.masterTasks.filter(t=>t.warehouse===selectedWarehouse);
-  if(savedForWarehouse.length!==nextTasks.length||masterForWarehouse.length!==nextTasks.length)throw Error('Server nepotvrdil oba seznamy pro '+selectedWarehouse+'.');
+  const savedForWarehouse=saved.tasks.filter(t=>t.warehouse===targetWarehouse),masterForWarehouse=saved.masterTasks.filter(t=>t.warehouse===targetWarehouse);
+  if(savedForWarehouse.length!==nextTasks.length||masterForWarehouse.length!==nextTasks.length)throw Error('Server nepotvrdil oba seznamy pro '+targetWarehouse+'.');
   tasks=saved.masterTasks;publishedTasks=saved.tasks;syncCategoryChecks();render();
-  const otherWarehouse=selectedWarehouse==='DC2'?'DC3':'DC2',otherCount=tasks.filter(t=>t.warehouse===otherWarehouse).length;
+  const otherWarehouse=targetWarehouse==='DC2'?'DC3':'DC2',otherCount=tasks.filter(t=>t.warehouse===otherWarehouse).length;
   const rejected=Object.entries(rejectCounts).filter(([,count])=>count>0).map(([name,count])=>name+' '+count).join(', ')||'žádné';
-  $('boxPickStatus').textContent='✓ Excel pro '+selectedWarehouse+' nahrán a ověřen: '+nextTasks.length+' boxů. Seznam '+otherWarehouse+' zůstal beze změny ('+otherCount+' boxů). Vyřazeno: '+rejected+'. Duplicitní opakované řádky přeskočeny: '+duplicateRows+'.';
-  $('boxPickFreshness').textContent='✓ '+selectedWarehouse+' uložen samostatně · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný');
+  $('boxPickStatus').textContent='✓ Excel pro '+targetWarehouse+' nahrán a ověřen: '+nextTasks.length+' boxů. Seznam '+otherWarehouse+' zůstal beze změny ('+otherCount+' boxů). Vyřazeno: '+rejected+'. Duplicitní opakované řádky přeskočeny: '+duplicateRows+'.';
+  $('boxPickFreshness').textContent='✓ '+targetWarehouse+' uložen samostatně · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný');
  }catch(error){
   $('boxPickStatus').textContent='✕ Import/nahrazení se nezdařilo: '+String(error&&error.message||error)+'. Předchozí serverový seznam zůstal zachován.';
  }finally{
@@ -378,34 +378,34 @@ $('boxPickFile').onchange=async e=>{
 document.querySelectorAll('#boxPickCategories input').forEach(x=>x.onchange=()=>{categorySettings[selectedWarehouse][x.dataset.category]=x.checked;saveFilterSettings();scheduleBoxSettingsSave();render()});document.querySelectorAll('#coldSubtypeFilters input').forEach(x=>x.onchange=()=>{coldSubtypeSettings[selectedWarehouse][x.dataset.coldSubtype]=x.checked;saveFilterSettings();scheduleBoxSettingsSave();render()});$('coldSelectAll').onclick=()=>{Object.keys(coldSubtypeSettings[selectedWarehouse]).forEach(k=>coldSubtypeSettings[selectedWarehouse][k]=true);saveFilterSettings();scheduleBoxSettingsSave();syncCategoryChecks();render()};$('coldSelectNone').onclick=()=>{Object.keys(coldSubtypeSettings[selectedWarehouse]).forEach(k=>coldSubtypeSettings[selectedWarehouse][k]=false);saveFilterSettings();scheduleBoxSettingsSave();syncCategoryChecks();render()};
 let boxPickLoadPromise=null,boxPickMutationVersion=0;async function load(manual=false){if(manual){$('boxPickStatus').textContent='Načítám aktuální seznam přímo ze serveru…';$('boxPickFreshness').textContent='Ověřuji nejnovější revizi serveru…'}if(boxPickLoadPromise){if(manual){$('boxPickRefreshButton').disabled=true;$('boxPickRefreshButton').textContent='↻ Načítám ze serveru…'}try{await boxPickLoadPromise;if(manual)return await load(true);return}finally{if(manual){$('boxPickRefreshButton').disabled=false;$('boxPickRefreshButton').textContent='↻ Aktualizovat seznam ze serveru'}}}const loadVersion=boxPickMutationVersion;boxPickLoadPromise=(async()=>{const b=$('boxPickRefreshButton');if(manual&&b){b.disabled=true;b.textContent='↻ Načítám ze serveru…'}try{const s=await QRBoxPickingSync.get();if(loadVersion!==boxPickMutationVersion)return;tasks=Array.isArray(s.masterTasks)?s.masterTasks:(Array.isArray(s.tasks)?s.tasks:[]);publishedTasks=Array.isArray(s.tasks)?s.tasks:[];const filterSource=restoreFilterSettings(s);syncCategoryChecks();document.querySelectorAll('[data-box-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.boxWarehouse===selectedWarehouse));$('boxPickUploadTitle').textContent='Excel soubor pro '+selectedWarehouse;$('boxPickWarehouseStatus').textContent='Zobrazen sklad '+selectedWarehouse+'.';const selectedCount=tasks.filter(t=>t.warehouse===selectedWarehouse).length;$('boxPickStatus').textContent=selectedWarehouse+': '+selectedCount+' boxů načteno. Seznam druhého skladu je uložen samostatně. Filtry: '+filterSource+'.';$('boxPickFreshness').textContent='Poslední synchronizace serveru: '+(s.updated_at?new Date(s.updated_at).toLocaleString():'čas není dostupný')+' · revize '+(s.revision||'—');render()}catch(e){$('boxPickStatus').textContent='Chyba synchronizace: '+e.message;$('boxPickFreshness').textContent='Server nepotvrдиl актуальність даних.'}finally{if(manual&&b){b.disabled=false;b.textContent='↻ Aktualizovat seznam ze serveru'}boxPickLoadPromise=null}})();return boxPickLoadPromise}
 $('deleteBoxPick').onclick=async()=>{
- if(!confirm('Opravdu smazat hlavní i publikovaný seznam boxů pouze pro '+selectedWarehouse+'? Druhý sklad zůstane beze změny.'))return;
- const b=$('deleteBoxPick');
+ if(!confirm('Opravdu smazat hlavní i publikovaný seznam boxů pouze pro '+targetWarehouse+'? Druhý sklad zůstane beze změny.'))return;
+ const targetWarehouse=targetWarehouse;const b=$('deleteBoxPick');
  if(boxSettingsSaveTimer){clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=null;}
  b.disabled=true;$('boxPickFile').disabled=true;$('publishBoxPick').disabled=true;$('boxPickRefreshButton').disabled=true;boxPickMutationVersion++;
  try{
   const current=await QRBoxPickingSync.get();
-  const oldMasterCount=(current.masterTasks||[]).filter(t=>t.warehouse===selectedWarehouse).length;
-  const oldPublishedCount=(current.tasks||[]).filter(t=>t.warehouse===selectedWarehouse).length;
-  const saved=await QRBoxPickingSync.saveWarehouse(selectedWarehouse,{tasks:[],masterTasks:[]});
+  const oldMasterCount=(current.masterTasks||[]).filter(t=>t.warehouse===targetWarehouse).length;
+  const oldPublishedCount=(current.tasks||[]).filter(t=>t.warehouse===targetWarehouse).length;
+  const saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:[],masterTasks:[]});
   const savedRevision=Number(saved.revision);let verified=null;
   for(let attempt=0;attempt<8;attempt++){
    verified=await QRBoxPickingSync.get();
-   const published=(verified.tasks||[]).filter(t=>t.warehouse===selectedWarehouse),master=(verified.masterTasks||[]).filter(t=>t.warehouse===selectedWarehouse);
+   const published=(verified.tasks||[]).filter(t=>t.warehouse===targetWarehouse),master=(verified.masterTasks||[]).filter(t=>t.warehouse===targetWarehouse);
    if(!published.length&&!master.length&&Number(verified.revision)>=savedRevision)break;
-   if(Number(verified.revision)>savedRevision&&(published.length||master.length))throw Error('Po smazání jiné zařízení zapsalo nový seznam pro '+selectedWarehouse+'.');
+   if(Number(verified.revision)>savedRevision&&(published.length||master.length))throw Error('Po smazání jiné zařízení zapsalo nový seznam pro '+targetWarehouse+'.');
    if(attempt<7)await new Promise(resolve=>setTimeout(resolve,350));
   }
-  const published=(verified.tasks||[]).filter(t=>t.warehouse===selectedWarehouse),master=(verified.masterTasks||[]).filter(t=>t.warehouse===selectedWarehouse);
-  if(published.length||master.length||Number(verified.revision)<savedRevision)throw Error('Server nepotvrdil vymazání seznamů pro '+selectedWarehouse+'.');
+  const published=(verified.tasks||[]).filter(t=>t.warehouse===targetWarehouse),master=(verified.masterTasks||[]).filter(t=>t.warehouse===targetWarehouse);
+  if(published.length||master.length||Number(verified.revision)<savedRevision)throw Error('Server nepotvrdil vymazání seznamů pro '+targetWarehouse+'.');
   tasks=verified.masterTasks||[];publishedTasks=verified.tasks||[];render();
-  $('boxPickStatus').textContent='✓ Smazání potvrzeno pro '+selectedWarehouse+'. Druhý sklad zůstal beze změny.';
-  $('boxPickFreshness').textContent=selectedWarehouse+' seznamy jsou prázdné · revize '+verified.revision;
-  alert((oldMasterCount||oldPublishedCount?'Seznam '+selectedWarehouse+' byl úspěšně smazán.':'Seznam '+selectedWarehouse+' už byl prázdný.')+'\\n\\nPřed mazáním: hlavní '+oldMasterCount+' boxů, telefon '+oldPublishedCount+' boxů.\\nDruhý sklad zůstal beze změny.');
+  $('boxPickStatus').textContent='✓ Smazání potvrzeno pro '+targetWarehouse+'. Druhý sklad zůstal beze změny.';
+  $('boxPickFreshness').textContent=targetWarehouse+' seznamy jsou prázdné · revize '+verified.revision;
+  alert((oldMasterCount||oldPublishedCount?'Seznam '+targetWarehouse+' byl úspěšně smazán.':'Seznam '+targetWarehouse+' už byl prázdný.')+'\\n\\nPřed mazáním: hlavní '+oldMasterCount+' boxů, telefon '+oldPublishedCount+' boxů.\\nDruhý sklad zůstal beze změny.');
  }catch(e){$('boxPickStatus').textContent='✕ Smazání nebylo potvrzeno serverem: '+String(e&&e.message||e)}
  finally{b.disabled=false;$('boxPickFile').disabled=false;$('publishBoxPick').disabled=false;$('boxPickRefreshButton').disabled=false}
 };;syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
- if(!tasks.some(t=>t.warehouse===selectedWarehouse)){$('boxPickStatus').textContent='Nejdříve nahrajte Excel soubor pro '+selectedWarehouse+'.';return}
- const localCategories=JSON.parse(JSON.stringify(categorySettings)),localCold=JSON.parse(JSON.stringify(coldSubtypeSettings));
+ if(!tasks.some(t=>t.warehouse===targetWarehouse)){$('boxPickStatus').textContent='Nejdříve nahrajte Excel soubor pro '+targetWarehouse+'.';return}
+ const targetWarehouse=targetWarehouse;const localCategories=JSON.parse(JSON.stringify(categorySettings)),localCold=JSON.parse(JSON.stringify(coldSubtypeSettings));
  const btn=$('publishBoxPick');btn.disabled=true;
  try{
   if(boxSettingsSaveTimer){clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=null;}
@@ -416,17 +416,17 @@ $('deleteBoxPick').onclick=async()=>{
    const doneById=new Map();
    for(const t of [...sourceMaster,...(currentState.tasks||[])])if(t.done)doneById.set(String(t.id),t);
    const masterWithProgress=sourceMaster.filter(t=>isPositionLevel00(t.position)).map(t=>{const old=doneById.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
-   const selectedForPublish=masterWithProgress.filter(t=>t.warehouse===selectedWarehouse&&passesWarehouseFilters(t,selectedWarehouse));
-   if(!selectedForPublish.length){$('boxPickStatus').textContent='Publikování zastaveno: podle filtrů není vybrán žádný box pro '+selectedWarehouse+'. Seznam druhého skladu zůstává beze změny.';return}
+   const selectedForPublish=masterWithProgress.filter(t=>t.warehouse===targetWarehouse&&passesWarehouseFilters(t,targetWarehouse));
+   if(!selectedForPublish.length){$('boxPickStatus').textContent='Publikování zastaveno: podle filtrů není vybrán žádný box pro '+targetWarehouse+'. Seznam druhého skladu zůstává beze změny.';return}
    const categoriesByWarehouse={DC2:{...DEFAULT_CATEGORIES.DC2,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC2)||{}),...localCategories.DC2},DC3:{...DEFAULT_CATEGORIES.DC3,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC3)||{}),...localCategories.DC3}};
    const coldSubtypeSettingsToSave={DC2:{...DEFAULT_COLD.DC2,...((currentState.coldSubtypeSettings&&currentState.coldSubtypeSettings.DC2)||{}),...localCold.DC2},DC3:{...DEFAULT_COLD.DC3,...((currentState.coldSubtypeSettings&&currentState.coldSubtypeSettings.DC3)||{}),...localCold.DC3}};
-   try{saved=await QRBoxPickingSync.saveWarehouse(selectedWarehouse,{tasks:selectedForPublish,masterTasks:masterWithProgress.filter(t=>t.warehouse===selectedWarehouse),categoriesByWarehouse:{[selectedWarehouse]:localCategories[selectedWarehouse]},coldSubtypeSettings:{[selectedWarehouse]:localCold[selectedWarehouse]}})}
+   try{saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:selectedForPublish,masterTasks:masterWithProgress.filter(t=>t.warehouse===targetWarehouse),categoriesByWarehouse:{[targetWarehouse]:localCategories[targetWarehouse]},coldSubtypeSettings:{[targetWarehouse]:localCold[targetWarehouse]}})}
    catch(e){lastError=e;if(!/konflikt|změnilo jiné zařízení|revize/i.test(String(e.message))||attempt===2)throw e}
   }
   if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno serverem.');
   publishedTasks=saved.tasks||[];tasks=saved.masterTasks||[];
-  const publishedCount=publishedTasks.filter(t=>t.warehouse===selectedWarehouse).length;
-  $('boxPickStatus').textContent='Publikováno do telefonu pouze '+selectedWarehouse+': '+publishedCount+' boxů. Seznam druhého skladu zůstal beze změny.';
+  const publishedCount=publishedTasks.filter(t=>t.warehouse===targetWarehouse).length;
+  $('boxPickStatus').textContent='Publikováno do telefonu pouze '+targetWarehouse+': '+publishedCount+' boxů. Seznam druhého skladu zůstal beze změny.';
   $('boxPickFreshness').textContent='Poslední synchronizace serveru: '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný')+' · revize '+(saved.revision||'—');
   render();
  }catch(e){$('boxPickStatus').textContent='Chyba publikování: '+e.message}
