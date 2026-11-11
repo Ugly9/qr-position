@@ -20,7 +20,7 @@
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
  const originalSave=sync.save.bind(sync);
- const validPosition=task=>{const m=String(task&&task.position??'').trim().match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(00|01)\s*$/);return !!m&&(task.warehouse==='DC3'||m[3]==='00')};
+ const validPosition=task=>{const m=String((task&&task.position)??'').trim().match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(00|01)\s*$/);return !!m&&(task.warehouse==='DC3'||m[3]==='00')};
  const invalidRows=rows=>(Array.isArray(rows)?rows:[]).filter(task=>!validPosition(task));
  sync.save=async function(payload){
   const current=await sync.get();
