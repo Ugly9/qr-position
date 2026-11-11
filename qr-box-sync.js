@@ -46,5 +46,25 @@ async function save(payload){
  if(!check.categoriesByWarehouse||!check.coldSubtypeSettings)throw new Error('Server nevrátil nastavení filtrů. Obnovte a zkuste znovu.');
  return check;
 }
-window.QRBoxPickingSync={get,save};
+async function saveWarehouse(warehouse,payload={}){
+ if(warehouse!=='DC2'&&warehouse!=='DC3')throw new Error('Neplatný sklad.');
+ const current=await get(),other=warehouse==='DC2'?'DC3':'DC2';
+ const mergeList=(field)=>{
+  const base=Array.isArray(current[field])?current[field]:[];
+  if(!Array.isArray(payload[field]))return base;
+  return base.filter(t=>t&&t.warehouse!==warehouse).concat(payload[field].filter(t=>t&&t.warehouse===warehouse));
+ };
+ const categoriesByWarehouse={DC2:{...defaults.categories,...(current.categoriesByWarehouse&&current.categoriesByWarehouse.DC2||{})},DC3:{...defaults.categories,...(current.categoriesByWarehouse&&current.categoriesByWarehouse.DC3||{})}};
+ const coldSubtypeSettings={DC2:{...defaults.coldSubtypeSettings.DC2,...(current.coldSubtypeSettings&&current.coldSubtypeSettings.DC2||{})},DC3:{...defaults.coldSubtypeSettings.DC3,...(current.coldSubtypeSettings&&current.coldSubtypeSettings.DC3||{})}};
+ if(payload.categoriesByWarehouse&&payload.categoriesByWarehouse[warehouse])Object.assign(categoriesByWarehouse[warehouse],payload.categoriesByWarehouse[warehouse]);
+ if(payload.categories)Object.assign(categoriesByWarehouse[warehouse],payload.categories);
+ if(payload.coldSubtypeSettings&&payload.coldSubtypeSettings[warehouse])Object.assign(coldSubtypeSettings[warehouse],payload.coldSubtypeSettings[warehouse]);
+ return save({
+  tasks:mergeList('tasks'),masterTasks:mergeList('masterTasks'),
+  categories:current.categories,categoriesByWarehouse,coldSubtypeSettings,
+  expectedRevision:current.revision,
+  ...(payload.restoreToken?{restoreToken:payload.restoreToken}:{})
+ });
+}
+window.QRBoxPickingSync={get,save,saveWarehouse};
 })();
