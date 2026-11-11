@@ -298,7 +298,6 @@ $('boxPickFile').onchange=async e=>{
  if(!navigator.onLine){$('boxPickStatus').textContent='✕ Pro nahrání nového seznamu musí být aktivní připojení k serveru.';input.value='';return;}
  input.disabled=true;
  boxPickMutationVersion++;
- if(boxSettingsSaveTimer){clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=null;}
  $('boxPickStatus').textContent='Načítám a důkladně kontroluji nový Excel…';
  $('boxPickFreshness').textContent='Předchozí seznam zůstane zachován, dokud server nepotvrdí celý nový import.';
  try{
@@ -386,7 +385,7 @@ $('deleteBoxPick').onclick=async()=>{
   const current=await QRBoxPickingSync.get();
   const oldMasterCount=(current.masterTasks||[]).filter(t=>t.warehouse===targetWarehouse).length;
   const oldPublishedCount=(current.tasks||[]).filter(t=>t.warehouse===targetWarehouse).length;
-  const saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:[],masterTasks:[]});
+  const saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:[],masterTasks:[],categoriesByWarehouse:{[targetWarehouse]:categorySettings[targetWarehouse]},coldSubtypeSettings:{[targetWarehouse]:coldSubtypeSettings[targetWarehouse]}});
   const savedRevision=Number(saved.revision);let verified=null;
   for(let attempt=0;attempt<8;attempt++){
    verified=await QRBoxPickingSync.get();
@@ -409,7 +408,6 @@ $('deleteBoxPick').onclick=async()=>{
  const localCategories=JSON.parse(JSON.stringify(categorySettings)),localCold=JSON.parse(JSON.stringify(coldSubtypeSettings));
  const btn=$('publishBoxPick');btn.disabled=true;
  try{
-  if(boxSettingsSaveTimer){clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=null;}
   let saved=null,lastError=null;
   for(let attempt=0;attempt<3&&!saved;attempt++){
    const currentState=await QRBoxPickingSync.get();
