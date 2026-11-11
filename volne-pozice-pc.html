@@ -409,7 +409,7 @@ $('deleteBoxPick').onclick=async()=>{
   if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno serverem.');
   publishedTasks=saved.tasks||[];tasks=saved.masterTasks||[];
   const publishedCount=publishedTasks.filter(t=>t.warehouse===targetWarehouse).length;
-  $('boxPickStatus').textContent='Publikováno do telefonu '+targetWarehouse+' · '+(selectedPickLevel==='01'?'Nadrozměry':'00 pozice')+': '+selectedCurrentLevel.length+' boxů. Druhý typ seznamu zachován.';
+  $('boxPickStatus').textContent='Publikováno do telefonu '+targetWarehouse+' · '+(selectedPickLevel==='01'?'Nadrozměry':'00 pozice')+': '+publishedTasks.filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===(selectedPickLevel==='01'?'01':'00')).length+' boxů. Druhý typ seznamu zachován.';
   $('boxPickFreshness').textContent='Poslední synchronizace serveru: '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný')+' · revize '+(saved.revision||'—');
   render();
  }catch(e){$('boxPickStatus').textContent='Chyba publikování: '+e.message}
