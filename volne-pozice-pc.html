@@ -404,8 +404,9 @@ $('deleteBoxPick').onclick=async()=>{
  }catch(e){$('boxPickStatus').textContent='✕ Smazání nebylo potvrzeno serverem: '+String(e&&e.message||e)}
  finally{b.disabled=false;$('boxPickFile').disabled=false;$('publishBoxPick').disabled=false;$('boxPickRefreshButton').disabled=false}
 };;syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
+ const targetWarehouse=selectedWarehouse;
  if(!tasks.some(t=>t.warehouse===targetWarehouse)){$('boxPickStatus').textContent='Nejdříve nahrajte Excel soubor pro '+targetWarehouse+'.';return}
- const targetWarehouse=selectedWarehouse;const localCategories=JSON.parse(JSON.stringify(categorySettings)),localCold=JSON.parse(JSON.stringify(coldSubtypeSettings));
+ const localCategories=JSON.parse(JSON.stringify(categorySettings)),localCold=JSON.parse(JSON.stringify(coldSubtypeSettings));
  const btn=$('publishBoxPick');btn.disabled=true;
  try{
   if(boxSettingsSaveTimer){clearTimeout(boxSettingsSaveTimer);boxSettingsSaveTimer=null;}
