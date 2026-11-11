@@ -318,12 +318,14 @@ $('boxPickFile').onchange=async e=>{
    const statusRaw=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
    const statusOk=Number(statusRaw)===1||statusRaw==='novy'||statusRaw==='new'||/^1(?:\.0+)?(?:\s|$|[-(:])/.test(statusRaw);
    const priority=Number(String(row[col('Priorita')]??'').trim().replace(',','.')),category=cats[priority];
+   const destinationRaw=String(destinationColumn?row[destinationColumn]??'':'').trim().toUpperCase(),destinationMatch=destinationRaw.match(/(?:^|[^A-Z])(RO|IT|PL)(?:$|[^A-Z])/),destination=destinationMatch?destinationMatch[1]:'';
    const match=position.match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(00|01)\s*$/),reasons=[];
    if(!['CZSYR2','CZSYR3'].includes(warehouseRaw))reasons.push('Sklad');
    if(!statusOk)reasons.push('Stav');
    if(!match||(warehouseRaw==='CZSYR2'&&match&&match[3]!=='00')||(match&&match[3]!==targetLevel))reasons.push('Pozice');
    if(!box)reasons.push('Box');
    if(!category)reasons.push('Priorita');
+   if(targetWarehouse==='DC3'&&targetLevel==='01'&&!destination)reasons.push('Cílový sklad (sloupec U: RO/IT/PL)');
    if(reasons.length){reasons.forEach(reason=>rejectCounts[reason]++);continue;}
    const aisle=Number(match[1]),slot=Number(match[2]),warehouse=warehouseRaw==='CZSYR2'?'DC2':'DC3';
    if(warehouse!==targetWarehouse){rejectCounts.Sklad++;continue;}
@@ -333,7 +335,7 @@ $('boxPickFile').onchange=async e=>{
    if(seenKeys.has(uniqueKey)){duplicateRows++;continue;}seenKeys.add(uniqueKey);
    const rawId=String(row[col('Id')]??'').trim(),id=rawId||uniqueKey;
    if(seenIds.has(id))throw Error('Duplicitní ID "'+id+'" v řádcích '+seenIds.get(id)+' a '+(i+2)+'. Import byl zastaven, aby se nepřepsal chybný seznam.');
-   seenIds.set(id,i+2);const destinationRaw=String(destinationColumn?row[destinationColumn]??'':'').trim().toUpperCase(),destinationMatch=destinationRaw.match(/(?:^|[^A-Z])(RO|IT|PL)(?:$|[^A-Z])/),destination=destinationMatch?destinationMatch[1]:'';if(targetWarehouse==='DC3'&&targetLevel==='01'&&!destination)rejectCounts['Cílový sklad']= (rejectCounts['Cílový sklad']||0)+1;nextTasks.push({id,warehouse,aisle,slot,position,box,category,priority,destination,done:false,order:i});
+   seenIds.set(id,i+2);nextTasks.push({id,warehouse,aisle,slot,position,box,category,priority,destination,done:false,order:i});
   }
   nextTasks.sort((a,b)=>a.warehouse.localeCompare(b.warehouse)||a.aisle-b.aisle||a.slot-b.slot||a.order-b.order);
   if(!nextTasks.length)throw Error('Po kontrole nezůstal žádný platný box. Starý seznam zůstal zachován. Zkontrolujte sklad, Stav 1/Nový, Prioritu, Box a Pozici na úrovni 00 nebo 01. Zóna nerozhoduje.');
