@@ -3,7 +3,7 @@ const URL='https://hsrznmfeqajffrleeyly.supabase.co';
 const KEY='sb_publishable_lQBoAETsI3XjQV21G4mpIQ_2xBzbsBT';
 const AUTH='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzcnpubWZlcWFqZmZybGVleWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4OTc3MzcsImV4cCI6MjEwNDQ3MzczN30.sW3f1zi83QOJ9xlDIy6bbVNhDtcv8KtkrtDrNV5Ajvc';
 async function request(path,options={}){const method=String(options.method||'GET').toUpperCase();const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',...(options.headers||{})};if(method==='GET')headers['Cache-Control']='no-cache';const r=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:method==='GET'?'no-store':'default'});if(!r.ok)throw new Error('Supabase '+r.status+': '+(await r.text()).slice(0,250));return r.status===204?null:r.json().catch(()=>null)}
-const defaults={tasks:[],masterTasks:[],categories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},categoriesByWarehouse:{DC2:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true}},coldSubtypeSettings:{DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}},updated_at:null};
+const defaults={tasks:[],masterTasks:[],categories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},categoriesByWarehouse:{DC2:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true}},coldSubtypeSettings:{DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}},oversizeCategories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},oversizeColdSubtypeSettings:{'1':true,'2':true,fastpick:true},updated_at:null};
 async function get(){const rows=await request('qr_box_picking_state?select=payload,revision,updated_at&singleton=eq.true&limit=1');if(!rows||!rows[0])return {...defaults,revision:1};const payload=rows[0].payload||{};const tasks=Array.isArray(payload.tasks)?payload.tasks:[];return {...defaults,...payload,tasks,masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:tasks,revision:Number(rows[0].revision),updated_at:rows[0].updated_at}}
 async function save(payload){
  const current=await get();
@@ -25,6 +25,8 @@ async function save(payload){
    DC2:{...defaults.categories,...((current.categoriesByWarehouse&&current.categoriesByWarehouse.DC2)||{}),...(sourceByWarehouse.DC2||{})},
    DC3:{...defaults.categories,...((current.categoriesByWarehouse&&current.categoriesByWarehouse.DC3)||{}),...(sourceByWarehouse.DC3||{})}
   },
+  oversizeCategories:{...defaults.oversizeCategories,...(current.oversizeCategories||{}),...(payload.oversizeCategories||{})},
+  oversizeColdSubtypeSettings:{...defaults.oversizeColdSubtypeSettings,...(current.oversizeColdSubtypeSettings||{}),...(payload.oversizeColdSubtypeSettings||{})},
   coldSubtypeSettings:{
    DC2:{...defaults.coldSubtypeSettings.DC2,...((current.coldSubtypeSettings&&current.coldSubtypeSettings.DC2)||{}),...(sourceCold.DC2||{})},
    DC3:{...defaults.coldSubtypeSettings.DC3,...((current.coldSubtypeSettings&&current.coldSubtypeSettings.DC3)||{}),...(sourceCold.DC3||{})}
@@ -62,6 +64,7 @@ async function saveWarehouse(warehouse,payload={}){
  return save({
   tasks:mergeList('tasks'),masterTasks:mergeList('masterTasks'),
   categories:current.categories,categoriesByWarehouse,coldSubtypeSettings,
+  oversizeCategories:{...current.oversizeCategories,...(payload.oversizeCategories||{})},oversizeColdSubtypeSettings:{...current.oversizeColdSubtypeSettings,...(payload.oversizeColdSubtypeSettings||{})},
   expectedRevision:current.revision,
   ...(payload.restoreToken?{restoreToken:payload.restoreToken}:{})
  });
