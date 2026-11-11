@@ -296,10 +296,11 @@ document.querySelectorAll('[data-box-level]').forEach(b=>b.onclick=()=>{selected
 function render(){let a=filtered(),g=new Map();a.forEach(t=>{let n=t.warehouse==='DC3'?(t.aisle%2===1?t.aisle:t.aisle-1):(t.aisle%2===0?t.aisle:t.aisle-1),k=t.warehouse+'|'+n;if(!g.has(k))g.set(k,[]);g.get(k).push(t)});$('boxPickCount').textContent=a.length;$('boxPickAisles').textContent=g.size;const doneIds=new Set([...tasks.filter(t=>t.done),...publishedTasks.filter(t=>t.done)].map(t=>String(t.id)));$('boxPickDone').textContent=a.filter(t=>doneIds.has(String(t.id))).length;$('boxPickPreview').innerHTML=[...g.entries()].sort((x,y)=>x[0].localeCompare(y[0],undefined,{numeric:true})).map(([k,v])=>'<div class="street"><div class="street-top"><h3>'+k.replace('|',' · Ulička ')+'–'+(Number(k.split('|')[1])+1)+'</h3><span class="box-pick-count">'+v.length+'</span></div><div class="muted">'+v.slice(0,5).map(t=>t.box+' ('+t.position+')').join(' · ')+(v.length>5?' …':'')+'</div></div>').join('')||'<div class="empty">Žádné boxy pro zvolený filtr.</div>'}
 $('boxPickFile').onchange=async e=>{
  const f=e.target.files?.[0];if(!f)return;
- const input=e.target,targetWarehouse=selectedWarehouse;
+ const input=e.target,targetWarehouse=selectedWarehouse,targetLevel=targetWarehouse==='DC3'?selectedPickLevel:'00';
+ if(!targetLevel){$('boxPickStatus').textContent='Nejdříve vyberte 00 pozice nebo Nadrozměry.';input.value='';return;}
  if(!navigator.onLine){$('boxPickStatus').textContent='✕ Pro nahrání nového seznamu musí být aktivní připojení k serveru.';input.value='';return;}
  input.disabled=true;boxPickMutationVersion++;
- $('boxPickStatus').textContent='Načítám a důkladně kontroluji nový Excel…';
+ $('boxPickStatus').textContent='Načítám Excel pro '+(targetLevel==='01'?'Nadrozměry':'00 pozice')+' a důkladně kontroluji data…';
  $('boxPickFreshness').textContent='Předchozí seznam zůstane zachován, dokud server nepotvrdí celý nový import.';
  try{
   if(!window.XLSX)throw Error('Knihovna pro čtení Excelu se nenačetla. Obnovte stránku a zkuste to znovu.');
@@ -320,7 +321,7 @@ $('boxPickFile').onchange=async e=>{
    const match=position.match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(00|01)\s*$/),reasons=[];
    if(!['CZSYR2','CZSYR3'].includes(warehouseRaw))reasons.push('Sklad');
    if(!statusOk)reasons.push('Stav');
-   if(!match||(warehouseRaw==='CZSYR2'&&match&&match[3]!=='00'))reasons.push('Pozice');
+   if(!match||(warehouseRaw==='CZSYR2'&&match&&match[3]!=='00')||(match&&match[3]!==targetLevel))reasons.push('Pozice');
    if(!box)reasons.push('Box');
    if(!category)reasons.push('Priorita');
    if(reasons.length){reasons.forEach(reason=>rejectCounts[reason]++);continue;}
@@ -337,15 +338,23 @@ $('boxPickFile').onchange=async e=>{
   nextTasks.sort((a,b)=>a.warehouse.localeCompare(b.warehouse)||a.aisle-b.aisle||a.slot-b.slot||a.order-b.order);
   if(!nextTasks.length)throw Error('Po kontrole nezůstal žádný platný box. Starý seznam zůstal zachován. Zkontrolujte sklad, Stav 1/Nový, Prioritu, Box a Pozici na úrovni 00 nebo 01. Zóna nerozhoduje.');
   let saved=null,lastError=null;
-  for(let attempt=0;attempt<3&&!saved;attempt++){try{saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:nextTasks,masterTasks:nextTasks,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'})}catch(error){lastError=error;const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(error&&error.message||error));if(!conflict||attempt===2)throw error;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)))}}
+  for(let attempt=0;attempt<3&&!saved;attempt++){
+   try{
+    const current=await QRBoxPickingSync.get();
+    const sameLevel=t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel;
+    const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
+    const mergedPublished=[...(current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
+    saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
+   }catch(error){lastError=error;const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(error&&error.message||error));if(!conflict||attempt===2)throw error;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)))}
+  }
   if(!saved)throw lastError||Error('Server nepotvrdil import nového seznamu.');
-  const savedForWarehouse=saved.tasks.filter(t=>t.warehouse===targetWarehouse),masterForWarehouse=saved.masterTasks.filter(t=>t.warehouse===targetWarehouse);
-  if(savedForWarehouse.length!==nextTasks.length||masterForWarehouse.length!==nextTasks.length)throw Error('Server nepotvrdil oba seznamy pro '+targetWarehouse+'.');
+  const savedForWarehouse=saved.tasks.filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel),masterForWarehouse=saved.masterTasks.filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel);
+  if(savedForWarehouse.length!==nextTasks.length||masterForWarehouse.length!==nextTasks.length)throw Error('Server nepotvrdil oba seznamy pro '+targetWarehouse+' / '+targetLevel+'.');
   tasks=saved.masterTasks;publishedTasks=saved.tasks;syncCategoryChecks();render();
   const otherWarehouse=targetWarehouse==='DC2'?'DC3':'DC2',otherCount=tasks.filter(t=>t.warehouse===otherWarehouse).length;
   const rejected=Object.entries(rejectCounts).filter(([,count])=>count>0).map(([name,count])=>name+' '+count).join(', ')||'žádné';
-  $('boxPickStatus').textContent='✓ Excel pro '+targetWarehouse+' nahrán a ověřen: '+nextTasks.length+' boxů. Seznam '+otherWarehouse+' zůstal beze změny ('+otherCount+' boxů). Vyřazeno: '+rejected+'. Duplicitní opakované řádky přeskočeny: '+duplicateRows+'.';
-  $('boxPickFreshness').textContent='✓ '+targetWarehouse+' uložen samostatně · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný');
+  $('boxPickStatus').textContent='✓ Excel pro '+targetWarehouse+' / '+(targetLevel==='01'?'Nadrozměry':'00 pozice')+' nahrán a ověřen: '+nextTasks.length+' boxů. Seznam '+otherWarehouse+' zůstal beze změny ('+otherCount+' boxů). Vyřazeno: '+rejected+'. Duplicitní opakované řádky přeskočeny: '+duplicateRows+'.';
+  $('boxPickFreshness').textContent='✓ '+targetWarehouse+' / '+(targetLevel==='01'?'Nadrozměry':'00 pozice')+' uložen samostatně · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný');
  }catch(error){$('boxPickStatus').textContent='✕ Import/nahrazení se nezdařilo: '+String(error&&error.message||error)+'. Předchozí serverový seznam zůstal zachován.'}
  finally{input.disabled=false;input.value=''}
 };
