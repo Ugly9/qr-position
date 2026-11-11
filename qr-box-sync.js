@@ -26,7 +26,8 @@ async function save(payload){
    DC3:{...defaults.categories,...((current.categoriesByWarehouse&&current.categoriesByWarehouse.DC3)||{}),...(sourceByWarehouse.DC3||{})}
   },
   oversizeCategories:{...defaults.oversizeCategories,...(current.oversizeCategories||{}),...(payload.oversizeCategories||{})},
-  oversizeColdSubtypeSettings:{...defaults.oversizeColdSubtypeSettings,...(current.oversizeColdSubtypeSettings||{}),...(payload.oversizeColdSubtypeSettings||{})},\n  oversizeDestinationSettings:{...defaults.oversizeDestinationSettings,...(current.oversizeDestinationSettings||{}),...(payload.oversizeDestinationSettings||{})},
+  oversizeColdSubtypeSettings:{...defaults.oversizeColdSubtypeSettings,...(current.oversizeColdSubtypeSettings||{}),...(payload.oversizeColdSubtypeSettings||{})},
+  oversizeDestinationSettings:{...defaults.oversizeDestinationSettings,...(current.oversizeDestinationSettings||{}),...(payload.oversizeDestinationSettings||{})},
   coldSubtypeSettings:{
    DC2:{...defaults.coldSubtypeSettings.DC2,...((current.coldSubtypeSettings&&current.coldSubtypeSettings.DC2)||{}),...(sourceCold.DC2||{})},
    DC3:{...defaults.coldSubtypeSettings.DC3,...((current.coldSubtypeSettings&&current.coldSubtypeSettings.DC3)||{}),...(sourceCold.DC3||{})}
