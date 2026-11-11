@@ -41,7 +41,7 @@ async function save(payload){
  const row=updated[0],check={...defaults,...(row.payload||{}),tasks:Array.isArray(row.payload&&row.payload.tasks)?row.payload.tasks:[],masterTasks:Array.isArray(row.payload&&row.payload.masterTasks)?row.payload.masterTasks:[],revision:Number(row.revision),updated_at:row.updated_at};
  const sameTasks=(a,b)=>{
   if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length)return false;
-  const sig=t=>JSON.stringify([String((t&&t.id)??''),String((t&&t.warehouse)??''),String((t&&t.aisle)??''),String((t&&t.slot)??''),String((t&&t.position)??''),String((t&&t.box)??''),String((t&&t.category)??''),String((t&&t.priority)??''),!!(t&&t.done),String((t&&t.done_at)??''),String((t&&t.order)??'')]);
+  const sig=t=>JSON.stringify([String((t&&t.id)??''),String((t&&t.warehouse)??''),String((t&&t.aisle)??''),String((t&&t.slot)??''),String((t&&t.position)??''),String((t&&t.box)??''),String((t&&t.category)??''),String((t&&t.priority)??''),String((t&&t.destination)??''),!!(t&&t.done),String((t&&t.done_at)??''),String((t&&t.order)??'')]);
   return a.every((t,i)=>sig(t)===sig(b[i]));
  };
  if(check.revision!==nextRevision||!sameTasks(check.tasks,nextPayload.tasks)||!sameTasks(check.masterTasks,nextPayload.masterTasks))throw new Error('Server nepotvrdil přesně uložený seznam boxů. Aktualizujte data a zkontrolujte výsledek.');
