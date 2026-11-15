@@ -316,7 +316,7 @@ $('boxPickFile').onchange=async e=>{
   for(let i=0;i<rows.length;i++){
    const row=rows[i],warehouseRaw=String(row[col('Sklad')]??'').trim().toUpperCase(),position=String(row[col('Pozice')]??'').trim(),box=String(row[col('Box')]??'').trim();
    const statusRaw=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-   const statusOk=statusRaw==='novy';
+   const statusOk=statusRaw==='1'||statusRaw==='novy';
    const priorityRaw=String(row[col('Priorita')]??'').trim().replace(',','.');
    const priority=priorityRaw===''?NaN:Number(priorityRaw),category=Number.isInteger(priority)?cats[priority]:undefined;
    const destinationRaw=String(destinationColumn?row[destinationColumn]??'':'').trim().toUpperCase(),destinationMatch=destinationRaw.match(/^(RO|IT|PL)/),destination=destinationMatch?destinationMatch[1]:'';
