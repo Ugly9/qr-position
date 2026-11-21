@@ -515,7 +515,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
 (function(){
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
- let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false,floorFilterSaveBusy=false,floorFilterSaveVersion=0;
+ let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false,floorFilterSaveQueue=Promise.resolve(),floorFilterSavingCounts={DC2:0,DC3:0};
  const FLOOR_DEFAULT_CATEGORIES={HOT:true,COLD:true,DC:true,MANUAL:true,FastPick:true};
  const FLOOR_DEFAULT_COLD={'1':true,'2':true,fastpick:true};
  let floorCategories={...FLOOR_DEFAULT_CATEGORIES},floorCold={...FLOOR_DEFAULT_COLD};
@@ -538,25 +538,20 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   return floorCategories[t&&t.category]!==false;
  }
  async function saveFloorFilters(){
-  floorFilterSaveVersion++;
-  if(floorFilterSaveBusy)return;
-  floorFilterSaveBusy=true;
+  const warehouse=floorWarehouse,categories={...floorCategories},cold={...floorCold};
+  floorFilterSavingCounts[warehouse]=(floorFilterSavingCounts[warehouse]||0)+1;
   $('boxFloorFilterStatus').textContent='Ukládám výběr kategorií na server…';
-  try{
-   let saved=null,warehouse=floorWarehouse,version=0;
-   do{
-    version=floorFilterSaveVersion;
-    warehouse=floorWarehouse;
-    const categories={...floorCategories},cold={...floorCold};
-    saved=await QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}});
-    if(version===floorFilterSaveVersion&&warehouse===floorWarehouse){
-     loadFloorFilters(saved);renderFloorList();
-     $('boxFloorFilterStatus').textContent='✓ Kategorie '+warehouse+' uloženy a synchronizovány.';
-     $('boxFloorFreshness').textContent='Nastavení kategorií uloženo · revize '+saved.revision;
-    }
-   }while(warehouse!==floorWarehouse||floorFilterSaveVersion!==version);
-  }catch(e){$('boxFloorFilterStatus').textContent='✕ Filtry se nepodařilo uložit: '+String(e&&e.message||e)+'. Zkontrolujte připojení.'}
-  finally{floorFilterSaveBusy=false}
+  const work=floorFilterSaveQueue.catch(()=>{}).then(()=>QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}}));
+  floorFilterSaveQueue=work;
+  let saved=null,error=null;
+  try{saved=await work}catch(e){error=e}
+  finally{
+   floorFilterSavingCounts[warehouse]=Math.max(0,(floorFilterSavingCounts[warehouse]||1)-1);
+   if(warehouse===floorWarehouse&&floorFilterSavingCounts[warehouse]===0){
+    if(saved){loadFloorFilters(saved);renderFloorList();$('boxFloorFilterStatus').textContent='✓ Kategorie '+warehouse+' uloženy a synchronizovány.';$('boxFloorFreshness').textContent='Nastavení kategorií uloženo · revize '+saved.revision}
+    else if(error)$('boxFloorFilterStatus').textContent='✕ Filtry se nepodařilo uložit: '+String(error&&error.message||error)+'. Zkontrolujte připojení.';
+   }
+  }
  }
  document.querySelectorAll('[data-floor-category]').forEach(x=>x.addEventListener('change',()=>{floorCategories[x.dataset.floorCategory]=x.checked;renderFloorList();saveFloorFilters()}));
  document.querySelectorAll('[data-floor-cold]').forEach(x=>x.addEventListener('change',()=>{floorCold[x.dataset.floorCold]=x.checked;renderFloorList();saveFloorFilters()}));
@@ -604,7 +599,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const current=await QRBoxPickingSync.get();
    tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
    publishedTasks=Array.isArray(current.tasks)?current.tasks:[];
-   if(!floorFilterSaveBusy)loadFloorFilters(current);
+   if(!(floorFilterSavingCounts[floorWarehouse]||0))loadFloorFilters(current);
    renderFloorList();
    const total=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
    const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)&&floorPassesCategory(t)).length;
