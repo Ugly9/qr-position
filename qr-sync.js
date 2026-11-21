@@ -38,12 +38,89 @@ function sameOp(a,b){return aisleKey(a)===aisleKey(b)&&a.action===b.action&&a.op
 function applyWorkingOps(rows,ops){const out=(rows||[]).map(x=>({...x}));for(const op of ops){const key=aisleKey(op),i=out.findIndex(x=>aisleKey(x)===key);if(op.action==='remove'){if(i>=0)out.splice(i,1)}else if(op.action==='add'){const v={warehouse:op.warehouse,aisle:Number(op.aisle),worker_id:op.worker_id,updated_at:op.updated_at||new Date().toISOString()};if(i>=0)out[i]=v;else out.push(v)}}return out}
 function queueWorkingOp(op){savePendingWork(pendingWork().filter(x=>aisleKey(x)!==aisleKey(op)).concat(op));saveWorkingCache(applyWorkingOps(readJSON('qr-working-cache-v1',[]),[op]));workingStateVersion++}
 function removeQueuedOp(op){savePendingWork(pendingWork().filter(x=>!sameOp(x,op)));workingStateVersion++}
-async function syncPendingWork(){if(typeof navigator!=='undefined'&&navigator.onLine===false)return;if(workingSyncPromise)return workingSyncPromise;workingSyncPromise=(async()=>{let pass=0;while(pass++<30&&!(typeof navigator!=='undefined'&&navigator.onLine===false)){const ops=pendingWork();if(!ops.length)break;let failed=false;for(const op of ops){const key=aisleKey(op),now=pendingWork().find(x=>aisleKey(x)===key);if(!now||!sameOp(now,op))continue;try{if(op.action==='add'){await req('qr_working_aisles?on_conflict=warehouse,aisle',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({warehouse:op.warehouse,aisle:Number(op.aisle),worker_id:op.worker_id,updated_at:op.updated_at})});const verify=await req('qr_working_aisles?select=warehouse,aisle,worker_id&warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle));const row=(verify||[]).find(x=>aisleKey(x)===key),cur=pendingWork().find(x=>aisleKey(x)===key);if(!cur||!sameOp(cur,op))continue;if(!row||row.worker_id!==op.worker_id)throw new Error('Server nepotvrdil označení')}else if(op.action==='remove'){await req('qr_working_aisles?warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle),{method:'DELETE'});const verify=await req('qr_working_aisles?select=warehouse,aisle,worker_id&warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle));const cur=pendingWork().find(x=>aisleKey(x)===key);if(!cur||!sameOp(cur,op))continue;if((verify||[]).some(x=>aisleKey(x)===key))throw new Error('Server nepotvrdil zrušení')}else{removeQueuedOp(op);continue}removeQueuedOp(op);saveWorkingCache(applyWorkingOps(readJSON('qr-working-cache-v1',[]),[op]))}catch(e){const cur=pendingWork().find(x=>aisleKey(x)===key);if(cur&&sameOp(cur,op))failed=true}}if(failed)break}})();try{await workingSyncPromise}finally{workingSyncPromise=null}}
+async function syncPendingWork(){
+ if(typeof navigator!=='undefined'&&navigator.onLine===false)return;
+ if(workingSyncPromise)return workingSyncPromise;
+ workingSyncPromise=(async()=>{
+  let pass=0;
+  while(pass++<30&&!(typeof navigator!=='undefined'&&navigator.onLine===false)){
+   const ops=pendingWork();
+   if(!ops.length)break;
+   let failed=false;
+   for(const op of ops){
+    const key=aisleKey(op),now=pendingWork().find(x=>aisleKey(x)===key);
+    if(!now||!sameOp(now,op))continue;
+    try{
+     // A map replacement or global clear invalidates offline aisle actions.
+     // Never replay a marker that belongs to an older map revision.
+     const liveMapRevision=await readListRevision();
+     const opMapRevision=Number(op.map_revision);
+     if(Number.isSafeInteger(opMapRevision)&&opMapRevision!==liveMapRevision){
+      removeQueuedOp(op);
+      continue;
+     }
+     if(op.action==='add'){
+      await req('qr_working_aisles?on_conflict=warehouse,aisle',{
+       method:'POST',
+       headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+       body:JSON.stringify({warehouse:op.warehouse,aisle:Number(op.aisle),worker_id:op.worker_id,updated_at:op.updated_at})
+      });
+      const verify=await req('qr_working_aisles?select=warehouse,aisle,worker_id&warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle));
+      const row=(verify||[]).find(x=>aisleKey(x)===key),cur=pendingWork().find(x=>aisleKey(x)===key);
+      if(!cur||!sameOp(cur,op))continue;
+      if(!row||row.worker_id!==op.worker_id)throw new Error('Server nepotvrdil označení');
+     }else if(op.action==='remove'){
+      await req('qr_working_aisles?warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle),{method:'DELETE'});
+      const verify=await req('qr_working_aisles?select=warehouse,aisle,worker_id&warehouse=eq.'+encodeURIComponent(op.warehouse)+'&aisle=eq.'+Number(op.aisle));
+      const cur=pendingWork().find(x=>aisleKey(x)===key);
+      if(!cur||!sameOp(cur,op))continue;
+      if((verify||[]).some(x=>aisleKey(x)===key))throw new Error('Server nepotvrdil zrušení');
+     }else{
+      removeQueuedOp(op);
+      continue;
+     }
+     removeQueuedOp(op);
+     saveWorkingCache(applyWorkingOps(readJSON('qr-working-cache-v1',[]),[op]));
+    }catch(e){
+     const cur=pendingWork().find(x=>aisleKey(x)===key);
+     if(cur&&sameOp(cur,op))failed=true;
+    }
+   }
+   if(failed)break;
+  }
+ })();
+ try{await workingSyncPromise}finally{workingSyncPromise=null}
+}
 async function getWorkingAisles(){await syncPendingWork();const version=workingStateVersion;let rows=readJSON('qr-working-cache-v1',[]);if(!(typeof navigator!=='undefined'&&navigator.onLine===false)){try{const fresh=await req('qr_working_aisles?select=warehouse,aisle,worker_id,updated_at&order=warehouse,aisle');if(version===workingStateVersion){rows=fresh||[];saveWorkingCache(rows)}else rows=readJSON('qr-working-cache-v1',rows)}catch(e){}}return applyWorkingOps(rows,pendingWork())}
 async function markWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'add',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,worker_id:op.worker_id,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
 async function clearWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'remove',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
 async function replaceAll(rows,expectedRevision){if(!Array.isArray(rows))throw new Error('Nový seznam nemá správný formát');expectedRevision=Number(expectedRevision);if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1)throw new Error('Chybí platná verze seznamu při zahájení operace. Obnovte stránku a zkuste znovu.');const clean=rows.map(x=>({warehouse:String(x.warehouse),aisle:Number(x.aisle),position:Number(x.position)}));if(clean.some(x=>!['DC2','DC3'].includes(x.warehouse)||!Number.isInteger(x.aisle)||!Number.isInteger(x.position)||(x.warehouse==='DC2'&&(x.aisle<12||x.aisle>123||x.position<1||x.position>168))||(x.warehouse==='DC3'&&(x.aisle<1||x.aisle>41||x.position<1||x.position>148))))throw new Error('Nový seznam obsahuje neplatné pozice');const seen=new Set();for(const x of clean){const k=x.warehouse+'|'+x.aisle+'|'+x.position;if(seen.has(k))throw new Error('Nový seznam obsahuje duplicitní pozici: '+k);seen.add(k)}const result=await req('rpc/replace_qr_free_positions_v2',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_rows:clean,p_expected_revision:expectedRevision})});const count=Number(result&&result.count),revision=Number(result&&result.revision);if(!Number.isInteger(count)||count!==clean.length||!Number.isSafeInteger(revision)||revision<expectedRevision)throw new Error('Server nepotvrdil úplnou náhradu seznamu. Očekáváno '+clean.length+' pozic, potvrzenо '+(Number.isFinite(count)?count:'neznámý počet')+'.');listRevision=revision;try{localStorage.setItem('qr-map-revision-cache-v1',String(revision))}catch(_){}return clean.map(x=>({...x,occupied:false}))}
 async function clearAll(expectedRevision){const revision=Number.isSafeInteger(Number(expectedRevision))?Number(expectedRevision):await readListRevision();if(!Number.isSafeInteger(revision)||revision<1)throw new Error('Chybí platná verze seznamu pro smazání. Obnovte stránku a zkuste znovu.');const result=await req('rpc/clear_qr_free_positions_v1',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_expected_revision:revision})});if(!result||Number(result.count)!==0||Number(result.revision)<=revision)throw new Error('Server nepotvrdil smazání seznamu.');listRevision=Number(result.revision);dataRevision=Number(result.data_revision||dataRevision||1);try{localStorage.setItem('qr-map-revision-cache-v1',String(listRevision))}catch(_){}return result}
+async function clearAllLists(expectedMapRevision,expectedBoxRevision){
+ const mapRevision=Number(expectedMapRevision),boxRevision=Number(expectedBoxRevision);
+ if(!Number.isSafeInteger(mapRevision)||mapRevision<1||!Number.isSafeInteger(boxRevision)||boxRevision<1){
+  throw new Error('Chybí platná verze mapy nebo seznamu boxů. Obnovte stránku a zkuste znovu.');
+ }
+ const result=await req('rpc/clear_qr_all_lists_v1',{
+  method:'POST',
+  headers:{Prefer:'return=representation'},
+  body:JSON.stringify({p_expected_map_revision:mapRevision,p_expected_box_revision:boxRevision})
+ });
+ const nextMapRevision=Number(result&&result.map_revision),nextBoxRevision=Number(result&&result.box_revision);
+ if(!result||result.ok!==true||result.cleared!==true||nextMapRevision<=mapRevision||nextBoxRevision<=boxRevision||
+    Number(result.deleted_map_rows)<0||Number(result.deleted_working_aisles)<0||
+    Number(result.deleted_published_tasks)<0||Number(result.deleted_master_tasks)<0){
+  throw new Error('Server nepotvrdil úplné smazání všech seznamů.');
+ }
+ listRevision=nextMapRevision;
+ dataRevision=Number(result.map_data_revision||dataRevision||1);
+ try{localStorage.setItem('qr-map-revision-cache-v1',String(listRevision))}catch(_){}
+ // The map clear also removes the shared working-aisle table. Drop this
+ // device's optimistic and queued copies so they cannot mask the empty state.
+ try{savePendingWork([]);saveWorkingCache([])}catch(_){}
+ workingStateVersion++;
+ return result;
+}
 async function hasList(){return (await allRows()).length>0}
-window.QRPositionSync={init,refresh,allOccupied,markOccupied,replaceAll,clearAll,getListRevision:readListRevision,getDataRevision:readDataRevision,getVersion:readVersion,getSnapshot, getMapRevision:readListRevision,getWorkingAisles,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll,allPositions:stableRecords};
+window.QRPositionSync={init,refresh,allOccupied,markOccupied,replaceAll,clearAll,clearAllLists,getListRevision:readListRevision,getDataRevision:readDataRevision,getVersion:readVersion,getSnapshot, getMapRevision:readListRevision,getWorkingAisles,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll,allPositions:stableRecords};
 })();
