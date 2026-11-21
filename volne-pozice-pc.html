@@ -14,7 +14,41 @@
 <section class="panel"><div class="row" style="align-items:center;margin-bottom:14px"><h2 style="margin:0;flex:1">Priorita uliček</h2><span class="badge" id="dcLabel">Vyberte DC2 nebo DC3</span></div><div class="row" style="margin-bottom:14px"><button class="btn" id="toggleOccupied">Zobrazit všechny obsazené pozice</button><button class="btn" id="refreshOccupied">Aktualizovat</button></div><div id="occupiedList" class="occupied-list" style="display:none;margin-bottom:16px"><div class="empty">Vyberte DC2 nebo DC3.</div></div><div class="layout" style="grid-template-columns:minmax(240px,.9fr) minmax(0,1.1fr);gap:14px" id="content">
 <div id="streetList" class="street-list"><div class="empty">Vyberte sklad vlevo. Uličky se seřadí podle počtu volných pozic.</div></div>
 <div id="positionPane"><div class="empty">Vyberte uličku vlevo. Zobrazí se pozice označené v mobilní verzi jako obsazené.</div></div>
-</div></section></div><section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><p class="muted">Filtry importu: vybraný sklad; Stav 1 (Nový); platná Priorita a Box. DC3 se rozdělí podle patra: 00 pozice a Nadrozměry (01). Zóna nerozhoduje.</p><div class="row" id="boxPickWarehouses" style="margin:14px 0"><button class="btn primary" type="button" data-box-warehouse="DC2">DC2 · Vyskladnění boxů</button><button class="btn" type="button" data-box-warehouse="DC3">DC3 · Vyskladnění boxů</button></div><div class="status" id="boxPickWarehouseStatus">Zobrazen sklad DC2.</div><div class="warehouse" id="boxPickLevels" style="margin:12px 0;display:none"><button class="btn primary" type="button" data-box-level="00"><strong>00 pozice</strong><small>Běžné pozice</small></button><button class="btn" type="button" data-box-level="01"><strong>Nadrozměry</strong><small>Pozice na 1. patře</small></button></div><div class="upload"><strong id="boxPickUploadTitle">Excel soubor pro DC2</strong><div class="status">Každý sklad má vlastní Excel import. Soubor nahradí pouze seznam vybraného skladu.</div><input id="boxPickFile" type="file" accept=".xlsx,.xls,.csv"><div class="row" style="margin-top:10px"><button class="btn" type="button" id="boxPickRefreshButton">↻ Aktualizovat seznam ze serveru</button></div><div id="boxPickStatus" class="status">Soubor zatím není načten.</div><div id="boxPickFreshness" class="status">Poslední synchronizace: zatím neověřena.</div></div><h3>Kategorie k vyskladnění</h3><div id="oversizeDestinationFilters" class="row" style="display:none;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px"><strong style="width:100%">Cílový sklad — podtypy Nadrozměrů (sloupec U)</strong><label><input type="checkbox" data-oversize-destination="RO" checked> RO</label><label><input type="checkbox" data-oversize-destination="IT" checked> IT</label><label><input type="checkbox" data-oversize-destination="PL" checked> PL</label></div><div class="row" id="boxPickCategories"><label><input type="checkbox" data-category="HOT" checked> HOT</label><label><input type="checkbox" data-category="DC" checked> DC</label><label><input type="checkbox" data-category="MANUAL" checked> MANUAL</label></div><details id="coldSubtypeDetails" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">COLD — vybrat podtypy</summary><div class="row" id="coldSubtypeFilters" style="margin-top:12px;display:flex;flex-direction:column;align-items:flex-start"><label><input type="checkbox" data-cold-subtype="1" checked> COLD 1. PRIORITA · 17 %</label><label><input type="checkbox" data-cold-subtype="2" checked> COLD 2. PRIORITA · 100 %</label><label><input type="checkbox" data-cold-subtype="fastpick" checked> COLD FASTPICK</label></div><div class="row" style="margin-top:10px"><button type="button" class="btn" id="coldSelectAll">Vybrat všechny COLD</button><button type="button" class="btn" id="coldSelectNone">Zrušit výběr</button></div><div class="status" style="margin-top:7px">Výběr určuje, které boxy z aktuálního skladu budou zahrnuty při publikování do telefonu.</div></details><div class="row" style="margin:14px 0"><button class="btn primary" id="publishBoxPick">Publikovat do telefonu</button><button class="btn" id="deleteBoxPick">Smazat seznam</button></div><div class="stats"><div class="stat"><b id="boxPickCount">0</b><span>Boxů</span></div><div class="stat"><b id="boxPickAisles">0</b><span>Uliček</span></div><div class="stat"><b id="boxPickDone">0</b><span>Vyskladněno</span></div></div><div id="boxPickPreview" class="street-list"><div class="empty">Nahrajte Excel soubor.</div></div></section></main>
+</div></section></div><section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><div class="row" id="boxPickModeSwitch" style="margin:14px 0">
+ <button class="btn primary" type="button" data-box-floor-mode="standard">00 pozice / Nadrozměry</button>
+ <button class="btn" type="button" data-box-floor-mode="floors">Patra 1–6</button>
+</div>
+<div id="legacyBoxPickMode">
+<p class="muted">Filtry importu: vybraný sklad; Stav 1 (Nový); platná Priorita a Box. DC3 se rozdělí podle patra: 00 pozice a Nadrozměry (01). Zóna nerozhoduje.</p><div class="row" id="boxPickWarehouses" style="margin:14px 0"><button class="btn primary" type="button" data-box-warehouse="DC2">DC2 · Vyskladnění boxů</button><button class="btn" type="button" data-box-warehouse="DC3">DC3 · Vyskladnění boxů</button></div><div class="status" id="boxPickWarehouseStatus">Zobrazen sklad DC2.</div><div class="warehouse" id="boxPickLevels" style="margin:12px 0;display:none"><button class="btn primary" type="button" data-box-level="00"><strong>00 pozice</strong><small>Běžné pozice</small></button><button class="btn" type="button" data-box-level="01"><strong>Nadrozměry</strong><small>Pozice na 1. patře</small></button></div><div class="upload"><strong id="boxPickUploadTitle">Excel soubor pro DC2</strong><div class="status">Každý sklad má vlastní Excel import. Soubor nahradí pouze seznam vybraného skladu.</div><input id="boxPickFile" type="file" accept=".xlsx,.xls,.csv"><div class="row" style="margin-top:10px"><button class="btn" type="button" id="boxPickRefreshButton">↻ Aktualizovat seznam ze serveru</button></div><div id="boxPickStatus" class="status">Soubor zatím není načten.</div><div id="boxPickFreshness" class="status">Poslední synchronizace: zatím neověřena.</div></div><h3>Kategorie k vyskladnění</h3><div id="oversizeDestinationFilters" class="row" style="display:none;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px"><strong style="width:100%">Cílový sklad — podtypy Nadrozměrů (sloupec U)</strong><label><input type="checkbox" data-oversize-destination="RO" checked> RO</label><label><input type="checkbox" data-oversize-destination="IT" checked> IT</label><label><input type="checkbox" data-oversize-destination="PL" checked> PL</label></div><div class="row" id="boxPickCategories"><label><input type="checkbox" data-category="HOT" checked> HOT</label><label><input type="checkbox" data-category="DC" checked> DC</label><label><input type="checkbox" data-category="MANUAL" checked> MANUAL</label></div><details id="coldSubtypeDetails" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">COLD — vybrat podtypy</summary><div class="row" id="coldSubtypeFilters" style="margin-top:12px;display:flex;flex-direction:column;align-items:flex-start"><label><input type="checkbox" data-cold-subtype="1" checked> COLD 1. PRIORITA · 17 %</label><label><input type="checkbox" data-cold-subtype="2" checked> COLD 2. PRIORITA · 100 %</label><label><input type="checkbox" data-cold-subtype="fastpick" checked> COLD FASTPICK</label></div><div class="row" style="margin-top:10px"><button type="button" class="btn" id="coldSelectAll">Vybrat všechny COLD</button><button type="button" class="btn" id="coldSelectNone">Zrušit výběr</button></div><div class="status" style="margin-top:7px">Výběr určuje, které boxy z aktuálního skladu budou zahrnuty při publikování do telefonu.</div></details><div class="row" style="margin:14px 0"><button class="btn primary" id="publishBoxPick">Publikovat do telefonu</button><button class="btn" id="deleteBoxPick">Smazat seznam</button></div><div class="stats"><div class="stat"><b id="boxPickCount">0</b><span>Boxů</span></div><div class="stat"><b id="boxPickAisles">0</b><span>Uliček</span></div><div class="stat"><b id="boxPickDone">0</b><span>Vyskladněno</span></div></div><div id="boxPickPreview" class="street-list"><div class="empty">Nahrajte Excel soubor.</div></div>
+</div>
+<div id="floorBoxPickMode" style="display:none">
+ <p class="muted">Samostatný režim pater. DC2: 1–6. DC3: 3–6. Excel se ukládá pro vybraný sklad a patro; ostatní seznamy zůstávají beze změny.</p>
+ <div class="row" style="margin:14px 0">
+  <button class="btn primary" type="button" data-box-floor-warehouse="DC2">DC2 · Patra</button>
+  <button class="btn" type="button" data-box-floor-warehouse="DC3">DC3 · Patra</button>
+ </div>
+ <div class="warehouse" id="boxFloorLevels" style="margin:12px 0">
+  <button class="btn primary" type="button" data-box-floor-level="01"><strong>1. patro</strong><small>01 pozice</small></button><button class="btn" type="button" data-box-floor-level="02"><strong>2. patro</strong><small>02 pozice</small></button><button class="btn" type="button" data-box-floor-level="03"><strong>3. patro</strong><small>03 pozice</small></button><button class="btn" type="button" data-box-floor-level="04"><strong>4. patro</strong><small>04 pozice</small></button><button class="btn" type="button" data-box-floor-level="05"><strong>5. patro</strong><small>05 pozice</small></button><button class="btn" type="button" data-box-floor-level="06"><strong>6. patro</strong><small>06 pozice</small></button>
+ </div>
+ <div class="upload">
+  <strong id="boxFloorUploadTitle">Excel soubor pro DC2 · 1. patro</strong>
+  <div class="status">Stejný formát Excel jako dosud. Import přepíše pouze vybraný sklad a patro.</div>
+  <input id="boxFloorFile" type="file" accept=".xlsx,.xls,.csv">
+  <div class="row" style="margin-top:10px">
+   <button class="btn" type="button" id="boxFloorRefresh">↻ Aktualizovat seznam ze serveru</button>
+   <button class="btn primary" type="button" id="boxFloorPublish">Publikovat patro do телефону</button>
+   <button class="btn" type="button" id="boxFloorDelete">Smazat seznam patra</button>
+  </div>
+  <div id="boxFloorStatus" class="status">Vyberte sklad, patro a nahrajte Excel.</div>
+  <div id="boxFloorFreshness" class="status">Synchronizace: zatím neověřena.</div>
+ </div>
+ <div class="stats">
+  <div class="stat"><b id="boxFloorCount">0</b><span>Boxů</span></div>
+  <div class="stat"><b id="boxFloorAisles">0</b><span>Uliček</span></div>
+  <div class="stat"><b id="boxFloorDone">0</b><span>Vyskladněno</span></div>
+ </div>
+ <div id="boxFloorPreview" class="street-list"><div class="empty">Nahrajte Excel soubor для выбранного этажа.</div></div>
+</div></section></main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=52"></script><script src="./qr-box-sync.js?v=29"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
@@ -465,6 +499,173 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  },true);
 })();
 </script><script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
+ let floorWarehouse='DC2',floorLevel='01',floorBusy=false;
+ const getLevel=position=>{const m=String(position??'').trim().match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,2})\\s*$/);return m?m[3].padStart(2,'0'):null};
+ const allowed=(warehouse,level)=>warehouse==='DC2'?/^0[1-6]$/.test(level):warehouse==='DC3'?/^0[3-6]$/.test(level):false;
+ const floorLabel=()=>Number(floorLevel)+'. patro ('+floorLevel+')';
+ function renderSelectors(){
+  document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.boxFloorWarehouse===floorWarehouse));
+  document.querySelectorAll('[data-box-floor-level]').forEach(b=>{const n=b.dataset.boxFloorLevel;b.hidden=floorWarehouse==='DC3'&&Number(n)<3;b.disabled=!allowed(floorWarehouse,n);b.classList.toggle('primary',n===floorLevel)});
+  $('boxFloorUploadTitle').textContent='Excel soubor pro '+floorWarehouse+' · '+floorLabel();
+ }
+ function showMode(mode){
+  const floors=mode==='floors';
+  $('legacyBoxPickMode').style.display=floors?'none':'block';
+  $('floorBoxPickMode').style.display=floors?'block':'none';
+  document.querySelectorAll('[data-box-floor-mode]').forEach(b=>b.classList.toggle('primary',b.dataset.boxFloorMode===mode));
+  if(floors)refreshFloorState();
+ }
+ function renderFloorList(){
+  const all=(Array.isArray(tasks)?tasks:[]).filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel);
+  const doneIds=new Set([...(Array.isArray(tasks)?tasks:[]),...(Array.isArray(publishedTasks)?publishedTasks:[])].filter(t=>t&&t.done).map(t=>String(t.id)));
+  const groups=new Map();
+  all.forEach(t=>{const aisle=Number(t.aisle),pair=floorWarehouse==='DC3'?(aisle===1?1:(aisle%2===0?aisle:aisle-1)):(aisle%2===0?aisle:aisle-1);if(!groups.has(pair))groups.set(pair,[]);groups.get(pair).push(t)});
+  $('boxFloorCount').textContent=all.length;
+  $('boxFloorAisles').textContent=groups.size;
+  $('boxFloorDone').textContent=all.filter(t=>doneIds.has(String(t.id))).length;
+  const root=$('boxFloorPreview');root.innerHTML='';
+  [...groups.entries()].sort((a,b)=>a[0]-b[0]).forEach(([aisle,rows])=>{
+   rows.sort((a,b)=>Number(a.slot)-Number(b.slot)||String(a.box).localeCompare(String(b.box)));
+   const card=document.createElement('div');card.className='street';
+   const top=document.createElement('div');top.className='street-top';
+   const title=document.createElement('h3');title.textContent='Ulička '+aisle+(floorWarehouse==='DC3'&&aisle===1?'':'–'+(aisle+1));
+   const count=document.createElement('span');count.className='box-pick-count';count.textContent=rows.length;top.append(title,count);card.append(top);
+   const detail=document.createElement('div');detail.className='muted';detail.textContent=rows.slice(0,8).map(t=>String(t.box)+' ('+String(t.position)+')').join(' · ')+(rows.length>8?' …':'');card.append(detail);root.append(card);
+  });
+  if(!all.length)root.innerHTML='<div class="empty">Для '+floorWarehouse+' / '+floorLabel()+' поки немає boxів. Завантажте Excel.</div>';
+ }
+ async function refreshFloorState(){
+  if(floorBusy)return;
+  $('boxFloorStatus').textContent='Завантажую '+floorWarehouse+' / '+floorLabel()+' із сервера…';
+  try{
+   const current=await QRBoxPickingSync.get();
+   tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
+   publishedTasks=Array.isArray(current.tasks)?current.tasks:[];
+   renderFloorList();
+   const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
+   const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
+   $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxів у головному списку, '+published+' опубліковано в телефон.';
+   $('boxFloorFreshness').textContent='Серверна ревізія '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'час недоступний');
+  }catch(e){$('boxFloorStatus').textContent='Помилка синхронізації: '+String(e&&e.message||e)}
+ }
+ async function importFloor(file){
+  if(floorBusy)return;
+  if(!file)return;
+  if(!navigator.onLine){$('boxFloorStatus').textContent='Для імпорту потрібне підключення до сервера.';$('boxFloorFile').value='';return}
+  if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Це patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
+  floorBusy=true;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
+  try{
+   if(!window.XLSX)throw new Error('Knihovna Excelu se nenačetla.');
+   const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),sheet=wb.Sheets[wb.SheetNames[0]];
+   if(!sheet)throw new Error('V Excelu chybí první list.');
+   const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});
+   if(!rows.length)throw new Error('Soubor neobsahuje žádné datové řádky.');
+   const headers=Object.keys(rows[0]),norm=v=>String(v??'').trim().toLocaleLowerCase('cs'),col=n=>headers.find(h=>norm(h)===norm(n));
+   const required=['Sklad','Box','Pozice','Stav','Priorita'],missing=required.filter(n=>!col(n));
+   if(missing.length)throw new Error('Chybí povinné sloupce: '+missing.join(', '));
+   const next=[],reject={warehouse:0,status:0,position:0,box:0,priority:0},seen=new Set(),ids=new Map();let duplicates=0;
+   for(let i=0;i<rows.length;i++){
+    const row=rows[i],wh=String(row[col('Sklad')]??'').trim().toUpperCase(),box=String(row[col('Box')]??'').trim(),position=String(row[col('Pozice')]??'').trim();
+    const status=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    const statusOk=status==='1'||status==='novy';
+    const priorityRaw=String(row[col('Priorita')]??'').trim().replace(',','.'),priority=priorityRaw===''?NaN:Number(priorityRaw),category=Number.isInteger(priority)?priorityCategories[priority]:undefined;
+    const match=position.match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{2})\\s*$/);
+    if(wh!=='CZSYR2'&&wh!=='CZSYR3'){reject.warehouse++;continue}
+    if(!statusOk){reject.status++;continue}
+    if(!match||match[3]!==floorLevel||!allowed(floorWarehouse,match[3])){reject.position++;continue}
+    if(!box){reject.box++;continue}
+    if(!category){reject.priority++;continue}
+    const warehouse=wh==='CZSYR2'?'DC2':'DC3';if(warehouse!==floorWarehouse){reject.warehouse++;continue}
+    const aisle=Number(match[1]),slot=Number(match[2]),within=warehouse==='DC2'?(aisle>=12&&aisle<=123&&slot>=1&&slot<=168):(aisle>=1&&aisle<=41&&slot>=1&&slot<=148);
+    if(!within){reject.position++;continue}
+    const key=wh+'|'+box+'|'+position;if(seen.has(key)){duplicates++;continue}seen.add(key);
+    const rawId=String(row[col('Id')]??'').trim(),id=rawId||key;
+    if(ids.has(id))throw new Error('Duplicitní ID '+id+' v řádcích '+ids.get(id)+' a '+(i+2)+'.');
+    ids.set(id,i+2);next.push({id,warehouse,aisle,slot,position,box,category,priority,destination:'',done:false,order:i});
+   }
+   next.sort((a,b)=>a.aisle-b.aisle||a.slot-b.slot||a.order-b.order);
+   if(!next.length)throw new Error('Po kontrole nezůstal žádný box pro '+floorWarehouse+' / '+floorLabel()+'. Vyřazeno: '+JSON.stringify(reject));
+   let saved=null,lastError=null;
+   for(let attempt=0;attempt<3&&!saved;attempt++){
+    try{
+     const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+     const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!same(t)),...next];
+     const mergedPublished=[...(current.tasks||[]).filter(t=>!same(t)),...next];
+     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
+    }catch(e){lastError=e;if(!/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(e&&e.message||e))||attempt===2)throw e;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)))}
+   }
+   if(!saved)throw lastError||new Error('Server nepotvrdil import.');
+   const savedMaster=saved.masterTasks||[],savedPublished=saved.tasks||[];
+   if(savedMaster.filter(sameFloor).length!==next.length||savedPublished.filter(sameFloor).length!==next.length)throw new Error('Server nepotvrdil celý import.');
+   function sameFloor(t){return t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel}
+   tasks=savedMaster;publishedTasks=savedPublished;renderFloorList();
+   const rejected=Object.entries(reject).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'žádné';
+   $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Повторні рядки: '+duplicates+'. Відхилено: '+rejected+'. Інші поверхи не змінено.';
+   $('boxFloorFreshness').textContent='Ревізія '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'час недоступний');
+  }catch(e){$('boxFloorStatus').textContent='✕ Імпорт не виконано: '+String(e&&e.message||e)+'. Попередній список збережено.'}
+  finally{floorBusy=false;$('boxFloorFile').disabled=false;$('boxFloorFile').value=''}
+ }
+ async function publishFloor(){
+  if(floorBusy)return;floorBusy=true;$('boxFloorPublish').disabled=true;
+  try{
+   let saved=null,lastError=null;
+   for(let attempt=0;attempt<3&&!saved;attempt++){
+    try{
+     const current=await QRBoxPickingSync.get(),source=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
+     const done=new Map();for(const t of [...source,...(current.tasks||[])])if(t&&t.done)done.set(String(t.id),t);
+     const same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+     const master=source.filter(t=>t&&t.warehouse===floorWarehouse).map(t=>{const old=done.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
+     const selected=master.filter(same);
+     if(!selected.length)throw new Error('Nejdříve nahrajte Excel pro vybraný povrch.');
+     const publishedOther=(current.tasks||[]).filter(t=>t&&t.warehouse===floorWarehouse&&!same(t));
+     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:[...publishedOther,...selected],masterTasks:master,categoriesByWarehouse:{[floorWarehouse]:(current.categoriesByWarehouse||{})[floorWarehouse]},coldSubtypeSettings:{[floorWarehouse]:(current.coldSubtypeSettings||{})[floorWarehouse]}});
+    }catch(e){lastError=e;if(!/konflikt|změnilo jiné zařízení|revize/i.test(String(e&&e.message||e))||attempt===2)throw e}
+   }
+   if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno.');
+   tasks=saved.masterTasks||[];publishedTasks=saved.tasks||[];
+   const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
+   if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
+   renderFloorList();$('boxFloorStatus').textContent='✓ Publikовано до телефону: '+count+' boxů. Інші поверхи та стандартний режим збережені.';
+   $('boxFloorFreshness').textContent='Ревізія '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'час недоступний');
+  }catch(e){$('boxFloorStatus').textContent='✕ Не вдалося опублікувати: '+String(e&&e.message||e)}
+  finally{floorBusy=false;$('boxFloorPublish').disabled=false}
+ }
+ async function deleteFloor(){
+  if(floorBusy)return;
+  if(!confirm('Справді видалити тільки '+floorWarehouse+' / '+floorLabel()+'? Інші поверхи та стандартний режим залишаться без змін.'))return;
+  floorBusy=true;$('boxFloorDelete').disabled=true;
+  try{
+   const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+   const master=current.masterTasks||current.tasks||[],published=current.tasks||[];
+   const oldMaster=master.filter(same).length,oldPublished=published.filter(same).length;
+   const saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{
+    tasks:published.filter(t=>!same(t)),masterTasks:master.filter(t=>!same(t)),
+    categoriesByWarehouse:{[floorWarehouse]:(current.categoriesByWarehouse||{})[floorWarehouse]},
+    coldSubtypeSettings:{[floorWarehouse]:(current.coldSubtypeSettings||{})[floorWarehouse]}
+   });
+   const verified=await QRBoxPickingSync.get();
+   if((verified.tasks||[]).some(same)||(verified.masterTasks||[]).some(same)||Number(verified.revision)<Number(saved.revision))throw new Error('Server nepotvrdil smazání vybraného patra.');
+   tasks=verified.masterTasks||[];publishedTasks=verified.tasks||[];renderFloorList();
+   $('boxFloorStatus').textContent='✓ Видалено тільки '+floorWarehouse+' / '+floorLabel()+'. До видалення: '+oldMaster+' у головному списку, '+oldPublished+' у телефоні.';
+   $('boxFloorFreshness').textContent='Ревізія '+verified.revision+' · інші списки збережені.';
+  }catch(e){$('boxFloorStatus').textContent='✕ Не вдалося видалити: '+String(e&&e.message||e)}
+  finally{floorBusy=false;$('boxFloorDelete').disabled=false}
+ }
+ document.querySelectorAll('[data-box-floor-mode]').forEach(b=>b.addEventListener('click',()=>showMode(b.dataset.boxFloorMode)));
+ document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.addEventListener('click',()=>{floorWarehouse=b.dataset.boxFloorWarehouse;if(!allowed(floorWarehouse,floorLevel))floorLevel=floorWarehouse==='DC2'?'01':'03';renderSelectors();renderFloorList();refreshFloorState()}));
+ document.querySelectorAll('[data-box-floor-level]').forEach(b=>b.addEventListener('click',()=>{if(!allowed(floorWarehouse,b.dataset.boxFloorLevel))return;floorLevel=b.dataset.boxFloorLevel;renderSelectors();renderFloorList();refreshFloorState()}));
+ $('boxFloorFile').addEventListener('change',e=>importFloor(e.target.files&&e.target.files[0]));
+ $('boxFloorRefresh').addEventListener('click',refreshFloorState);
+ $('boxFloorPublish').addEventListener('click',publishFloor);
+ $('boxFloorDelete').addEventListener('click',deleteFloor);
+ renderSelectors();
+ setInterval(()=>{if($('floorBoxPickMode').style.display!=='none'&&!document.hidden&&navigator.onLine)refreshFloorState()},10000);
+})();
+</script>
+<script>
 window.addEventListener('load',()=>{
  if(!('serviceWorker' in navigator))return;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{
