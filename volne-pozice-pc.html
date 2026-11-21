@@ -415,11 +415,13 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const sourceMaster=Array.isArray(currentState.masterTasks)?currentState.masterTasks:(Array.isArray(currentState.tasks)?currentState.tasks:[]);
    const doneById=new Map();
    for(const t of [...sourceMaster,...(currentState.tasks||[])])if(t.done)doneById.set(String(t.id),t);
-   const masterWithProgress=sourceMaster.filter(t=>isPositionLevel00(t.position)||(t.warehouse==='DC3'&&isPositionLevel01(t.position))).map(t=>{const old=doneById.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
+   const isFloorTask=t=>{const level=positionLevel(t&&t.position);return t&&((t.warehouse==='DC2'&&/^0[1-6]$/.test(level))||(t.warehouse==='DC3'&&/^0[3-6]$/.test(level)))};
+   const masterWithProgress=sourceMaster.filter(t=>isPositionLevel00(t.position)||(t.warehouse==='DC3'&&isPositionLevel01(t.position))||isFloorTask(t)).map(t=>{const old=doneById.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
    const selectedCurrentLevel=masterWithProgress.filter(t=>t.warehouse===targetWarehouse&&passesWarehouseFilters(t,targetWarehouse,selectedPickLevel));
    const otherLevel=selectedPickLevel==='01'?'00':'01';
    const preservedOtherLevel=(currentState.tasks||[]).filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===otherLevel&&!(targetWarehouse==='DC2'&&otherLevel==='01'));
-   const selectedForPublish=[...preservedOtherLevel,...selectedCurrentLevel];
+   const preservedFloorLevels=(currentState.tasks||[]).filter(t=>t.warehouse===targetWarehouse&&isFloorTask(t));
+   const selectedForPublish=[...preservedOtherLevel,...preservedFloorLevels,...selectedCurrentLevel];
    if(!selectedCurrentLevel.length){$('boxPickStatus').textContent='Publikování zastaveno: podle filtrů není vybrán žádný box pro '+targetWarehouse+' / '+(selectedPickLevel==='01'?'Nadrozměry':'00 pozice')+'. Druhý seznam zůstává beze změny.';return}
    const categoriesByWarehouse={DC2:{...DEFAULT_CATEGORIES.DC2,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC2)||{}),...localCategories.DC2},DC3:{...DEFAULT_CATEGORIES.DC3,...((currentState.categoriesByWarehouse&&currentState.categoriesByWarehouse.DC3)||{}),...localCategories.DC3}};
    const coldSubtypeSettingsToSave={DC2:{...DEFAULT_COLD.DC2,...((currentState.coldSubtypeSettings&&currentState.coldSubtypeSettings.DC2)||{}),...localCold.DC2},DC3:{...DEFAULT_COLD.DC3,...((currentState.coldSubtypeSettings&&currentState.coldSubtypeSettings.DC3)||{}),...localCold.DC3}};
