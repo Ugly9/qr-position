@@ -24,6 +24,17 @@ main{position:relative;z-index:1}
 .qr{box-shadow:0 12px 35px rgba(0,0,0,.28)}
 @media(max-width:900px){body::before{background-position:center;background-size:cover}.panel{backdrop-filter:blur(12px)}}
 
+
+/* Keep the GTA artwork crisp: do not blur the background through large panels. */
+body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:linear-gradient(115deg,rgba(5,8,18,.43),rgba(7,9,18,.34) 48%,rgba(8,7,18,.48)),url("./gta-notino-bg.webp")!important}
+.panel,.stat,.street,.occupied-aisle,.badge{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.panel{background:linear-gradient(145deg,rgba(13,19,34,.88),rgba(8,12,23,.86))!important}
+.stat,.street,.occupied-aisle{background:rgba(14,20,34,.88)!important}
+#boxFloorCategoryPanel label{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.045);font-weight:700}
+#boxFloorCategoryPanel input{accent-color:#4da3ff;width:16px;height:16px}
+#boxFloorCategoryPanel .row{gap:8px}
+#boxFloorCategoryPanel summary{color:#dce8ff}
+
 </style></head><body><main>
 <header class="head"><div><div class="eyebrow">WAREHOUSE TOOL · VOLNÉ POZICE</div><h1>QR Position — Volné pozice</h1><div class="muted">Společný seznam volných míst pro PC i mobilní verzi</div></div><div class="badge" id="syncBadge">NAČÍTÁM SPOLEČNÝ SEZNAM…</div></header>
 <nav class="row" style="margin:0 0 18px"><button class="btn primary" id="tabFree">Volné pozice</button><button class="btn" id="tabPicking">Vyskladnění boxu</button></nav>
@@ -82,6 +93,29 @@ main{position:relative;z-index:1}
   </div>
   <div id="boxFloorStatus" class="status">Vyberte sklad, patro a nahrajte Excel.</div>
   <div id="boxFloorFreshness" class="status">Synchronizace: zatím neověřena.</div>
+ </div>
+ <div class="upload" id="boxFloorCategoryPanel" style="margin-top:14px">
+  <strong>Kategorie k vyskladnění</strong>
+  <div class="status" style="margin:5px 0 10px">Výběr určuje, které boxy se zobrazí a které se publikují do telefonu. Import Excelu vždy zachová všechny platné boxy.</div>
+  <div class="row" id="boxFloorCategories">
+   <label><input type="checkbox" data-floor-category="HOT" checked> HOT</label>
+   <label><input type="checkbox" data-floor-category="COLD" checked> COLD</label>
+   <label><input type="checkbox" data-floor-category="DC" checked> DC</label>
+   <label><input type="checkbox" data-floor-category="MANUAL" checked> MANUAL</label>
+  </div>
+  <details id="boxFloorColdDetails" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px">
+   <summary style="cursor:pointer;font-weight:700;padding:4px 0">COLD — vybrat podtypy</summary>
+   <div class="row" id="boxFloorColdSubtypes" style="margin-top:12px;display:flex;flex-direction:column;align-items:flex-start">
+    <label><input type="checkbox" data-floor-cold="1" checked> COLD 1. PRIORITA · 17 %</label>
+    <label><input type="checkbox" data-floor-cold="2" checked> COLD 2. PRIORITA · 100 %</label>
+    <label><input type="checkbox" data-floor-cold="fastpick" checked> COLD FASTPICK</label>
+   </div>
+   <div class="row" style="margin-top:10px">
+    <button type="button" class="btn" id="boxFloorColdAll">Vybrat všechny COLD</button>
+    <button type="button" class="btn" id="boxFloorColdNone">Zrušit výběr</button>
+   </div>
+  </details>
+  <div class="status" id="boxFloorFilterStatus" style="margin-top:8px">Filtry se načítají ze serveru.</div>
  </div>
  <div class="stats">
   <div class="stat"><b id="boxFloorCount">0</b><span>Boxů</span></div>
@@ -481,7 +515,45 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
 (function(){
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
- let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false;
+ let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false,floorFilterSaveBusy=false;
+ const FLOOR_DEFAULT_CATEGORIES={HOT:true,COLD:true,DC:true,MANUAL:true,FastPick:true};
+ const FLOOR_DEFAULT_COLD={'1':true,'2':true,fastpick:true};
+ let floorCategories={...FLOOR_DEFAULT_CATEGORIES},floorCold={...FLOOR_DEFAULT_COLD};
+ function syncFloorFilterChecks(){
+  document.querySelectorAll('[data-floor-category]').forEach(x=>x.checked=floorCategories[x.dataset.floorCategory]!==false);
+  document.querySelectorAll('[data-floor-cold]').forEach(x=>x.checked=floorCold[x.dataset.floorCold]!==false);
+ }
+ function loadFloorFilters(state){
+  const serverCats=state&&state.categoriesByWarehouse&&state.categoriesByWarehouse[floorWarehouse];
+  const serverCold=state&&state.coldSubtypeSettings&&state.coldSubtypeSettings[floorWarehouse];
+  floorCategories={...FLOOR_DEFAULT_CATEGORIES,...(serverCats||{})};
+  floorCold={...FLOOR_DEFAULT_COLD,...(serverCold||{})};
+  syncFloorFilterChecks();
+ }
+ function floorPassesCategory(t){
+  const p=Number(t&&t.priority);
+  if(p===201||p===202)return floorCategories.COLD!==false&&floorCold['1']!==false;
+  if(p===203||p===204)return floorCategories.COLD!==false&&floorCold['2']!==false;
+  if(p===205)return floorCategories.COLD!==false&&floorCold.fastpick!==false;
+  return floorCategories[t&&t.category]!==false;
+ }
+ async function saveFloorFilters(){
+  if(floorFilterSaveBusy)return;
+  floorFilterSaveBusy=true;
+  const warehouse=floorWarehouse,categories={...floorCategories},cold={...floorCold};
+  $('boxFloorFilterStatus').textContent='Ukládám výběr kategorií na server…';
+  try{
+   const saved=await QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}});
+   if(warehouse===floorWarehouse){loadFloorFilters(saved);renderFloorList();}
+   $('boxFloorFilterStatus').textContent='✓ Kategorie '+warehouse+' uloženy a synchronizovány.';
+   $('boxFloorFreshness').textContent='Nastavení kategorií uloženo · revize '+saved.revision;
+  }catch(e){$('boxFloorFilterStatus').textContent='✕ Filtry se nepodařilo uložit: '+String(e&&e.message||e)+'. Zkontrolujte připojení.'}
+  finally{floorFilterSaveBusy=false}
+ }
+ document.querySelectorAll('[data-floor-category]').forEach(x=>x.addEventListener('change',()=>{floorCategories[x.dataset.floorCategory]=x.checked;renderFloorList();saveFloorFilters()}));
+ document.querySelectorAll('[data-floor-cold]').forEach(x=>x.addEventListener('change',()=>{floorCold[x.dataset.floorCold]=x.checked;renderFloorList();saveFloorFilters()}));
+ $('boxFloorColdAll').addEventListener('click',()=>{Object.keys(floorCold).forEach(k=>floorCold[k]=true);syncFloorFilterChecks();renderFloorList();saveFloorFilters()});
+ $('boxFloorColdNone').addEventListener('click',()=>{Object.keys(floorCold).forEach(k=>floorCold[k]=false);syncFloorFilterChecks();renderFloorList();saveFloorFilters()});
  const getLevel=position=>{const m=String(position??'').trim().match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,2})\s*$/);return m?m[3].padStart(2,'0'):null};
  const allowed=(warehouse,level)=>{const n=Number(level);return warehouse==='DC2'?n>=1&&n<=6:warehouse==='DC3'?n>=3&&n<=6:false};
  const isFloorPosition=(warehouse,position)=>{const level=getLevel(position);return level!==null&&allowed(warehouse,level)};
@@ -499,7 +571,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   if(floors)refreshFloorState();
  }
  function renderFloorList(){
-  const all=(Array.isArray(tasks)?tasks:[]).filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position));
+  const all=(Array.isArray(tasks)?tasks:[]).filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)&&floorPassesCategory(t));
   const doneIds=new Set([...(Array.isArray(tasks)?tasks:[]),...(Array.isArray(publishedTasks)?publishedTasks:[])].filter(t=>t&&t.done).map(t=>String(t.id)));
   const groups=new Map();
   all.forEach(t=>{const aisle=Number(t.aisle),pair=floorWarehouse==='DC3'?(aisle===1?1:(aisle%2===0?aisle:aisle-1)):(aisle%2===0?aisle:aisle-1);if(!groups.has(pair))groups.set(pair,[]);groups.get(pair).push(t)});
@@ -524,10 +596,12 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const current=await QRBoxPickingSync.get();
    tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
    publishedTasks=Array.isArray(current.tasks)?current.tasks:[];
+   loadFloorFilters(current);
    renderFloorList();
-   const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
+   const total=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
+   const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)&&floorPassesCategory(t)).length;
    const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
-   $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxů v hlavním seznamu, '+published+' publikováno v telefonu.';
+   $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' z '+total+' boxů podle vybraných kategorií, '+published+' publikováno v telefonu.';
    $('boxFloorFreshness').textContent='Serverová revize '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'čas není dostupný');
   }catch(e){$('boxFloorStatus').textContent='Chyba synchronizace: '+String(e&&e.message||e)}
  }
@@ -598,17 +672,17 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
      const done=new Map();for(const t of [...source,...(current.tasks||[])])if(t&&t.done)done.set(String(t.id),t);
      const same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
      const master=source.filter(t=>t&&t.warehouse===floorWarehouse).map(t=>{const old=done.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
-     const selected=master.filter(same);
-     if(!selected.length)throw new Error('Nejdříve nahrajte Excel pro vybraný povrch.');
+     const selected=master.filter(t=>same(t)&&floorPassesCategory(t));
+     if(!selected.length)throw new Error('Podle aktuálního výběru kategorií není co publikovat. Zapněte alespoň jednu kategorii nebo podtyp COLD.');
      const publishedOther=(current.tasks||[]).filter(t=>t&&t.warehouse===floorWarehouse&&!same(t));
-     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:[...publishedOther,...selected],masterTasks:master,categoriesByWarehouse:{[floorWarehouse]:(current.categoriesByWarehouse||{})[floorWarehouse]},coldSubtypeSettings:{[floorWarehouse]:(current.coldSubtypeSettings||{})[floorWarehouse]}});
+     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:[...publishedOther,...selected],masterTasks:master,categoriesByWarehouse:{[floorWarehouse]:floorCategories},coldSubtypeSettings:{[floorWarehouse]:floorCold}});
     }catch(e){lastError=e;if(!/konflikt|změnilo jiné zařízení|revize/i.test(String(e&&e.message||e))||attempt===2)throw e}
    }
    if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno.');
    tasks=saved.masterTasks||[];publishedTasks=saved.tasks||[];
    const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
-   if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
-   renderFloorList();$('boxFloorStatus').textContent='✓ Publikováno do telefonu: '+count+' boxů. Ostatní patra a standardní režim zůstaly zachovány.';
+   if(count!==selected.length)throw new Error('Počet publikovaných boxů ('+count+') neodpovídá výběru kategorií ('+selected.length+').');
+   renderFloorList();$('boxFloorStatus').textContent='✓ Publikováno do telefonu: '+count+' boxů podle vybraných kategorií. Ostatní patra a standardní režim zůstaly zachovány.';
    $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
   }catch(e){$('boxFloorStatus').textContent='✕ Publikování se nezdařilo: '+String(e&&e.message||e)}
   finally{floorBusy=false;$('boxFloorPublish').disabled=false}
@@ -716,7 +790,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=91',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=92',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
