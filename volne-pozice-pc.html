@@ -14,16 +14,32 @@
 <section class="panel"><div class="row" style="align-items:center;margin-bottom:14px"><h2 style="margin:0;flex:1">Priorita uliček</h2><span class="badge" id="dcLabel">Vyberte DC2 nebo DC3</span></div><div class="row" style="margin-bottom:14px"><button class="btn" id="toggleOccupied">Zobrazit všechny obsazené pozice</button><button class="btn" id="refreshOccupied">Aktualizovat</button></div><div id="occupiedList" class="occupied-list" style="display:none;margin-bottom:16px"><div class="empty">Vyberte DC2 nebo DC3.</div></div><div class="layout" style="grid-template-columns:minmax(240px,.9fr) minmax(0,1.1fr);gap:14px" id="content">
 <div id="streetList" class="street-list"><div class="empty">Vyberte sklad vlevo. Uličky se seřadí podle počtu volných pozic.</div></div>
 <div id="positionPane"><div class="empty">Vyberte uličku vlevo. Zobrazí se pozice označené v mobilní verzi jako obsazené.</div></div>
-</div></section></div><section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><div class="row" id="boxPickModeSwitch" style="margin:14px 0">
- <button class="btn primary" type="button" data-box-floor-mode="standard">00 pozice / Nadrozměry</button>
- <button class="btn" type="button" data-box-floor-mode="floors">Patra 1–6</button>
+</div></section></div><style>
+/* Unified warehouse-first navigation. Hidden legacy controls remain wired to existing handlers. */
+#boxPickWarehouses,#boxPickLevels,#boxFloorWarehouses,#boxFloorLevels{display:none!important}
+</style>
+<section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><div id="boxPickUnifiedControls" style="margin:14px 0">
+ <div style="margin-bottom:8px;font-weight:700">1. Vyberte sklad</div>
+ <div class="row" id="boxPickUnifiedWarehouses">
+  <button class="btn primary" type="button" data-ui-warehouse="DC2">DC2</button>
+  <button class="btn" type="button" data-ui-warehouse="DC3">DC3</button>
+ </div>
+ <div id="boxPickUnifiedModes" style="display:none;margin-top:14px">
+  <div style="margin-bottom:8px;font-weight:700">2. Vyberte typ vyskladnění</div>
+  <div class="warehouse" id="boxPickUnifiedModeButtons">
+   <button class="btn" type="button" data-ui-mode="00"><strong>00 pozice</strong><small>Běžné pozice</small></button>
+   <button class="btn" type="button" data-ui-mode="FLOORS"><strong>Patra</strong><small id="boxPickUnifiedFloorLabel">01–06 pozice</small></button>
+   <button class="btn" type="button" data-ui-mode="01"><strong>Nadrozměry</strong><small>Pouze DC3</small></button>
+  </div>
+ </div>
+ <div class="status" id="boxPickUnifiedStatus" style="margin-top:10px">Vybráno: DC2. Zvolte režim vyskladnění.</div>
 </div>
 <div id="legacyBoxPickMode">
 <p class="muted">Filtry importu: vybraný sklad; Stav 1 (Nový); platná Priorita a Box. DC3 se rozdělí podle patra: 00 pozice a Nadrozměry (01). Zóna nerozhoduje.</p><div class="row" id="boxPickWarehouses" style="margin:14px 0"><button class="btn primary" type="button" data-box-warehouse="DC2">DC2 · Vyskladnění boxů</button><button class="btn" type="button" data-box-warehouse="DC3">DC3 · Vyskladnění boxů</button></div><div class="status" id="boxPickWarehouseStatus">Zobrazen sklad DC2.</div><div class="warehouse" id="boxPickLevels" style="margin:12px 0;display:none"><button class="btn primary" type="button" data-box-level="00"><strong>00 pozice</strong><small>Běžné pozice</small></button><button class="btn" type="button" data-box-level="01"><strong>Nadrozměry</strong><small>Pozice na 1. patře</small></button></div><div class="upload"><strong id="boxPickUploadTitle">Excel soubor pro DC2</strong><div class="status">Každý sklad má vlastní Excel import. Soubor nahradí pouze seznam vybraného skladu.</div><input id="boxPickFile" type="file" accept=".xlsx,.xls,.csv"><div class="row" style="margin-top:10px"><button class="btn" type="button" id="boxPickRefreshButton">↻ Aktualizovat seznam ze serveru</button></div><div id="boxPickStatus" class="status">Soubor zatím není načten.</div><div id="boxPickFreshness" class="status">Poslední synchronizace: zatím neověřena.</div></div><h3>Kategorie k vyskladnění</h3><div id="oversizeDestinationFilters" class="row" style="display:none;margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px"><strong style="width:100%">Cílový sklad — podtypy Nadrozměrů (sloupec U)</strong><label><input type="checkbox" data-oversize-destination="RO" checked> RO</label><label><input type="checkbox" data-oversize-destination="IT" checked> IT</label><label><input type="checkbox" data-oversize-destination="PL" checked> PL</label></div><div class="row" id="boxPickCategories"><label><input type="checkbox" data-category="HOT" checked> HOT</label><label><input type="checkbox" data-category="DC" checked> DC</label><label><input type="checkbox" data-category="MANUAL" checked> MANUAL</label></div><details id="coldSubtypeDetails" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">COLD — vybrat podtypy</summary><div class="row" id="coldSubtypeFilters" style="margin-top:12px;display:flex;flex-direction:column;align-items:flex-start"><label><input type="checkbox" data-cold-subtype="1" checked> COLD 1. PRIORITA · 17 %</label><label><input type="checkbox" data-cold-subtype="2" checked> COLD 2. PRIORITA · 100 %</label><label><input type="checkbox" data-cold-subtype="fastpick" checked> COLD FASTPICK</label></div><div class="row" style="margin-top:10px"><button type="button" class="btn" id="coldSelectAll">Vybrat všechny COLD</button><button type="button" class="btn" id="coldSelectNone">Zrušit výběr</button></div><div class="status" style="margin-top:7px">Výběr určuje, které boxy z aktuálního skladu budou zahrnuty při publikování do telefonu.</div></details><div class="row" style="margin:14px 0"><button class="btn primary" id="publishBoxPick">Publikovat do telefonu</button><button class="btn" id="deleteBoxPick">Smazat seznam</button></div><div class="stats"><div class="stat"><b id="boxPickCount">0</b><span>Boxů</span></div><div class="stat"><b id="boxPickAisles">0</b><span>Uliček</span></div><div class="stat"><b id="boxPickDone">0</b><span>Vyskladněno</span></div></div><div id="boxPickPreview" class="street-list"><div class="empty">Nahrajte Excel soubor.</div></div>
 </div>
 <div id="floorBoxPickMode" style="display:none">
  <p class="muted">Samostatný režim pater. DC2: 1–6. DC3: 3–6. Excel se ukládá pro vybraný sklad a patro; ostatní seznamy zůstávají beze změny.</p>
- <div class="row" style="margin:14px 0">
+ <div class="row" id="boxFloorWarehouses" style="display:none;margin:14px 0">
   <button class="btn primary" type="button" data-box-floor-warehouse="DC2">DC2 · Patra</button>
   <button class="btn" type="button" data-box-floor-warehouse="DC3">DC3 · Patra</button>
  </div>
@@ -681,4 +697,54 @@ window.addEventListener('load',()=>{
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
  }).catch(()=>{});
 });
-</script></body></html>
+</script><script>
+(function(){
+ const $=id=>document.getElementById(id);
+ let activeWarehouse='DC2',activeMode=null;
+ const oldClick=selector=>{const el=document.querySelector(selector);if(!el)throw new Error('Chybí ovládací prvek '+selector);el.click()};
+ function render(){
+  document.querySelectorAll('[data-ui-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.uiWarehouse===activeWarehouse));
+  $('boxPickUnifiedModes').style.display=activeWarehouse?'block':'none';
+  $('boxPickUnifiedFloorLabel').textContent=activeWarehouse==='DC2'?'01–06 pozice':'03–06 pozice';
+  document.querySelectorAll('[data-ui-mode]').forEach(b=>{
+   const mode=b.dataset.uiMode;
+   b.hidden=mode==='01'&&activeWarehouse!=='DC3';
+   b.classList.toggle('primary',mode===activeMode);
+  });
+  const label=activeMode==='00'?'00 pozice':activeMode==='01'?'Nadrozměry':activeMode==='FLOORS'?(activeWarehouse==='DC2'?'Patra 1–6':'Patra 3–6'):'bez vybraného režimu';
+  $('boxPickUnifiedStatus').textContent='Vybráno: '+activeWarehouse+' · '+label+'.';
+ }
+ function chooseMode(mode){
+  if(!activeWarehouse)return;
+  if(mode==='01'&&activeWarehouse!=='DC3')return;
+  activeMode=mode;
+  try{
+   if(mode==='FLOORS'){
+    oldClick('[data-box-floor-mode="floors"]');
+    oldClick('[data-box-floor-warehouse="'+activeWarehouse+'"]');
+   }else{
+    oldClick('[data-box-floor-mode="standard"]');
+    oldClick('[data-box-warehouse="'+activeWarehouse+'"]');
+    oldClick('[data-box-level="'+mode+'"]');
+   }
+   $('legacyBoxPickMode').style.display=mode==='FLOORS'?'none':'block';
+   $('floorBoxPickMode').style.display=mode==='FLOORS'?'block':'none';
+   render();
+  }catch(e){
+   activeMode=null;
+   $('boxPickUnifiedStatus').textContent='Nepodařilo se přepnout režim: '+String(e&&e.message||e);
+   render();
+  }
+ }
+ document.querySelectorAll('[data-ui-warehouse]').forEach(b=>b.addEventListener('click',()=>{
+  activeWarehouse=b.dataset.uiWarehouse;activeMode=null;
+  $('legacyBoxPickMode').style.display='none';
+  $('floorBoxPickMode').style.display='none';
+  render();
+ }));
+ document.querySelectorAll('[data-ui-mode]').forEach(b=>b.addEventListener('click',()=>chooseMode(b.dataset.uiMode)));
+ render();
+ chooseMode('00');
+})();
+</script>
+</body></html>
