@@ -4,35 +4,38 @@
 .occupied-list{display:flex;flex-direction:column;gap:10px;max-height:72vh;overflow:auto;padding-right:4px}.occupied-aisle{border:1px solid var(--line);border-radius:14px;background:#171e2d;padding:14px}.occupied-head{display:flex;justify-content:space-between;gap:12px;align-items:center;font-weight:800}.occupied-positions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.occupied-position{padding:5px 9px;border-radius:8px;background:#594515;border:1px solid #c49a32;color:#ffe9a4;font-weight:700;font-variant-numeric:tabular-nums}
 .street{cursor:pointer;transition:border-color .12s,background .12s}.street:hover,.street:focus-visible{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.22);outline:none}.street .work{cursor:default}
 
-/* GTA NOTINO — crisp background, no blur/filter on the artwork */
-html,body{background:#080a12!important}
-body{position:relative;isolation:isolate;min-height:100vh;background:#080a12!important}
-body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-image:linear-gradient(115deg,rgba(5,8,18,.30),rgba(7,9,18,.24) 48%,rgba(8,7,18,.36)),url("./gta-notino-bg.webp");
-  background-position:center center;background-size:cover;background-repeat:no-repeat;
-  filter:none!important;opacity:1;transform:none;
-}
+/* GTA NOTINO visual layer — presentation only; application logic remains unchanged. */
+html,body{background:#070911!important}
+body{position:relative;isolation:isolate;background:#070911!important}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(115deg,rgba(5,8,18,.66),rgba(7,9,18,.54) 48%,rgba(8,7,18,.72)),url("./gta-notino-bg.webp");background-position:center;background-size:cover;background-repeat:no-repeat;filter:saturate(1.08) contrast(1.04)}
 main{position:relative;z-index:1}
-.panel{background:rgba(10,15,28,.90)!important;border:1px solid rgba(155,180,255,.25)!important;box-shadow:0 18px 48px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-.stat,.street,.occupied-aisle{background:rgba(12,18,32,.91)!important;border-color:rgba(155,176,235,.23)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-.street.active{background:rgba(20,48,84,.94)!important;border-color:#60a5fa!important}
-.street.shared-working{background:linear-gradient(110deg,rgba(89,71,15,.96),rgba(45,38,15,.94))!important}
-.btn{box-shadow:0 4px 14px rgba(0,0,0,.20);transition:transform .15s ease,border-color .15s ease,filter .15s ease}
-.btn:hover{filter:brightness(1.10);transform:translateY(-1px)}
+.panel{background:linear-gradient(145deg,rgba(13,19,34,.82),rgba(8,12,23,.78))!important;border-color:rgba(150,174,255,.22)!important;box-shadow:0 18px 55px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.07);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.stat,.street,.occupied-aisle{background:rgba(14,20,34,.78)!important;border-color:rgba(155,176,235,.20)!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.street.active{background:rgba(21,48,82,.86)!important;border-color:#60a5fa!important}
+.street.shared-working{background:linear-gradient(110deg,rgba(89,71,15,.91),rgba(45,38,15,.88))!important}
+.occupied-position{box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.upload{background:rgba(8,13,24,.48);border-color:rgba(160,180,235,.30)}
+.btn{box-shadow:0 4px 14px rgba(0,0,0,.18);transition:transform .15s ease,border-color .15s ease,filter .15s ease}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
 .btn.primary{background:linear-gradient(130deg,#2588f5,#8749ec)!important}
-.head h1{text-shadow:0 2px 12px rgba(0,0,0,.65)}
-.eyebrow{color:#c5ddff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
-.badge{background:rgba(39,31,20,.94)!important;backdrop-filter:none!important}
+.head h1{text-shadow:0 3px 18px rgba(0,0,0,.65)}
+.eyebrow{color:#b9d7ff;text-shadow:0 2px 12px rgba(0,0,0,.65)}
+.badge{background:rgba(47,36,22,.82);backdrop-filter:blur(8px)}
 .qr{box-shadow:0 12px 35px rgba(0,0,0,.28)}
+@media(max-width:900px){body::before{background-position:center;background-size:cover}.panel{backdrop-filter:blur(12px)}}
+
+
+/* Keep the GTA artwork crisp: do not blur the background through large panels. */
+body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:linear-gradient(115deg,rgba(5,8,18,.43),rgba(7,9,18,.34) 48%,rgba(8,7,18,.48)),url("./gta-notino-bg.webp")!important}
+.panel,.stat,.street,.occupied-aisle,.badge{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.panel{background:linear-gradient(145deg,rgba(13,19,34,.88),rgba(8,12,23,.86))!important}
+.stat,.street,.occupied-aisle{background:rgba(14,20,34,.88)!important}
 #boxFloorCategoryPanel label{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.045);font-weight:700}
 #boxFloorCategoryPanel input{accent-color:#4da3ff;width:16px;height:16px}
 #boxFloorCategoryPanel .row{gap:8px}
 #boxFloorCategoryPanel summary{color:#dce8ff}
-@media(max-width:900px){body::before{background-position:center center;background-size:cover}}
 
-</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+</style><link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style id="qr-global-clear-style">
@@ -50,6 +53,7 @@ main{position:relative;z-index:1}
 #globalClearStatus.is-success{color:#9de8bd}
 @media(max-width:680px){#globalClearTools{align-items:stretch!important;flex-direction:column}#globalClearStatus{text-align:left!important}#clearAllLists{width:100%}}
 </style>
+
 
 </head><body><main>
 <header class="head"><div><div class="eyebrow">WAREHOUSE TOOL · VOLNÉ POZICE</div><h1>QR Position — Volné pozice</h1><div class="muted">Společný seznam volných míst pro PC i mobilní verzi</div></div><div class="badge" id="syncBadge">NAČÍTÁM SPOLEČNÝ SEZNAM…</div></header>
@@ -813,7 +817,36 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=95"floors"]');
+ navigator.serviceWorker.register('./sw.js?v=95',{updateViaCache:'none'}).then(reg=>{
+  reg.update().catch(()=>{});
+  window.addEventListener('focus',()=>reg.update().catch(()=>{}));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
+ }).catch(()=>{});
+});
+</script><script>
+(function(){
+ const $=id=>document.getElementById(id);
+ let activeWarehouse='DC2',activeMode=null;
+ const oldClick=selector=>{const el=document.querySelector(selector);if(!el)throw new Error('Chybí ovládací prvek '+selector);el.click()};
+ function render(){
+  document.querySelectorAll('[data-ui-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.uiWarehouse===activeWarehouse));
+  $('boxPickUnifiedModes').style.display=activeWarehouse?'block':'none';
+  $('boxPickUnifiedFloorLabel').textContent=activeWarehouse==='DC2'?'01–06 pozice':'03–06 pozice';
+  document.querySelectorAll('[data-ui-mode]').forEach(b=>{
+   const mode=b.dataset.uiMode;
+   b.hidden=mode==='01'&&activeWarehouse!=='DC3';
+   b.classList.toggle('primary',mode===activeMode);
+  });
+  const label=activeMode==='00'?'00 pozice':activeMode==='01'?'Nadrozměry':activeMode==='FLOORS'?(activeWarehouse==='DC2'?'Patra 1–6':'Patra 3–6'):'bez vybraného režimu';
+  $('boxPickUnifiedStatus').textContent='Vybráno: '+activeWarehouse+' · '+label+'.';
+ }
+ function chooseMode(mode){
+  if(!activeWarehouse)return;
+  if(mode==='01'&&activeWarehouse!=='DC3')return;
+  activeMode=mode;
+  try{
+   if(mode==='FLOORS'){
+    oldClick('[data-box-floor-mode="floors"]');
     oldClick('[data-box-floor-warehouse="'+activeWarehouse+'"]');
    }else{
     oldClick('[data-box-floor-mode="standard"]');
@@ -840,7 +873,6 @@ window.addEventListener('load',()=>{
  chooseMode('00');
 })();
 </script>
-
 <style id="qr-position-gta-unified-ui">
 /* QR POSITION UNIFIED GTA UI — consistent PC interface styling */
 :root{--ui-font:"Oswald","Arial Narrow",Impact,sans-serif;--ui-display:"Anton","Arial Black",Impact,sans-serif;--ui-surface:rgba(12,17,30,.94);--ui-card:rgba(19,26,42,.94);--ui-card-hover:rgba(26,37,58,.97);--ui-line:rgba(178,195,235,.23);--ui-line-strong:rgba(255,255,255,.34);--ui-text:#f7f8ff;--ui-muted:#b8c1d4;--ui-blue:#2588f5;--ui-purple:#8749ec;--ui-pink:#ed3c91;--ui-gold:#ffc45c;--ui-radius:16px;--ui-shadow:0 12px 30px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.055)}
@@ -884,7 +916,21 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
 .box-pick-count{font-family:var(--ui-display)!important;font-size:17px!important}.occupied-position{font-family:var(--ui-font)!important;background:rgba(113,77,17,.98)!important;border-color:var(--ui-gold)!important;color:#fff0c5!important}.qr{border-radius:16px!important}
 @media(max-width:900px){.panel{padding:16px!important;border-radius:17px!important}.stat{padding:10px!important}.btn{min-height:42px}}
 </style>
-
+<style id="qr-global-clear-style">
+#clearAllLists{
+ flex:0 0 auto;min-height:44px;padding:11px 16px;
+ border:1px solid rgba(255,105,120,.72)!important;
+ background:linear-gradient(180deg,rgba(117,31,48,.98),rgba(74,19,34,.99))!important;
+ color:#fff!important;letter-spacing:.07em;font-weight:800;
+ box-shadow:0 5px 18px rgba(120,20,43,.26),inset 0 1px 0 rgba(255,255,255,.10)!important
+}
+#clearAllLists:hover{background:linear-gradient(180deg,#a52f4d,#721d38)!important;border-color:#ff9aaa!important}
+#clearAllLists:disabled{opacity:.58;filter:grayscale(.2);cursor:wait;transform:none}
+#globalClearStatus{font-size:12px}
+#globalClearStatus.is-error{color:#ff9aa9}
+#globalClearStatus.is-success{color:#9de8bd}
+@media(max-width:680px){#globalClearTools{align-items:stretch!important;flex-direction:column}#globalClearStatus{text-align:left!important}#clearAllLists{width:100%}}
+</style>
 <script id="qr-global-clear-handler">
 (function(){
  const $=id=>document.getElementById(id);
@@ -1043,5 +1089,4 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
  });
 })();
 </script>
-
 </body></html>
