@@ -2,7 +2,20 @@
 const URL='https://hsrznmfeqajffrleeyly.supabase.co';
 const KEY='sb_publishable_lQBoAETsI3XjQV21G4mpIQ_2xBzbsBT';
 const AUTH='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzcnpubWZlcWFqZmZybGVleWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4OTc3MzcsImV4cCI6MjEwNDQ3MzczN30.sW3f1zi83QOJ9xlDIy6bbVNhDtcv8KtkrtDrNV5Ajvc';
-async function request(path,options={}){const method=String(options.method||'GET').toUpperCase();const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',...(options.headers||{})};if(method==='GET')headers['Cache-Control']='no-cache';const r=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:method==='GET'?'no-store':'default'});if(!r.ok)throw new Error('Supabase '+r.status+': '+(await r.text()).slice(0,250));return r.status===204?null:r.json().catch(()=>null)}
+async function request(path,options={}){
+ const method=String(options.method||'GET').toUpperCase();
+ const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',...(options.headers||{})};
+ if(method==='GET'){headers['Cache-Control']='no-cache, no-store';headers.Pragma='no-cache'}
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+ try{
+  const r=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:'no-store',signal:controller.signal});
+  if(!r.ok)throw new Error('Supabase '+r.status+': '+(await r.text()).slice(0,250));
+  return r.status===204?null:r.json().catch(()=>null);
+ }catch(error){
+  if(error&&error.name==='AbortError')throw new Error('Supabase neodpověděl do 20 sekund. Zkontrolujte připojení; výsledek zápisu bude před opakováním ověřen na serveru.');
+  throw error;
+ }finally{clearTimeout(timeout)}
+}
 const defaults={tasks:[],masterTasks:[],categories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},categoriesByWarehouse:{DC2:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true}},coldSubtypeSettings:{DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}},oversizeCategories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},oversizeColdSubtypeSettings:{'1':true,'2':true,fastpick:true},oversizeDestinationSettings:{RO:true,IT:true,PL:true},updated_at:null};
 async function get(){const rows=await request('qr_box_picking_state?select=payload,revision,updated_at&singleton=eq.true&limit=1');if(!rows||!rows[0])return {...defaults,revision:1};const payload=rows[0].payload||{};const tasks=Array.isArray(payload.tasks)?payload.tasks:[];return {...defaults,...payload,tasks,masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:tasks,revision:Number(rows[0].revision),updated_at:rows[0].updated_at}}
 async function save(payload){
@@ -34,10 +47,28 @@ async function save(payload){
   },
   updated_at:now
  };
- const updated=await request(
-  'qr_box_picking_state?singleton=eq.true&revision=eq.'+encodeURIComponent(String(current.revision))+'&select=payload,revision,updated_at',
-  {method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({payload:nextPayload,revision:nextRevision,updated_at:now})}
- );
+ let updated=null,writeError=null;
+ try{
+  updated=await request(
+   'qr_box_picking_state?singleton=eq.true&revision=eq.'+encodeURIComponent(String(current.revision))+'&select=payload,revision,updated_at',
+   {method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({payload:nextPayload,revision:nextRevision,updated_at:now})}
+  );
+ }catch(error){writeError=error}
+ if(writeError){
+  // A timed-out HTTP response does not prove that Postgres rolled back the write.
+  // Read the singleton row before reporting failure or allowing a blind retry.
+  try{
+   const observed=await get();
+   const sameTasks=(a,b)=>{
+    if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length)return false;
+    const sig=t=>JSON.stringify([String((t&&t.id)??''),String((t&&t.warehouse)??''),String((t&&t.aisle)??''),String((t&&t.slot)??''),String((t&&t.position)??''),String((t&&t.box)??''),String((t&&t.category)??''),String((t&&t.priority)??''),String((t&&t.destination)??''),!!(t&&t.done),String((t&&t.done_at)??''),String((t&&t.order)??'')]);
+    return a.every((t,i)=>sig(t)===sig(b[i]));
+   };
+   if(observed.revision===nextRevision&&sameTasks(observed.tasks,nextPayload.tasks)&&sameTasks(observed.masterTasks,nextPayload.masterTasks))return observed;
+   if(observed.revision!==current.revision)throw new Error('Zápis měl nejistou odpověď a server mezitím změnil revizi na '+observed.revision+'. Obnovte data; neopakujte import bez kontroly seznamu.');
+  }catch(readError){if(readError&&readError.message&&readError.message.startsWith('Zápis měl nejistou'))throw readError}
+  throw new Error('Server nepotvrdil odpověď zápisu: '+String(writeError.message||writeError)+'. Před opakováním obnovte seznam ze serveru.');
+ }
  if(!Array.isArray(updated)||updated.length!==1)throw new Error('Konflikt synchronizace: seznam mezitím změnilo jiné zařízení. Aktualizujte data a zkuste znovu.');
  const row=updated[0],check={...defaults,...(row.payload||{}),tasks:Array.isArray(row.payload&&row.payload.tasks)?row.payload.tasks:[],masterTasks:Array.isArray(row.payload&&row.payload.masterTasks)?row.payload.masterTasks:[],revision:Number(row.revision),updated_at:row.updated_at};
  const sameTasks=(a,b)=>{
