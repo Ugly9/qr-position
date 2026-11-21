@@ -473,7 +473,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const count=document.createElement('span');count.className='box-pick-count';count.textContent=rows.length;top.append(title,count);card.append(top);
    const detail=document.createElement('div');detail.className='muted';detail.textContent=rows.slice(0,8).map(t=>String(t.box)+' ('+String(t.position)+')').join(' · ')+(rows.length>8?' …':'');card.append(detail);root.append(card);
   });
-  if(!all.length)root.innerHTML='<div class="empty">Для '+floorWarehouse+' / '+floorLabel()+' поки немає boxів. Завантажте Excel.</div>';
+  if(!all.length)root.innerHTML='<div class="empty">Pro '+floorWarehouse+' / '+floorLabel()+' zatím nejsou žádné boxy. Nahrajte Excel.</div>';
  }
  async function refreshFloorState(){
   if(floorBusy)return;
@@ -487,13 +487,13 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
    $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxів у головному списку, '+published+' опубліковано в телефон.';
    $('boxFloorFreshness').textContent='Серверна ревізія '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'час недоступний');
-  }catch(e){$('boxFloorStatus').textContent='Помилка синхронізації: '+String(e&&e.message||e)}
+  }catch(e){$('boxFloorStatus').textContent='Chyba synchronizace: '+String(e&&e.message||e)}
  }
  async function importFloor(file){
   if(floorBusy)return;
   if(!file)return;
   if(!navigator.onLine){$('boxFloorStatus').textContent='Для імпорту потрібне підключення до сервера.';$('boxFloorFile').value='';return}
-  if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Це patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
+  if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Toto patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
   floorBusy=true;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
   try{
    if(!window.XLSX)throw new Error('Knihovna Excelu se nenačetla.');
@@ -541,9 +541,9 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    function sameFloor(t){return t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel}
    tasks=savedMaster;publishedTasks=savedPublished;renderFloorList();
    const rejected=Object.entries(reject).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'žádné';
-   $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Повторні рядки: '+duplicates+'. Відхилено: '+rejected+'. Інші поверхи не змінено.';
-   $('boxFloorFreshness').textContent='Ревізія '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'час недоступний');
-  }catch(e){$('boxFloorStatus').textContent='✕ Імпорт не виконано: '+String(e&&e.message||e)+'. Попередній список збережено.'}
+   $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Opakované řádky: '+duplicates+'. Odmítnuto: '+rejected+'. Ostatní patra zůstala beze změny.';
+   $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
+  }catch(e){$('boxFloorStatus').textContent='✕ Import se nezdařil: '+String(e&&e.message||e)+'. Попередній список збережено.'}
   finally{floorBusy=false;$('boxFloorFile').disabled=false;$('boxFloorFile').value=''}
  }
  async function publishFloor(){
@@ -566,9 +566,9 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    tasks=saved.masterTasks||[];publishedTasks=saved.tasks||[];
    const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
    if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
-   renderFloorList();$('boxFloorStatus').textContent='✓ Publikовано до телефону: '+count+' boxů. Інші поверхи та стандартний режим збережені.';
-   $('boxFloorFreshness').textContent='Ревізія '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'час недоступний');
-  }catch(e){$('boxFloorStatus').textContent='✕ Не вдалося опублікувати: '+String(e&&e.message||e)}
+   renderFloorList();$('boxFloorStatus').textContent='✓ Publikováno do telefonu: '+count+' boxů. Ostatní patra a standardní režim zůstaly zachovány.';
+   $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
+  }catch(e){$('boxFloorStatus').textContent='✕ Publikování se nezdařilo: '+String(e&&e.message||e)}
   finally{floorBusy=false;$('boxFloorPublish').disabled=false}
  }
  async function deleteFloor(){
@@ -587,9 +587,9 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const verified=await QRBoxPickingSync.get();
    if((verified.tasks||[]).some(same)||(verified.masterTasks||[]).some(same)||Number(verified.revision)<Number(saved.revision))throw new Error('Server nepotvrdil smazání vybraného patra.');
    tasks=verified.masterTasks||[];publishedTasks=verified.tasks||[];renderFloorList();
-   $('boxFloorStatus').textContent='✓ Видалено тільки '+floorWarehouse+' / '+floorLabel()+'. До видалення: '+oldMaster+' у головному списку, '+oldPublished+' у телефоні.';
-   $('boxFloorFreshness').textContent='Ревізія '+verified.revision+' · інші списки збережені.';
-  }catch(e){$('boxFloorStatus').textContent='✕ Не вдалося видалити: '+String(e&&e.message||e)}
+   $('boxFloorStatus').textContent='✓ Smazáno pouze '+floorWarehouse+' / '+floorLabel()+'. Před smazáním: '+oldMaster+' v hlavním seznamu, '+oldPublished+' v telefonu.';
+   $('boxFloorFreshness').textContent='Ревізія '+verified.revision+' · ostatní seznamy zůstaly zachovány.';
+  }catch(e){$('boxFloorStatus').textContent='✕ Smazání se nezdařilo: '+String(e&&e.message||e)}
   finally{floorBusy=false;$('boxFloorDelete').disabled=false}
  }
  document.querySelectorAll('[data-box-floor-mode]').forEach(b=>b.addEventListener('click',()=>showMode(b.dataset.boxFloorMode)));
