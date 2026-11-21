@@ -515,7 +515,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
 (function(){
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
- let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false,floorFilterSaveBusy=false;
+ let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false,floorFilterSaveBusy=false,floorFilterSaveVersion=0;
  const FLOOR_DEFAULT_CATEGORIES={HOT:true,COLD:true,DC:true,MANUAL:true,FastPick:true};
  const FLOOR_DEFAULT_COLD={'1':true,'2':true,fastpick:true};
  let floorCategories={...FLOOR_DEFAULT_CATEGORIES},floorCold={...FLOOR_DEFAULT_COLD};
@@ -538,15 +538,23 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   return floorCategories[t&&t.category]!==false;
  }
  async function saveFloorFilters(){
+  floorFilterSaveVersion++;
   if(floorFilterSaveBusy)return;
   floorFilterSaveBusy=true;
-  const warehouse=floorWarehouse,categories={...floorCategories},cold={...floorCold};
   $('boxFloorFilterStatus').textContent='Ukládám výběr kategorií na server…';
   try{
-   const saved=await QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}});
-   if(warehouse===floorWarehouse){loadFloorFilters(saved);renderFloorList();}
-   $('boxFloorFilterStatus').textContent='✓ Kategorie '+warehouse+' uloženy a synchronizovány.';
-   $('boxFloorFreshness').textContent='Nastavení kategorií uloženo · revize '+saved.revision;
+   let saved=null,warehouse=floorWarehouse;
+   do{
+    const version=floorFilterSaveVersion;
+    warehouse=floorWarehouse;
+    const categories={...floorCategories},cold={...floorCold};
+    saved=await QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}});
+    if(version===floorFilterSaveVersion&&warehouse===floorWarehouse){
+     loadFloorFilters(saved);renderFloorList();
+     $('boxFloorFilterStatus').textContent='✓ Kategorie '+warehouse+' uloženy a synchronizovány.';
+     $('boxFloorFreshness').textContent='Nastavení kategorií uloženo · revize '+saved.revision;
+    }
+   }while(warehouse!==floorWarehouse||floorFilterSaveVersion!==version);
   }catch(e){$('boxFloorFilterStatus').textContent='✕ Filtry se nepodařilo uložit: '+String(e&&e.message||e)+'. Zkontrolujte připojení.'}
   finally{floorFilterSaveBusy=false}
  }
@@ -587,7 +595,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const count=document.createElement('span');count.className='box-pick-count';count.textContent=rows.length;top.append(title,count);card.append(top);
    const detail=document.createElement('div');detail.className='muted';detail.textContent=rows.slice(0,8).map(t=>String(t.box)+' ('+String(t.position)+')').join(' · ')+(rows.length>8?' …':'');card.append(detail);root.append(card);
   });
-  if(!all.length)root.innerHTML='<div class="empty">Pro '+floorWarehouse+' / '+floorLabel()+' zatím nejsou žádné boxy. Nahrajte Excel.</div>';
+  if(!all.length)root.innerHTML='<div class="empty">Žádné boxy pro vybrané kategorie. Změňte filtry nebo nahrajte Excel.</div>';
  }
  async function refreshFloorState(){
   if(floorBusy)return;
@@ -596,7 +604,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const current=await QRBoxPickingSync.get();
    tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
    publishedTasks=Array.isArray(current.tasks)?current.tasks:[];
-   loadFloorFilters(current);
+   if(!floorFilterSaveBusy)loadFloorFilters(current);
    renderFloorList();
    const total=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
    const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)&&floorPassesCategory(t)).length;
