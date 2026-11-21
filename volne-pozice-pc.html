@@ -477,7 +477,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  }
  async function refreshFloorState(){
   if(floorBusy)return;
-  $('boxFloorStatus').textContent='Завантажую '+floorWarehouse+' / '+floorLabel()+' із сервера…';
+  $('boxFloorStatus').textContent='Načítám '+floorWarehouse+' / '+floorLabel()+' ze serveru…';
   try{
    const current=await QRBoxPickingSync.get();
    tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
@@ -485,14 +485,14 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    renderFloorList();
    const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
    const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
-   $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxів у головному списку, '+published+' опубліковано в телефон.';
-   $('boxFloorFreshness').textContent='Серверна ревізія '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'час недоступний');
+   $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxů v hlavním seznamu, '+published+' publikováno v telefonu.';
+   $('boxFloorFreshness').textContent='Serverová revize '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'čas není dostupný');
   }catch(e){$('boxFloorStatus').textContent='Chyba synchronizace: '+String(e&&e.message||e)}
  }
  async function importFloor(file){
   if(floorBusy)return;
   if(!file)return;
-  if(!navigator.onLine){$('boxFloorStatus').textContent='Для імпорту потрібне підключення до сервера.';$('boxFloorFile').value='';return}
+  if(!navigator.onLine){$('boxFloorStatus').textContent='Pro import je nutné připojení k serveru.';$('boxFloorFile').value='';return}
   if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Toto patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
   floorBusy=true;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
   try{
@@ -543,7 +543,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const rejected=Object.entries(reject).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'žádné';
    $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Opakované řádky: '+duplicates+'. Odmítnuto: '+rejected+'. Ostatní patra zůstala beze změny.';
    $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
-  }catch(e){$('boxFloorStatus').textContent='✕ Import se nezdařil: '+String(e&&e.message||e)+'. Попередній список збережено.'}
+  }catch(e){$('boxFloorStatus').textContent='✕ Import se nezdařil: '+String(e&&e.message||e)+'. Předchozí seznam zůstal zachován.'}
   finally{floorBusy=false;$('boxFloorFile').disabled=false;$('boxFloorFile').value=''}
  }
  async function publishFloor(){
@@ -573,7 +573,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  }
  async function deleteFloor(){
   if(floorBusy)return;
-  if(!confirm('Справді видалити тільки '+floorWarehouse+' / '+floorLabel()+'? Інші поверхи та стандартний режим залишаться без змін.'))return;
+  if(!confirm('Opravdu smazat pouze '+floorWarehouse+' / '+floorLabel()+'? Ostatní patra a standardní režim zůstanou beze změny.'))return;
   floorBusy=true;$('boxFloorDelete').disabled=true;
   try{
    const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
@@ -588,7 +588,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    if((verified.tasks||[]).some(same)||(verified.masterTasks||[]).some(same)||Number(verified.revision)<Number(saved.revision))throw new Error('Server nepotvrdil smazání vybraného patra.');
    tasks=verified.masterTasks||[];publishedTasks=verified.tasks||[];renderFloorList();
    $('boxFloorStatus').textContent='✓ Smazáno pouze '+floorWarehouse+' / '+floorLabel()+'. Před smazáním: '+oldMaster+' v hlavním seznamu, '+oldPublished+' v telefonu.';
-   $('boxFloorFreshness').textContent='Ревізія '+verified.revision+' · ostatní seznamy zůstaly zachovány.';
+   $('boxFloorFreshness').textContent='Revize '+verified.revision+' · ostatní seznamy zůstaly zachovány.';
   }catch(e){$('boxFloorStatus').textContent='✕ Smazání se nezdařilo: '+String(e&&e.message||e)}
   finally{floorBusy=false;$('boxFloorDelete').disabled=false}
  }
