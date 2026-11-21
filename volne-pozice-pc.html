@@ -441,7 +441,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
  let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false;
- const getLevel=position=>{const m=String(position??'').trim().match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,2})\\s*$/);return m?m[3].padStart(2,'0'):null};
+ const getLevel=position=>{const m=String(position??'').trim().match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,2})\s*$/);return m?m[3].padStart(2,'0'):null};
  const allowed=(warehouse,level)=>{const n=Number(level);return warehouse==='DC2'?n>=1&&n<=6:warehouse==='DC3'?n>=3&&n<=6:false};
  const isFloorPosition=(warehouse,position)=>{const level=getLevel(position);return level!==null&&allowed(warehouse,level)};
  const floorLabel=()=>floorWarehouse==='DC2'?'Patra 1–6 (01–06)':'Patra 3–6 (03–06)';
