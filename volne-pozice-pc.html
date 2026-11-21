@@ -423,7 +423,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   button.disabled=true;
   const file=document.getElementById('boxPickFile'),publish=document.getElementById('publishBoxPick'),refresh=document.getElementById('boxPickRefreshButton');
   [file,publish,refresh].forEach(x=>{if(x)x.disabled=true});
-  const matches=t=>{if(!t||t.warehouse!==warehouse)return false;const m=String(t.position||'').trim().match(/-\\s*0*([01])\\s*$/);return !!m&&Number(m[1])===Number(level)};
+  const matches=t=>{if(!t||t.warehouse!==warehouse)return false;const m=String(t.position||'').trim().match(/-\s*0*([01])\s*$/);return !!m&&Number(m[1])===Number(level)};
   try{
    status.textContent='Načítám seznam ze serveru…';
    const current=await window.QRBoxPickingSync.get();
