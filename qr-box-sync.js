@@ -18,7 +18,7 @@ async function request(path,options={}){
 }
 const defaults={tasks:[],masterTasks:[],categories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},categoriesByWarehouse:{DC2:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true}},coldSubtypeSettings:{DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}},oversizeCategories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},oversizeColdSubtypeSettings:{'1':true,'2':true,fastpick:true},oversizeDestinationSettings:{RO:true,IT:true,PL:true},updated_at:null};
 async function get(){const rows=await request('qr_box_picking_state?select=payload,revision,updated_at&singleton=eq.true&limit=1');if(!rows||!rows[0])return {...defaults,revision:1};const payload=rows[0].payload||{};const tasks=Array.isArray(payload.tasks)?payload.tasks:[];return {...defaults,...payload,tasks,masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:tasks,revision:Number(rows[0].revision),updated_at:rows[0].updated_at}}
-async function save(payload){
+async function saveNow(payload){
  const current=await get();
  const expected=Number(payload&&payload.expectedRevision);
  if(!Number.isSafeInteger(expected)||expected<1)throw new Error('Chybí platná revize seznamu. Obnovte data a zkuste znovu.');
@@ -80,7 +80,7 @@ async function save(payload){
  if(!check.categoriesByWarehouse||!check.coldSubtypeSettings)throw new Error('Server nevrátil nastavení filtrů. Obnovte a zkuste znovu.');
  return check;
 }
-async function saveWarehouse(warehouse,payload={}){
+async function saveWarehouseNow(warehouse,payload={}){
  if(warehouse!=='DC2'&&warehouse!=='DC3')throw new Error('Neplatný sklad.');
  const current=await get(),other=warehouse==='DC2'?'DC3':'DC2';
  const mergeList=(field)=>{
@@ -93,7 +93,7 @@ async function saveWarehouse(warehouse,payload={}){
  if(payload.categoriesByWarehouse&&payload.categoriesByWarehouse[warehouse])Object.assign(categoriesByWarehouse[warehouse],payload.categoriesByWarehouse[warehouse]);
  if(payload.categories)Object.assign(categoriesByWarehouse[warehouse],payload.categories);
  if(payload.coldSubtypeSettings&&payload.coldSubtypeSettings[warehouse])Object.assign(coldSubtypeSettings[warehouse],payload.coldSubtypeSettings[warehouse]);
- return save({
+ return saveNow({
   tasks:mergeList('tasks'),masterTasks:mergeList('masterTasks'),
   categories:current.categories,categoriesByWarehouse,coldSubtypeSettings,
   oversizeCategories:{...current.oversizeCategories,...(payload.oversizeCategories||{})},oversizeColdSubtypeSettings:{...current.oversizeColdSubtypeSettings,...(payload.oversizeColdSubtypeSettings||{})},oversizeDestinationSettings:{...current.oversizeDestinationSettings,...(payload.oversizeDestinationSettings||{})},
@@ -101,5 +101,13 @@ async function saveWarehouse(warehouse,payload={}){
   ...(payload.restoreToken?{restoreToken:payload.restoreToken}:{})
  });
 }
+let writeQueue=Promise.resolve();
+function enqueueWrite(work){
+ const result=writeQueue.then(work,work);
+ writeQueue=result.catch(()=>{});
+ return result;
+}
+function save(payload){return enqueueWrite(()=>saveNow(payload))}
+function saveWarehouse(warehouse,payload={}){return enqueueWrite(()=>saveWarehouseNow(warehouse,payload))}
 window.QRBoxPickingSync={get,save,saveWarehouse};
 })();
