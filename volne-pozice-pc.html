@@ -673,14 +673,14 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  async function publishFloor(){
   if(floorBusy)return;floorBusy=true;boxPickMutationVersion++;$('boxFloorPublish').disabled=true;
   try{
-   let saved=null,lastError=null;
+   let saved=null,lastError=null,selected=[];
    for(let attempt=0;attempt<3&&!saved;attempt++){
     try{
      const current=await QRBoxPickingSync.get(),source=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
      const done=new Map();for(const t of [...source,...(current.tasks||[])])if(t&&t.done)done.set(String(t.id),t);
      const same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
      const master=source.filter(t=>t&&t.warehouse===floorWarehouse).map(t=>{const old=done.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
-     const selected=master.filter(t=>same(t)&&floorPassesCategory(t));
+     selected=master.filter(t=>same(t)&&floorPassesCategory(t));
      if(!selected.length)throw new Error('Podle aktuálního výběru kategorií není co publikovat. Zapněte alespoň jednu kategorii nebo podtyp COLD.');
      const publishedOther=(current.tasks||[]).filter(t=>t&&t.warehouse===floorWarehouse&&!same(t));
      saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:[...publishedOther,...selected],masterTasks:master,categoriesByWarehouse:{[floorWarehouse]:floorCategories},coldSubtypeSettings:{[floorWarehouse]:floorCold}});
