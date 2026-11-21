@@ -494,7 +494,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   if(!file)return;
   if(!navigator.onLine){$('boxFloorStatus').textContent='Pro import je nutné připojení k serveru.';$('boxFloorFile').value='';return}
   if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Toto patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
-  floorBusy=true;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
+  floorBusy=true;boxPickMutationVersion++;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
   try{
    if(!window.XLSX)throw new Error('Knihovna Excelu se nenačetla.');
    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),sheet=wb.Sheets[wb.SheetNames[0]];
@@ -547,7 +547,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   finally{floorBusy=false;$('boxFloorFile').disabled=false;$('boxFloorFile').value=''}
  }
  async function publishFloor(){
-  if(floorBusy)return;floorBusy=true;$('boxFloorPublish').disabled=true;
+  if(floorBusy)return;floorBusy=true;boxPickMutationVersion++;$('boxFloorPublish').disabled=true;
   try{
    let saved=null,lastError=null;
    for(let attempt=0;attempt<3&&!saved;attempt++){
@@ -574,7 +574,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  async function deleteFloor(){
   if(floorBusy)return;
   if(!confirm('Opravdu smazat pouze '+floorWarehouse+' / '+floorLabel()+'? Ostatní patra a standardní režim zůstanou beze změny.'))return;
-  floorBusy=true;$('boxFloorDelete').disabled=true;
+  floorBusy=true;boxPickMutationVersion++;$('boxFloorDelete').disabled=true;
   try{
    const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
    const master=current.masterTasks||current.tasks||[],published=current.tasks||[];
