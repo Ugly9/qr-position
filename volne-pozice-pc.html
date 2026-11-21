@@ -28,7 +28,7 @@
   <button class="btn" type="button" data-box-floor-warehouse="DC3">DC3 · Patra</button>
  </div>
  <div class="warehouse" id="boxFloorLevels" style="margin:12px 0">
-  <button class="btn primary" type="button" data-box-floor-level="01"><strong>1. patro</strong><small>01 pozice</small></button><button class="btn" type="button" data-box-floor-level="02"><strong>2. patro</strong><small>02 pozice</small></button><button class="btn" type="button" data-box-floor-level="03"><strong>3. patro</strong><small>03 pozice</small></button><button class="btn" type="button" data-box-floor-level="04"><strong>4. patro</strong><small>04 pozice</small></button><button class="btn" type="button" data-box-floor-level="05"><strong>5. patro</strong><small>05 pozice</small></button><button class="btn" type="button" data-box-floor-level="06"><strong>6. patro</strong><small>06 pozice</small></button>
+  <button class="btn primary" type="button" data-box-floor-level="ALL"><strong>Patra 1–6</strong><small>DC2: 01–06 · DC3: 03–06</small></button>
  </div>
  <div class="upload">
   <strong id="boxFloorUploadTitle">Excel soubor pro DC2 · 1. patro</strong>
@@ -440,13 +440,14 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
 (function(){
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
- let floorWarehouse='DC2',floorLevel='01',floorBusy=false;
- const getLevel=position=>{const m=String(position??'').trim().match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,2})\s*$/);return m?m[3].padStart(2,'0'):null};
- const allowed=(warehouse,level)=>warehouse==='DC2'?/^0[1-6]$/.test(level):warehouse==='DC3'?/^0[3-6]$/.test(level):false;
- const floorLabel=()=>Number(floorLevel)+'. patro ('+floorLevel+')';
+ let floorWarehouse='DC2',floorLevel='ALL',floorBusy=false;
+ const getLevel=position=>{const m=String(position??'').trim().match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,2})\\s*$/);return m?m[3].padStart(2,'0'):null};
+ const allowed=(warehouse,level)=>{const n=Number(level);return warehouse==='DC2'?n>=1&&n<=6:warehouse==='DC3'?n>=3&&n<=6:false};
+ const isFloorPosition=(warehouse,position)=>{const level=getLevel(position);return level!==null&&allowed(warehouse,level)};
+ const floorLabel=()=>floorWarehouse==='DC2'?'Patra 1–6 (01–06)':'Patra 3–6 (03–06)';
  function renderSelectors(){
   document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.boxFloorWarehouse===floorWarehouse));
-  document.querySelectorAll('[data-box-floor-level]').forEach(b=>{const n=b.dataset.boxFloorLevel;b.hidden=floorWarehouse==='DC3'&&Number(n)<3;b.disabled=!allowed(floorWarehouse,n);b.classList.toggle('primary',n===floorLevel)});
+  document.querySelectorAll('[data-box-floor-level]').forEach(b=>{b.textContent='';b.innerHTML='<strong>'+floorLabel()+'</strong><small>'+(floorWarehouse==='DC2'?'01–06 pozice':'03–06 pozice')+'</small>';b.classList.add('primary')});
   $('boxFloorUploadTitle').textContent='Excel soubor pro '+floorWarehouse+' · '+floorLabel();
  }
  function showMode(mode){
@@ -457,7 +458,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   if(floors)refreshFloorState();
  }
  function renderFloorList(){
-  const all=(Array.isArray(tasks)?tasks:[]).filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel);
+  const all=(Array.isArray(tasks)?tasks:[]).filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position));
   const doneIds=new Set([...(Array.isArray(tasks)?tasks:[]),...(Array.isArray(publishedTasks)?publishedTasks:[])].filter(t=>t&&t.done).map(t=>String(t.id)));
   const groups=new Map();
   all.forEach(t=>{const aisle=Number(t.aisle),pair=floorWarehouse==='DC3'?(aisle===1?1:(aisle%2===0?aisle:aisle-1)):(aisle%2===0?aisle:aisle-1);if(!groups.has(pair))groups.set(pair,[]);groups.get(pair).push(t)});
@@ -483,8 +484,8 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    tasks=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
    publishedTasks=Array.isArray(current.tasks)?current.tasks:[];
    renderFloorList();
-   const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
-   const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
+   const count=tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
+   const published=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
    $('boxFloorStatus').textContent=floorWarehouse+' / '+floorLabel()+': '+count+' boxů v hlavním seznamu, '+published+' publikováno v telefonu.';
    $('boxFloorFreshness').textContent='Serverová revize '+(current.revision||'—')+' · '+(current.updated_at?new Date(current.updated_at).toLocaleString():'čas není dostupný');
   }catch(e){$('boxFloorStatus').textContent='Chyba synchronizace: '+String(e&&e.message||e)}
@@ -493,7 +494,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   if(floorBusy)return;
   if(!file)return;
   if(!navigator.onLine){$('boxFloorStatus').textContent='Pro import je nutné připojení k serveru.';$('boxFloorFile').value='';return}
-  if(!allowed(floorWarehouse,floorLevel)){ $('boxFloorStatus').textContent='Toto patro není dostupné pro '+floorWarehouse+'.';$('boxFloorFile').value='';return}
+  
   floorBusy=true;boxPickMutationVersion++;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
   try{
    if(!window.XLSX)throw new Error('Knihovna Excelu se nenačetla.');
@@ -513,7 +514,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
     const match=position.match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(\d{2})\s*$/);
     if(wh!=='CZSYR2'&&wh!=='CZSYR3'){reject.warehouse++;continue}
     if(!statusOk){reject.status++;continue}
-    if(!match||match[3]!==floorLevel||!allowed(floorWarehouse,match[3])){reject.position++;continue}
+    if(!match||!allowed(floorWarehouse,match[3])){reject.position++;continue}
     if(!box){reject.box++;continue}
     if(!category){reject.priority++;continue}
     const warehouse=wh==='CZSYR2'?'DC2':'DC3';if(warehouse!==floorWarehouse){reject.warehouse++;continue}
@@ -529,7 +530,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    let saved=null,lastError=null;
    for(let attempt=0;attempt<3&&!saved;attempt++){
     try{
-     const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+     const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
      const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!same(t)),...next];
      const mergedPublished=[...(current.tasks||[]).filter(t=>!same(t)),...next];
      saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
@@ -538,7 +539,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    if(!saved)throw lastError||new Error('Server nepotvrdil import.');
    const savedMaster=saved.masterTasks||[],savedPublished=saved.tasks||[];
    if(savedMaster.filter(sameFloor).length!==next.length||savedPublished.filter(sameFloor).length!==next.length)throw new Error('Server nepotvrdil celý import.');
-   function sameFloor(t){return t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel}
+   function sameFloor(t){return t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)}
    tasks=savedMaster;publishedTasks=savedPublished;renderFloorList();
    const rejected=Object.entries(reject).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'žádné';
    $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Opakované řádky: '+duplicates+'. Odmítnuto: '+rejected+'. Ostatní patra zůstala beze změny.';
@@ -554,7 +555,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
     try{
      const current=await QRBoxPickingSync.get(),source=Array.isArray(current.masterTasks)?current.masterTasks:(current.tasks||[]);
      const done=new Map();for(const t of [...source,...(current.tasks||[])])if(t&&t.done)done.set(String(t.id),t);
-     const same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+     const same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
      const master=source.filter(t=>t&&t.warehouse===floorWarehouse).map(t=>{const old=done.get(String(t.id));return old?{...t,done:true,done_at:old.done_at||null}:t});
      const selected=master.filter(same);
      if(!selected.length)throw new Error('Nejdříve nahrajte Excel pro vybraný povrch.');
@@ -564,7 +565,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    }
    if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno.');
    tasks=saved.masterTasks||[];publishedTasks=saved.tasks||[];
-   const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length;
+   const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
    if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
    renderFloorList();$('boxFloorStatus').textContent='✓ Publikováno do telefonu: '+count+' boxů. Ostatní patra a standardní režim zůstaly zachovány.';
    $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
@@ -593,8 +594,8 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   finally{floorBusy=false;$('boxFloorDelete').disabled=false}
  }
  document.querySelectorAll('[data-box-floor-mode]').forEach(b=>b.addEventListener('click',()=>showMode(b.dataset.boxFloorMode)));
- document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.addEventListener('click',()=>{floorWarehouse=b.dataset.boxFloorWarehouse;if(!allowed(floorWarehouse,floorLevel))floorLevel=floorWarehouse==='DC2'?'01':'03';renderSelectors();renderFloorList();refreshFloorState()}));
- document.querySelectorAll('[data-box-floor-level]').forEach(b=>b.addEventListener('click',()=>{if(!allowed(floorWarehouse,b.dataset.boxFloorLevel))return;floorLevel=b.dataset.boxFloorLevel;renderSelectors();renderFloorList();refreshFloorState()}));
+ document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.addEventListener('click',()=>{floorWarehouse=b.dataset.boxFloorWarehouse;if(!allowed(floorWarehouse,floorLevel))floorLevel='ALL';renderSelectors();renderFloorList();refreshFloorState()}));
+ document.querySelectorAll('[data-box-floor-level]').forEach(b=>b.addEventListener('click',()=>{floorLevel='ALL';renderSelectors();renderFloorList();refreshFloorState()}));
  $('boxFloorFile').addEventListener('change',e=>importFloor(e.target.files&&e.target.files[0]));
  $('boxFloorRefresh').addEventListener('click',refreshFloorState);
  $('boxFloorPublish').addEventListener('click',publishFloor);
