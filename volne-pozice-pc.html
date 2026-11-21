@@ -543,9 +543,9 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   floorFilterSaveBusy=true;
   $('boxFloorFilterStatus').textContent='Ukládám výběr kategorií na server…';
   try{
-   let saved=null,warehouse=floorWarehouse;
+   let saved=null,warehouse=floorWarehouse,version=0;
    do{
-    const version=floorFilterSaveVersion;
+    version=floorFilterSaveVersion;
     warehouse=floorWarehouse;
     const categories={...floorCategories},cold={...floorCold};
     saved=await QRBoxPickingSync.saveWarehouse(warehouse,{categoriesByWarehouse:{[warehouse]:categories},coldSubtypeSettings:{[warehouse]:cold}});
