@@ -26,7 +26,7 @@ main{position:relative;z-index:1}
 
 
 /* Keep the GTA artwork crisp: do not blur the background through large panels. */
-body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:linear-gradient(115deg,rgba(5,8,18,.43),rgba(7,9,18,.34) 48%,rgba(8,7,18,.48)),url("./gta-notino-bg.webp")!important}
+body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:linear-gradient(115deg,rgba(5,8,18,.43),rgba(7,9,18,.34) 48%,rgba(8,7,18,.48)),url("https://cdn.websitepublisher.ai/custom/wid42651/assets/gta-notino-bg.png")!important}
 .panel,.stat,.street,.occupied-aisle,.badge{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .panel{background:linear-gradient(145deg,rgba(13,19,34,.88),rgba(8,12,23,.86))!important}
 .stat,.street,.occupied-aisle{background:rgba(14,20,34,.88)!important}
@@ -817,7 +817,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=97',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=98',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
