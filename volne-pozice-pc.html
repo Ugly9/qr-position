@@ -419,7 +419,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   const label=level==='01'?'Nadrozměry':'00 pozice';
   status.textContent='Kliknutí zachyceno. Připravuji smazání '+warehouse+' / '+label+'…';
   if(!window.QRBoxPickingSync){status.textContent='Chyba: synchronizace není načtena. Obnovte stránku.';return;}
-  if(!window.confirm('Opravdu smazat hlavní i publikovaný seznam '+warehouse+' / '+label+'? Druhý typ seznamu i druhý sklad zůstanou beze změny.'))return;
+  if(!window.confirm('Opravdu smazat hlavní i publikovaný seznam '+warehouse+' / '+label+'? Druhý typ seznamu i druhý sklad zůstanou beze změny.')){status.textContent='Smazání zrušeno. Seznam nebyl změněn.';return;}
   button.disabled=true;
   const file=document.getElementById('boxPickFile'),publish=document.getElementById('publishBoxPick'),refresh=document.getElementById('boxPickRefreshButton');
   [file,publish,refresh].forEach(x=>{if(x)x.disabled=true});
@@ -453,7 +453,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    if(remainingPublished||remainingMaster||Number(verified.revision)<revision)throw new Error('Server nepotvrdil vymazání seznamu.');
    status.textContent='Smazání potvrzeno: '+warehouse+' / '+label+'.';
    freshness.textContent='Seznam je prázdný · revize '+verified.revision;
-   window.alert((oldMaster||oldPublished?'Seznam '+warehouse+' / '+label+' byl smazán.':'Seznam '+warehouse+' / '+label+' už byl prázdný.')+'\\nPřed smazáním: hlavní '+oldMaster+' boxů, telefon '+oldPublished+' boxů.\\nDruhý typ seznamu i druhý sklad zůstaly beze změny.');
+   window.alert((oldMaster||oldPublished?'Seznam '+warehouse+' / '+label+' byl smazán.':'Seznam '+warehouse+' / '+label+' už byl prázdný.')+'\nPřed smazáním: hlavní '+oldMaster+' boxů, telefon '+oldPublished+' boxů.\nDruhý typ seznamu i druhý sklad zůstaly beze změny.');
    window.location.reload();
   }catch(error){
    status.textContent='Smazání nebylo potvrzeno: '+String(error&&error.message||error);
