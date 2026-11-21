@@ -388,7 +388,7 @@ function renderDirectionToggles(){const label='⇄ Směr: '+(reverseAisleOrder?'
  }
  if(!boxPickLevel){
   activeTask=null;
-  $('boxPickMobileStreets').innerHTML='<div class="empty">Vyberte 00 pozice, Patra 1–6'+(warehouse==='DC3'+' nebo Nadrozměry.')+'</div>';
+  $('boxPickMobileStreets').innerHTML='<div class="empty">Vyberte 00 pozice, Patra 1–6'+(warehouse==='DC3'?' nebo Nadrozměry.':'.')+'</div>';
   $('boxPickMobileStatus').textContent='Vyberte typ vyskladnění pro '+warehouse+'.';
   return;
  }
