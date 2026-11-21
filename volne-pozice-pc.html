@@ -503,7 +503,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
  const $=id=>document.getElementById(id);
  const priorityCategories={1:'HOT',201:'COLD',202:'COLD',203:'COLD',204:'COLD',205:'FastPick',3:'DC',0:'MANUAL'};
  let floorWarehouse='DC2',floorLevel='01',floorBusy=false;
- const getLevel=position=>{const m=String(position??'').trim().match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,2})\\s*$/);return m?m[3].padStart(2,'0'):null};
+ const getLevel=position=>{const m=String(position??'').trim().match(/^\s*0*(\\d{1,3})\s*[-–]\s*0*(\\d{1,3})\s*[-–]\s*0*(\\d{1,2})\s*$/);return m?m[3].padStart(2,'0'):null};
  const allowed=(warehouse,level)=>warehouse==='DC2'?/^0[1-6]$/.test(level):warehouse==='DC3'?/^0[3-6]$/.test(level):false;
  const floorLabel=()=>Number(floorLevel)+'. patro ('+floorLevel+')';
  function renderSelectors(){
@@ -569,10 +569,10 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    const next=[],reject={warehouse:0,status:0,position:0,box:0,priority:0},seen=new Set(),ids=new Map();let duplicates=0;
    for(let i=0;i<rows.length;i++){
     const row=rows[i],wh=String(row[col('Sklad')]??'').trim().toUpperCase(),box=String(row[col('Box')]??'').trim(),position=String(row[col('Pozice')]??'').trim();
-    const status=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    const status=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const statusOk=status==='1'||status==='novy';
     const priorityRaw=String(row[col('Priorita')]??'').trim().replace(',','.'),priority=priorityRaw===''?NaN:Number(priorityRaw),category=Number.isInteger(priority)?priorityCategories[priority]:undefined;
-    const match=position.match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{2})\\s*$/);
+    const match=position.match(/^\s*0*(\\d{1,3})\s*[-–]\s*0*(\\d{1,3})\s*[-–]\s*0*(\\d{2})\s*$/);
     if(wh!=='CZSYR2'&&wh!=='CZSYR3'){reject.warehouse++;continue}
     if(!statusOk){reject.status++;continue}
     if(!match||match[3]!==floorLevel||!allowed(floorWarehouse,match[3])){reject.position++;continue}
