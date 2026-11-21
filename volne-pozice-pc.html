@@ -566,7 +566,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    if(!saved)throw lastError||new Error('Publikování nebylo potvrzeno.');
    tasks=saved.masterTasks||[];publishedTasks=saved.tasks||[];
    const count=publishedTasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length;
-   if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
+   if(count!==(tasks.filter(t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)).length))throw new Error('Počet publikovaných boxů se neshoduje s hlavním seznamem.');
    renderFloorList();$('boxFloorStatus').textContent='✓ Publikováno do telefonu: '+count+' boxů. Ostatní patra a standardní režim zůstaly zachovány.';
    $('boxFloorFreshness').textContent='Revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
   }catch(e){$('boxFloorStatus').textContent='✕ Publikování se nezdařilo: '+String(e&&e.message||e)}
@@ -577,7 +577,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   if(!confirm('Opravdu smazat pouze '+floorWarehouse+' / '+floorLabel()+'? Ostatní patra a standardní režim zůstanou beze změny.'))return;
   floorBusy=true;boxPickMutationVersion++;$('boxFloorDelete').disabled=true;
   try{
-   const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&getLevel(t.position)===floorLevel;
+   const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
    const master=current.masterTasks||current.tasks||[],published=current.tasks||[];
    const oldMaster=master.filter(same).length,oldPublished=published.filter(same).length;
    const saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{
@@ -594,7 +594,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   finally{floorBusy=false;$('boxFloorDelete').disabled=false}
  }
  document.querySelectorAll('[data-box-floor-mode]').forEach(b=>b.addEventListener('click',()=>showMode(b.dataset.boxFloorMode)));
- document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.addEventListener('click',()=>{floorWarehouse=b.dataset.boxFloorWarehouse;if(!allowed(floorWarehouse,floorLevel))floorLevel='ALL';renderSelectors();renderFloorList();refreshFloorState()}));
+ document.querySelectorAll('[data-box-floor-warehouse]').forEach(b=>b.addEventListener('click',()=>{floorWarehouse=b.dataset.boxFloorWarehouse;floorLevel='ALL';renderSelectors();renderFloorList();refreshFloorState()}));
  document.querySelectorAll('[data-box-floor-level]').forEach(b=>b.addEventListener('click',()=>{floorLevel='ALL';renderSelectors();renderFloorList();refreshFloorState()}));
  $('boxFloorFile').addEventListener('change',e=>importFloor(e.target.files&&e.target.files[0]));
  $('boxFloorRefresh').addEventListener('click',refreshFloorState);
