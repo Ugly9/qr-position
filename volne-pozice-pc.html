@@ -35,9 +35,29 @@ main{position:relative;z-index:1}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="qr-global-clear-style">
+#clearAllLists{
+ flex:0 0 auto;min-height:44px;padding:11px 16px;
+ border:1px solid rgba(255,105,120,.72)!important;
+ background:linear-gradient(180deg,rgba(117,31,48,.98),rgba(74,19,34,.99))!important;
+ color:#fff!important;letter-spacing:.07em;font-weight:800;
+ box-shadow:0 5px 18px rgba(120,20,43,.26),inset 0 1px 0 rgba(255,255,255,.10)!important
+}
+#clearAllLists:hover{background:linear-gradient(180deg,#a52f4d,#721d38)!important;border-color:#ff9aaa!important}
+#clearAllLists:disabled{opacity:.58;filter:grayscale(.2);cursor:wait;transform:none}
+#globalClearStatus{font-size:12px}
+#globalClearStatus.is-error{color:#ff9aa9}
+#globalClearStatus.is-success{color:#9de8bd}
+@media(max-width:680px){#globalClearTools{align-items:stretch!important;flex-direction:column}#globalClearStatus{text-align:left!important}#clearAllLists{width:100%}}
+</style>
+
 </head><body><main>
 <header class="head"><div><div class="eyebrow">WAREHOUSE TOOL · VOLNÉ POZICE</div><h1>QR Position — Volné pozice</h1><div class="muted">Společný seznam volných míst pro PC i mobilní verzi</div></div><div class="badge" id="syncBadge">NAČÍTÁM SPOLEČNÝ SEZNAM…</div></header>
 <nav class="row" style="margin:0 0 18px"><button class="btn primary" id="tabFree">Volné pozice</button><button class="btn" id="tabPicking">Vyskladnění boxu</button></nav>
+<div class="row" id="globalClearTools" style="justify-content:flex-end;align-items:center;margin:0 0 18px">
+ <span class="status" id="globalClearStatus" role="status" aria-live="polite" style="flex:1;min-width:180px;text-align:right"></span>
+ <button class="btn" id="clearAllLists" type="button" aria-label="Vymazat všechny seznamy v QR Position">⚠ VYMAZAT VŠECHNY SEZNAMY</button>
+</div>
 <div class="layout" id="freePositionsView"><aside class="panel"><h2>1. Vyberte sklad</h2><div class="warehouse"><button class="btn" data-dc="DC2"><strong>DC2</strong><small>Uličky 12–123 · pozice 1–168</small></button><button class="btn" data-dc="DC3"><strong>DC3</strong><small>Uličky 1–41 · pozice 1–148</small></button></div>
 <div class="stats"><div class="stat"><b id="total">—</b><span>Volné pozice celkem</span></div><div class="stat"><b id="dc2Total">—</b><span>Volné pozice DC2</span></div><div class="stat"><b id="dc3Total">—</b><span>Volné pozice DC3</span></div></div>
 <div class="row"><button class="btn" id="delete">Smazat seznam</button></div>
@@ -124,7 +144,7 @@ main{position:relative;z-index:1}
  </div>
  <div id="boxFloorPreview" class="street-list"><div class="empty">Nahrajte Excel soubor для выбранного этажа.</div></div>
 </div></section></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=52"></script><script src="./qr-box-sync.js?v=29"></script><script src="./qr-working-guard.js?v=16"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=53"></script><script src="./qr-box-sync.js?v=29"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -793,7 +813,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=94"floors"]');
+ navigator.serviceWorker.register('./sw.js?v=95"floors"]');
     oldClick('[data-box-floor-warehouse="'+activeWarehouse+'"]');
    }else{
     oldClick('[data-box-floor-mode="standard"]');
@@ -864,5 +884,164 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
 .box-pick-count{font-family:var(--ui-display)!important;font-size:17px!important}.occupied-position{font-family:var(--ui-font)!important;background:rgba(113,77,17,.98)!important;border-color:var(--ui-gold)!important;color:#fff0c5!important}.qr{border-radius:16px!important}
 @media(max-width:900px){.panel{padding:16px!important;border-radius:17px!important}.stat{padding:10px!important}.btn{min-height:42px}}
 </style>
+
+<script id="qr-global-clear-handler">
+(function(){
+ const $=id=>document.getElementById(id);
+ const button=$('clearAllLists'),status=$('globalClearStatus');
+ if(!button||button.dataset.bound==='1')return;
+ button.dataset.bound='1';
+ let busy=false;
+ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ function setStatus(message,kind){
+  status.textContent=message;
+  status.classList.toggle('is-error',kind==='error');
+  status.classList.toggle('is-success',kind==='success');
+ }
+ async function readBoth(){
+  const pair=await Promise.all([
+   window.QRPositionSync.getSnapshot(),
+   window.QRBoxPickingSync.get()
+  ]);
+  return {map:pair[0],boxes:pair[1]};
+ }
+ function isCompletelyCleared(state){
+  return !!state&&
+   Array.isArray(state.map.rows)&&state.map.rows.length===0&&
+   Array.isArray(state.map.freeRows)&&state.map.freeRows.length===0&&
+   Array.isArray(state.boxes.tasks)&&state.boxes.tasks.length===0&&
+   Array.isArray(state.boxes.masterTasks)&&state.boxes.masterTasks.length===0&&
+   state.boxes.cleared===true;
+ }
+ button.addEventListener('click',async function(){
+  if(busy)return;
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){
+   setStatus('Pro hromadné mazání je nutné připojení k serveru.','error');
+   return;
+  }
+  if(typeof pcListMutation!=='undefined'&&pcListMutation){
+   setStatus('Nejprve dokončete probíhající import nebo mazání.','error');
+   return;
+  }
+  const busyIds=['file','boxPickFile','boxFloorFile','publishBoxPick','deleteBoxPick','boxFloorPublish','boxFloorDelete'];
+  if(busyIds.some(id=>{const el=$(id);return el&&el.disabled})){
+   setStatus('Některý import nebo operace právě probíhá. Počkejte na její dokončení.','error');
+   return;
+  }
+  busy=true;
+  button.disabled=true;
+  const originalLabel='⚠ VYMAZAT VŠECHNY SEZNAMY';
+  button.textContent='OVĚŘUJI SEZNAMY…';
+  setStatus('Načítám počty záznamů ze serveru…');
+  let controls=[],savedDisabled=[];
+  try{
+   const before=await readBoth();
+   const published=Array.isArray(before.boxes.tasks)?before.boxes.tasks.length:0;
+   const master=Array.isArray(before.boxes.masterTasks)?before.boxes.masterTasks.length:0;
+   const mapCount=before.map.rows.length;
+   const message=
+    'Opravdu chcete vymazat VŠECHNY seznamy QR Position na serveru?\n\n'+
+    'Mapa volných pozic: '+mapCount+' záznamů\n'+
+    'Boxy publikované do telefonu: '+published+'\n'+
+    'Boxy v hlavním seznamu: '+master+'\n'+
+    'Značení pracovních uliček bude také vymazáno.\n\n'+
+    'Dotkne se to PC i mobilní verze, DC2 i DC3, standardních pozic, Nadrozměrů i všech pater.\n'+
+    'Po smazání bude nutné nahrát nové Excel soubory.';
+   if(!window.confirm(message)){
+    setStatus('Mazání zrušeno. Žádná data nebyla změněna.');
+    return;
+   }
+   controls=Array.from(document.querySelectorAll('button,input,select,textarea'));
+   savedDisabled=controls.map(el=>el.disabled);
+   controls.forEach(el=>{if(el!==button)el.disabled=true});
+   button.textContent='MAŽU VŠECHNY SEZNAMY…';
+   setStatus('Provádím jednotné serverové mazání všech seznamů…');
+   if(typeof pcListMutation!=='undefined')pcListMutation=true;
+   if(typeof pcListRevision!=='undefined')pcListRevision++;
+   let rpcResult=null;
+   try{
+    rpcResult=await window.QRPositionSync.clearAllLists(before.map.map_revision,before.boxes.revision);
+   }catch(writeError){
+    // A lost HTTP response does not prove that the database transaction failed.
+    // Read both datasets before deciding whether to report an error.
+    let observed=null;
+    try{observed=await readBoth()}catch(_){}
+    if(!isCompletelyCleared(observed)||
+       Number(observed.map.map_revision)<Number(before.map.map_revision)||
+       Number(observed.boxes.revision)<Number(before.boxes.revision)){
+     throw writeError;
+    }
+    rpcResult={
+     ok:true,cleared:true,
+     map_revision:observed.map.map_revision,
+     box_revision:observed.boxes.revision,
+     deleted_map_rows:mapCount,
+     deleted_working_aisles:0,
+     deleted_published_tasks:published,
+     deleted_master_tasks:master
+    };
+   }
+   let verified=null;
+   for(let attempt=0;attempt<8;attempt++){
+    verified=await readBoth();
+    if(isCompletelyCleared(verified)&&
+       Number(verified.map.map_revision)>=Number(rpcResult.map_revision)&&
+       Number(verified.boxes.revision)>=Number(rpcResult.box_revision))break;
+    if(attempt<7)await pause(350);
+   }
+   if(!isCompletelyCleared(verified)||
+      Number(verified.map.map_revision)<Number(rpcResult.map_revision)||
+      Number(verified.boxes.revision)<Number(rpcResult.box_revision)){
+    throw new Error('Server nepotvrdil prázdné seznamy ve všech modulech. Výsledek nebyl označen jako úspěšný.');
+   }
+
+   // Clear only local copies of uploaded/operational data; keep device identity
+   // and user preferences such as the selected picking direction.
+   lists={DC2:[],DC3:[]};
+   if(typeof skipped!=='undefined'&&skipped&&typeof skipped.clear==='function')skipped.clear();
+   if(typeof working!=='undefined'&&working&&typeof working.clear==='function')working.clear();
+   if(typeof sharedWorking!=='undefined')sharedWorking=[];
+   if(typeof dc!=='undefined')dc=null;
+   if(typeof activeStreet!=='undefined')activeStreet=null;
+   if(typeof positionIndex!=='undefined')positionIndex=0;
+   try{
+    localStorage.removeItem('volnePozicePcLists');
+    localStorage.removeItem('volnePozicePcSkipped');
+    localStorage.removeItem('qr-free-positions-last-upload-v1');
+    localStorage.removeItem('qr-working-cache-v1');
+    localStorage.removeItem('qr-working-pending-v1');
+    localStorage.setItem('qr-map-revision-cache-v1',String(verified.map.map_revision));
+   }catch(_){}
+   if(typeof renderStats==='function')renderStats();
+   if($('streetList'))$('streetList').innerHTML='<div class="empty">Na serveru nejsou žádné volné pozice. Nahrajte novou mapu skladu.</div>';
+   if($('positionPane'))$('positionPane').innerHTML='<div class="empty">Vyberte sklad a nahrajte novou mapu.</div>';
+   if($('occupiedList'))$('occupiedList').innerHTML='<div class="empty">Seznam obsazených pozic je prázdný.</div>';
+   if($('importStatus'))$('importStatus').textContent='✓ Všechny seznamy jsou prázdné. Nahrajte novou mapu skladu.';
+   if($('lastUploadStatus'))$('lastUploadStatus').textContent='Poslední nahrání souboru: zatím není zaznamenáno.';
+   if(typeof setSyncBadge==='function')setSyncBadge('VŠECHNY SEZNAMY VYMAZÁNY');
+   // Refresh hidden module state too, so switching menus immediately shows empty lists.
+   if($('boxPickRefreshButton'))$('boxPickRefreshButton').click();
+   if($('boxFloorRefresh'))$('boxFloorRefresh').click();
+   setStatus(
+    '✓ Potvrzeno: mapa '+Number(rpcResult.deleted_map_rows||0)+
+    ', publikované boxy '+Number(rpcResult.deleted_published_tasks||0)+
+    ', hlavní boxy '+Number(rpcResult.deleted_master_tasks||0)+
+    '. Všechny moduly jsou prázdné.',
+    'success'
+   );
+  }catch(error){
+   const message=String(error&&error.message||error);
+   setStatus('✕ Mazání nebylo potvrzeno: '+message,'error');
+   if(typeof setSyncBadge==='function')setSyncBadge('CHYBA HROMADNÉHO MAZÁNÍ');
+  }finally{
+   controls.forEach((el,i)=>{if(el!==button)el.disabled=savedDisabled[i]});
+   if(typeof pcListMutation!=='undefined')pcListMutation=false;
+   button.disabled=false;
+   button.textContent=originalLabel;
+   busy=false;
+  }
+ });
+})();
+</script>
 
 </body></html>
