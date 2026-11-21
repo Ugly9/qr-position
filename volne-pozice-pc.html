@@ -938,6 +938,7 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
  if(!button||button.dataset.bound==='1')return;
  button.dataset.bound='1';
  let busy=false;
+ let reloadAfterClear=false;
  const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  function setStatus(message,kind){
   status.textContent=message;
@@ -1065,9 +1066,8 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    if($('importStatus'))$('importStatus').textContent='✓ Všechny seznamy jsou prázdné. Nahrajte novou mapu skladu.';
    if($('lastUploadStatus'))$('lastUploadStatus').textContent='Poslední nahrání souboru: zatím není zaznamenáno.';
    if(typeof setSyncBadge==='function')setSyncBadge('VŠECHNY SEZNAMY VYMAZÁNY');
-   // Refresh hidden module state too, so switching menus immediately shows empty lists.
-   if($('boxPickRefreshButton'))$('boxPickRefreshButton').click();
-   if($('boxFloorRefresh'))$('boxFloorRefresh').click();
+   // Reload after all controls are re-enabled so every module starts from the verified empty server state.
+   reloadAfterClear=true;
    setStatus(
     '✓ Potvrzeno: mapa '+Number(rpcResult.deleted_map_rows||0)+
     ', publikované boxy '+Number(rpcResult.deleted_published_tasks||0)+
@@ -1085,6 +1085,7 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    button.disabled=false;
    button.textContent=originalLabel;
    busy=false;
+   if(reloadAfterClear)setTimeout(()=>window.location.reload(),900);
   }
  });
 })();
