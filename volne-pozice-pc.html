@@ -157,20 +157,33 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
 #boxPickWarehouses,#boxPickLevels,#boxFloorWarehouses,#boxFloorLevels{display:none!important}
 </style>
 <section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><div id="boxPickUnifiedControls" style="margin:14px 0">
- <div style="margin-bottom:8px;font-weight:700">1. Vyberte sklad</div>
- <div class="row" id="boxPickUnifiedWarehouses">
-  <button class="btn primary" type="button" data-ui-warehouse="DC2">DC2</button>
-  <button class="btn" type="button" data-ui-warehouse="DC3">DC3</button>
- </div>
- <div id="boxPickUnifiedModes" style="display:none;margin-top:14px">
-  <div style="margin-bottom:8px;font-weight:700">2. Vyberte typ vyskladnění</div>
-  <div class="warehouse" id="boxPickUnifiedModeButtons">
-   <button class="btn" type="button" data-ui-mode="00"><strong>00 pozice</strong><small>Běžné pozice</small></button>
-   <button class="btn" type="button" data-ui-mode="FLOORS"><strong>Patra</strong><small id="boxPickUnifiedFloorLabel">01–06 pozice</small></button>
-   <button class="btn" type="button" data-ui-mode="01"><strong>Nadrozměry</strong><small>Pouze DC3</small></button>
+ <section id="boxPickWarehouseStep">
+  <div class="box-pick-step-title">KROK 1 · VYBERTE SKLAD</div>
+  <div class="row" id="boxPickUnifiedWarehouses">
+   <button class="btn warehouse-choice" type="button" data-ui-warehouse="DC2"><strong>DC2</strong><small>Vybrat sklad DC2</small></button>
+   <button class="btn warehouse-choice" type="button" data-ui-warehouse="DC3"><strong>DC3</strong><small>Vybrat sklad DC3</small></button>
   </div>
- </div>
- <div class="status" id="boxPickUnifiedStatus" style="margin-top:10px">Vybráno: DC2. Zvolte režim vyskladnění.</div>
+ </section>
+ <section id="boxPickUnifiedModes" style="display:none;margin-top:14px">
+  <div class="box-pick-step-title">KROK 2 · VYBERTE TYP VYSKLADNĚNÍ</div>
+  <div class="box-pick-selected-warehouse">
+   <span>VYBRANÝ SKLAD</span><strong id="boxPickUnifiedWarehouseLabel">DC2</strong>
+   <button class="btn" type="button" data-ui-back-warehouse>Změnit sklad</button>
+  </div>
+  <div class="warehouse" id="boxPickUnifiedModeButtons">
+   <button class="btn mode-choice" type="button" data-ui-mode="00"><strong>00 pozice</strong><small>Běžné pozice</small></button>
+   <button class="btn mode-choice" type="button" data-ui-mode="FLOORS"><strong>Patra</strong><small id="boxPickUnifiedFloorLabel">01–06 pozice</small></button>
+   <button class="btn mode-choice" type="button" data-ui-mode="01"><strong>Nadrozměry</strong><small>Pouze DC3</small></button>
+  </div>
+  <div class="status" id="boxPickUnifiedModeError" style="display:none;margin-top:10px"></div>
+ </section>
+ <section id="boxPickUnifiedSelected" style="display:none;margin-top:14px">
+  <div class="box-pick-selected-summary">
+   <div><span>VYBRANÝ SKLAD A REŽIM</span><strong id="boxPickUnifiedStatus">DC2 · 00 POZICE</strong></div>
+   <button class="btn" type="button" data-ui-back-mode>Změnit typ</button>
+   <button class="btn" type="button" data-ui-back-warehouse>Změnit sklad</button>
+  </div>
+ </section>
  <div hidden aria-hidden="true">
   <button type="button" data-box-floor-mode="standard"></button>
   <button type="button" data-box-floor-mode="floors"></button>
@@ -899,7 +912,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=103',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=104',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -908,24 +921,47 @@ window.addEventListener('load',()=>{
 </script><script>
 (function(){
  const $=id=>document.getElementById(id);
- let activeWarehouse='DC2',activeMode=null;
+ let activeWarehouse=null,activeMode=null;
  const oldClick=selector=>{const el=document.querySelector(selector);if(!el)throw new Error('Chybí ovládací prvek '+selector);el.click()};
+ function currentModeLabel(){
+  return activeMode==='00'?'00 POZICE':
+   activeMode==='01'?'NADROZMĚRY':
+   activeMode==='FLOORS'?(activeWarehouse==='DC2'?'PATRA 1–6':'PATRA 3–6'):'';
+ }
+ function hideWorkPanels(){
+  $('legacyBoxPickMode').style.display='none';
+  $('floorBoxPickMode').style.display='none';
+ }
  function render(){
-  document.querySelectorAll('[data-ui-warehouse]').forEach(b=>b.classList.toggle('primary',b.dataset.uiWarehouse===activeWarehouse));
-  $('boxPickUnifiedModes').style.display=activeWarehouse?'block':'none';
-  $('boxPickUnifiedFloorLabel').textContent=activeWarehouse==='DC2'?'01–06 pozice':'03–06 pozice';
-  document.querySelectorAll('[data-ui-mode]').forEach(b=>{
-   const mode=b.dataset.uiMode;
-   b.hidden=mode==='01'&&activeWarehouse!=='DC3';
-   b.classList.toggle('primary',mode===activeMode);
+  const warehouseStep=!activeWarehouse;
+  const modeStep=!!activeWarehouse&&!activeMode;
+  const selectedStep=!!activeWarehouse&&!!activeMode;
+  $('boxPickWarehouseStep').style.display=warehouseStep?'block':'none';
+  $('boxPickUnifiedModes').style.display=modeStep?'block':'none';
+  $('boxPickUnifiedSelected').style.display=selectedStep?'block':'none';
+  document.querySelectorAll('[data-ui-warehouse]').forEach(button=>{
+   button.classList.toggle('primary',button.dataset.uiWarehouse===activeWarehouse);
   });
-  const label=activeMode==='00'?'00 pozice':activeMode==='01'?'Nadrozměry':activeMode==='FLOORS'?(activeWarehouse==='DC2'?'Patra 1–6':'Patra 3–6'):'bez vybraného režimu';
-  $('boxPickUnifiedStatus').textContent='Vybráno: '+activeWarehouse+' · '+label+'.';
+  $('boxPickUnifiedWarehouseLabel').textContent=activeWarehouse||'—';
+  $('boxPickUnifiedFloorLabel').textContent=activeWarehouse==='DC2'?'01–06 pozice':'03–06 pozice';
+  document.querySelectorAll('[data-ui-mode]').forEach(button=>{
+   const mode=button.dataset.uiMode;
+   button.hidden=mode==='01'&&activeWarehouse!=='DC3';
+   button.classList.toggle('primary',mode===activeMode);
+  });
+  $('boxPickUnifiedStatus').textContent=activeWarehouse+' · '+currentModeLabel();
+ }
+ function chooseWarehouse(warehouse){
+  if(!['DC2','DC3'].includes(warehouse))return;
+  activeWarehouse=warehouse;
+  activeMode=null;
+  hideWorkPanels();
+  $('boxPickUnifiedModeError').style.display='none';
+  render();
  }
  function chooseMode(mode){
   if(!activeWarehouse)return;
   if(mode==='01'&&activeWarehouse!=='DC3')return;
-  activeMode=mode;
   try{
    if(mode==='FLOORS'){
     oldClick('[data-box-floor-mode="floors"]');
@@ -935,25 +971,44 @@ window.addEventListener('load',()=>{
     oldClick('[data-box-warehouse="'+activeWarehouse+'"]');
     oldClick('[data-box-level="'+mode+'"]');
    }
+   activeMode=mode;
    $('legacyBoxPickMode').style.display=mode==='FLOORS'?'none':'block';
    $('floorBoxPickMode').style.display=mode==='FLOORS'?'block':'none';
+   $('boxPickUnifiedModeError').style.display='none';
    render();
-  }catch(e){
+  }catch(error){
    activeMode=null;
-   $('boxPickUnifiedStatus').textContent='Nepodařilo se přepnout režim: '+String(e&&e.message||e);
+   hideWorkPanels();
+   $('boxPickUnifiedModeError').textContent='Nepodařilo se přepnout režim: '+String(error&&error.message||error);
+   $('boxPickUnifiedModeError').style.display='block';
    render();
   }
  }
- document.querySelectorAll('[data-ui-warehouse]').forEach(b=>b.addEventListener('click',()=>{
-  activeWarehouse=b.dataset.uiWarehouse;activeMode=null;
-  $('legacyBoxPickMode').style.display='none';
-  $('floorBoxPickMode').style.display='none';
-  render();
- }));
- document.querySelectorAll('[data-ui-mode]').forEach(b=>b.addEventListener('click',()=>chooseMode(b.dataset.uiMode)));
+ document.querySelectorAll('[data-ui-warehouse]').forEach(button=>{
+  button.addEventListener('click',()=>chooseWarehouse(button.dataset.uiWarehouse));
+ });
+ document.querySelectorAll('[data-ui-mode]').forEach(button=>{
+  button.addEventListener('click',()=>chooseMode(button.dataset.uiMode));
+ });
+ document.querySelectorAll('[data-ui-back-warehouse]').forEach(button=>{
+  button.addEventListener('click',()=>{
+   activeWarehouse=null;
+   activeMode=null;
+   hideWorkPanels();
+   render();
+  });
+ });
+ document.querySelectorAll('[data-ui-back-mode]').forEach(button=>{
+  button.addEventListener('click',()=>{
+   activeMode=null;
+   hideWorkPanels();
+   render();
+  });
+ });
+ hideWorkPanels();
  render();
- chooseMode('00');
 })();
+</script>;
 </script>
 <style id="qr-position-gta-unified-ui">
 /* QR POSITION UNIFIED GTA UI — consistent PC interface styling */
@@ -993,6 +1048,36 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--ui-pink)}label{fon
 details>summary{font-family:var(--ui-font)!important;font-weight:700!important;letter-spacing:.04em;color:#f4f6ff!important}details[open]>summary{color:#ffd27c!important}
 #boxFloorFilterStatus,#boxPickStatus,#boxFloorStatus,#boxFloorFreshness,#boxPickFreshness{font-family:var(--ui-font)!important;line-height:1.45}
 #tabFree,#tabPicking{flex:1 1 220px;min-height:48px;font-size:16px!important}
+
+#boxPickWarehouseStep,#boxPickUnifiedModes,#boxPickUnifiedSelected{animation:boxPickStepIn .18s ease-out}
+@keyframes boxPickStepIn{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.box-pick-step-title{margin:0 0 13px;padding-left:11px;border-left:4px solid var(--ui-gold);font-family:var(--ui-display)!important;font-size:17px;letter-spacing:.07em;color:#ffe0a0}
+#boxPickUnifiedWarehouses{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0}
+#boxPickUnifiedWarehouses .warehouse-choice{min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px!important;border:1px solid rgba(255,255,255,.35)!important;border-bottom:4px solid var(--ui-blue)!important;border-radius:17px!important;background:linear-gradient(145deg,rgba(33,53,83,.99),rgba(24,31,52,.99))!important;box-shadow:0 9px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12)!important}
+#boxPickUnifiedWarehouses .warehouse-choice:last-child{border-bottom-color:var(--ui-pink)!important}
+#boxPickUnifiedWarehouses .warehouse-choice strong{font-family:var(--ui-display)!important;font-size:clamp(30px,3vw,42px)!important;letter-spacing:.08em}
+#boxPickUnifiedWarehouses .warehouse-choice small{font-size:13px!important;color:#d6e0f5!important}
+.box-pick-selected-warehouse{display:flex;align-items:center;gap:12px;margin:0 0 13px;padding:10px 12px;border:1px solid var(--ui-line)!important;border-radius:12px;background:rgba(17,25,42,.96)}
+.box-pick-selected-warehouse>span,.box-pick-selected-summary span{color:var(--ui-muted);font-size:11px;font-weight:700;letter-spacing:.08em}
+.box-pick-selected-warehouse>strong{font-family:var(--ui-display)!important;font-size:20px;color:#fff;margin-right:auto}
+.box-pick-selected-warehouse .btn,.box-pick-selected-summary .btn{min-height:36px;padding:7px 11px!important;font-size:12px!important}
+#boxPickUnifiedModeButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+#boxPickUnifiedModeButtons .mode-choice{min-height:100px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;padding:17px!important;text-align:left}
+#boxPickUnifiedModeButtons .mode-choice strong{font-family:var(--ui-display)!important;font-size:22px!important}
+#boxPickUnifiedModeButtons .mode-choice small{font-size:12px!important;color:#d6e0f5!important}
+#boxPickUnifiedModeButtons .mode-choice[hidden]{display:none!important}
+#boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{grid-column:1/-1;min-height:76px}
+.box-pick-selected-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid var(--ui-line)!important;border-radius:13px;background:rgba(17,25,42,.96)}
+.box-pick-selected-summary>div{display:flex;flex:1 1 180px;flex-direction:column;gap:4px}
+.box-pick-selected-summary strong{font-family:var(--ui-display)!important;font-size:18px;letter-spacing:.04em;color:#fff}
+@media(max-width:680px){
+ #boxPickUnifiedWarehouses{gap:8px}
+ #boxPickUnifiedWarehouses .warehouse-choice{min-height:104px;padding:12px 8px!important}
+ #boxPickUnifiedModeButtons{grid-template-columns:1fr}
+ #boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{grid-column:auto}
+ .box-pick-selected-warehouse{flex-wrap:wrap}
+ .box-pick-selected-warehouse>strong{margin-right:0}
+}
 #boxPickUnifiedModes .warehouse{gap:10px}#boxPickUnifiedModeButtons .btn{min-height:78px}#boxPickUnifiedModeButtons .btn strong{font-family:var(--ui-display)!important;font-size:19px;font-weight:400}#boxPickUnifiedModeButtons .btn small{font-family:var(--ui-font)!important}
 #boxPickUnifiedStatus{padding:9px 12px;border-left:3px solid var(--ui-gold);background:rgba(255,196,92,.08);border-radius:0 9px 9px 0}
 .box-pick-count{font-family:var(--ui-display)!important;font-size:17px!important}.occupied-position{font-family:var(--ui-font)!important;background:rgba(113,77,17,.98)!important;border-color:var(--ui-gold)!important;color:#fff0c5!important}.qr{border-radius:16px!important}
