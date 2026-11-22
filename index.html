@@ -482,7 +482,9 @@ async function load(manual=false){
     }
     return state;
    }
-   const safeResult=preserveCurrentMobileMode(previousState,latestState,selectedWarehouse,selectedLevel);
+   const safeResult=(warehouse===selectedWarehouse&&boxPickLevel===selectedLevel)
+    ?preserveCurrentMobileMode(previousState,latestState,selectedWarehouse,selectedLevel)
+    :{state:latestState,preserved:0};
    preservedCount=safeResult.preserved;
    state=safeResult.state;
    if(warehouse!==selectedWarehouse||boxPickLevel!==selectedLevel){
