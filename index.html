@@ -112,7 +112,7 @@
 </main></div>
 <div class="toast" id="toast"></div>
 
-<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=53"></script><script src="./qr-box-sync.js?v=29"></script><script src="./qr-working-guard.js?v=16"></script><script>
+<script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=53"></script><script src="./qr-box-sync.js?v=30"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -355,7 +355,7 @@ document.getElementById('vdonelist').onclick=async()=>{await vRefresh();vShow('v
 window.addEventListener('online',()=>{if(vReady&&['vhome','vstreets','vqr','vdone'].some(id=>document.getElementById(id).style.display==='block'))vUpdateNow()});
 const originalGoHome=goHome;goHome=function(){['vhome','vstreets','vqr','vdone'].forEach(x=>document.getElementById(x).style.display='none');originalGoHome()};
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(window.__qrPositionReloading)return;window.__qrPositionReloading=true;window.location.reload()})}
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=91',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});window.addEventListener('focus',()=>reg.update().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{}); });
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js?v=92',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});window.addEventListener('focus',()=>reg.update().catch(()=>{}));document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})})}).catch(()=>{}); });
 })();
 </script>
 <script>
@@ -418,87 +418,96 @@ function taskMatchesMobileMode(task,selectedWarehouse,selectedLevel){
  }
  return level===selectedLevel;
 }
-function preserveCurrentMobileMode(previousState,latestState,selectedWarehouse,selectedLevel){
- if(!selectedWarehouse||!selectedLevel||latestState.cleared===true)return {state:latestState,preserved:0};
- const previousTasks=Array.isArray(previousState.tasks)?previousState.tasks:[];
+function mobileTaskPassesServerFilters(task,serverState,selectedWarehouse,selectedLevel){
+ const oversize=selectedWarehouse==='DC3'&&selectedLevel==='01';
+ const categories=oversize?(serverState.oversizeCategories||{}):
+  ((serverState.categoriesByWarehouse&&serverState.categoriesByWarehouse[selectedWarehouse])||serverState.categories||{});
+ if(categories[task.category]===false)return false;
+ const cold=oversize?(serverState.oversizeColdSubtypeSettings||{}):
+  ((serverState.coldSubtypeSettings&&serverState.coldSubtypeSettings[selectedWarehouse])||{});
+ const priority=Number(task.priority);
+ if(priority===201||priority===202)return categories.COLD!==false&&cold['1']!==false;
+ if(priority===203||priority===204)return categories.COLD!==false&&cold['2']!==false;
+ if(priority===205)return categories.COLD!==false&&cold.fastpick!==false;
+ return true;
+}
+function protectLastVisibleModeOnUnexpectedEmpty(previousState,latestState,selectedWarehouse,selectedLevel){
+ const result={state:latestState,preserved:0,unpublished:0,warning:false};
+ if(!selectedWarehouse||!selectedLevel||latestState.cleared===true)return result;
  const latestTasks=Array.isArray(latestState.tasks)?latestState.tasks:[];
  const masterTasks=Array.isArray(latestState.masterTasks)?latestState.masterTasks:[];
- const previousModeTasks=previousTasks.filter(t=>taskMatchesMobileMode(t,selectedWarehouse,selectedLevel)&&!t.done);
- if(!previousModeTasks.length)return {state:latestState,preserved:0};
- const publishedKeys=new Set(latestTasks.map(mobileTaskKey));
- const masterByKey=new Map(masterTasks.filter(t=>t&&!t.done).map(t=>[mobileTaskKey(t),t]));
- const missing=previousModeTasks
-  .filter(t=>!publishedKeys.has(mobileTaskKey(t)))
-  .map(t=>masterByKey.get(mobileTaskKey(t)))
-  .filter(Boolean);
- if(!missing.length)return {state:latestState,preserved:0};
- const nextKeys=new Set(publishedKeys);
- const additions=missing.filter(t=>{
-  const key=mobileTaskKey(t);
-  if(nextKeys.has(key))return false;
-  nextKeys.add(key);
-  return true;
- });
- if(!additions.length)return {state:latestState,preserved:0};
- return {state:{...latestState,tasks:latestTasks.concat(additions)},preserved:additions.length};
+ const publishedForMode=latestTasks.filter(t=>taskMatchesMobileMode(t,selectedWarehouse,selectedLevel)&&!t.done);
+ if(publishedForMode.length>0)return result;
+ const eligibleMaster=masterTasks.filter(t=>taskMatchesMobileMode(t,selectedWarehouse,selectedLevel)&&!t.done&&mobileTaskPassesServerFilters(t,latestState,selectedWarehouse,selectedLevel));
+ result.unpublished=eligibleMaster.length;
+ if(!eligibleMaster.length)return result;
+ const previousTasks=Array.isArray(previousState.tasks)?previousState.tasks:[];
+ const previousVisible=previousTasks.filter(t=>taskMatchesMobileMode(t,selectedWarehouse,selectedLevel)&&!t.done&&mobileTaskPassesServerFilters(t,latestState,selectedWarehouse,selectedLevel));
+ if(!previousVisible.length){result.warning=true;return result;}
+ const masterByKey=new Map(eligibleMaster.map(t=>[mobileTaskKey(t),t]));
+ const retained=previousVisible.map(t=>masterByKey.get(mobileTaskKey(t))).filter(Boolean);
+ if(!retained.length){result.warning=true;return result;}
+ const otherModes=latestTasks.filter(t=>!taskMatchesMobileMode(t,selectedWarehouse,selectedLevel));
+ result.state={...latestState,tasks:otherModes.concat(retained)};
+ result.preserved=retained.length;
+ result.warning=true;
+ return result;
 }
 let boxLoadPromise=null;
 async function load(manual=false){
  if(boxLoadPromise){
-  if(manual){
-   $('boxPickSyncHomeButton').disabled=true;
-   $('boxPickSyncHomeButton').textContent='↻ Synchronizuji…';
+  if(!manual)return boxLoadPromise;
+  const button=$('boxPickSyncHomeButton');
+  button.disabled=true;
+  button.textContent='↻ Synchronizuji…';
+  try{await boxLoadPromise}finally{
+   button.disabled=false;
+   button.textContent='↻ Synchronizovat seznam ze serveru';
   }
-  try{
-   await boxLoadPromise;
-   if(manual)return await load(true);
-   return state;
-  }finally{
-   if(manual){
-    $('boxPickSyncHomeButton').disabled=false;
-    $('boxPickSyncHomeButton').textContent='↻ Synchronizovat seznam ze serveru';
-   }
-  }
+  return load(true);
  }
  boxLoadPromise=(async()=>{
   const button=$('boxPickSyncHomeButton');
-  const detailVisible=$('boxPickingDetail').style.display!=='none';
-  const selectedWarehouse=warehouse;
-  const selectedLevel=boxPickLevel;
+  const selectedWarehouse=warehouse,selectedLevel=boxPickLevel;
   const previousState=state;
+  const previousRevision=Number(previousState.revision||0);
   if(manual){
    button.disabled=true;
    button.textContent='↻ Synchronizuji…';
-   $('boxPickMobileStatus').textContent='Načítám aktuální seznam ze serveru…';
+   $('boxPickMobileStatus').textContent='Ověřuji revizi a načítám seznam ze serveru…';
   }
-  let preservedCount=0;
   try{
-   const latestState=await QRBoxPickingSync.get();
-   const oldRevision=Number(previousState.revision||0);
-   const newRevision=Number(latestState.revision||0);
-   if(newRevision<oldRevision){
-    if(manual){
-     $('boxPickMobileStatus').textContent='Server vrátil starší revizi ('+newRevision+'). Aktuální seznam '+oldRevision+' zůstává beze změny.';
+   if(!manual){
+    const remoteVersion=await QRBoxPickingSync.getRevision();
+    if(remoteVersion.revision<previousRevision){
+     $('boxPickMobileStatus').textContent='⚠ Server vrátil starší revizi '+remoteVersion.revision+'; zobrazený seznam '+previousRevision+' zůstal zachován.';
+     return state;
     }
+    if(remoteVersion.revision===previousRevision)return state;
+   }
+   const latestState=await QRBoxPickingSync.get();
+   const newRevision=Number(latestState.revision||0);
+   if(newRevision<previousRevision){
+    if(manual)$('boxPickMobileStatus').textContent='⚠ Server vrátil starší revizi '+newRevision+'; zobrazený seznam '+previousRevision+' zůstal zachován.';
     return state;
    }
-   const safeResult=(warehouse===selectedWarehouse&&boxPickLevel===selectedLevel)
-    ?preserveCurrentMobileMode(previousState,latestState,selectedWarehouse,selectedLevel)
-    :{state:latestState,preserved:0};
-   preservedCount=safeResult.preserved;
+   const sameMode=warehouse===selectedWarehouse&&boxPickLevel===selectedLevel;
+   const safeResult=sameMode
+    ?protectLastVisibleModeOnUnexpectedEmpty(previousState,latestState,selectedWarehouse,selectedLevel)
+    :{state:latestState,preserved:0,unpublished:0,warning:false};
    state=safeResult.state;
-   if(warehouse!==selectedWarehouse||boxPickLevel!==selectedLevel){
+   if(!sameMode){
     renderStreets();
     return state;
    }
-   if(!manual&&newRevision===oldRevision&&!preservedCount)return state;
-   if(detailVisible&&activeTask){
-    const latest=(state.tasks||[]).find(t=>String(t.id)===String(activeTask.id)&&!t.done&&t.warehouse===warehouse&&
+   if($('boxPickingDetail').style.display!=='none'&&activeTask){
+    const activeKey=mobileTaskKey(activeTask);
+    const latest=(state.tasks||[]).find(t=>mobileTaskKey(t)===activeKey&&!t.done&&t.warehouse===warehouse&&
      (boxPickLevel==='FLOORS'?isFloorPosition(t.position):positionLevel(t.position)===selectedPositionLevel()));
     if(!latest){
      activeTask=null;
      show('boxPickingHome');
-     $('boxPickDetailStatus').textContent='Aktivní box už v aktuálním seznamu není. Uličky zůstávají zachovány.';
+     $('boxPickDetailStatus').textContent='Aktivní box už není v publikovaném seznamu. Vyberte další box.';
     }else{
      activeTask=latest;
      renderActiveTask();
@@ -508,15 +517,23 @@ async function load(manual=false){
    if(manual){
     const visibleCount=filtered().length;
     const modeLabel=boxPickLevel==='FLOORS'?'Patra '+(warehouse==='DC2'?'1–6':'3–6'):boxPickLevel==='01'?'Nadrozměry':'00 pozice';
-    $('boxPickMobileStatus').textContent=preservedCount
-     ?'✓ Synchronizováno · '+modeLabel+' · ponecháno '+preservedCount+' dříve zobrazených boxů, které stále existují v hlavním seznamu · zbývá '+visibleCount+' · revize '+(state.revision||'—')
-     :'✓ '+modeLabel+' · zbývá '+visibleCount+' boxů · revize '+(state.revision||'—');
-    $('boxPickDetailStatus').textContent='✓ Synchronizace dokončena · '+visibleCount+' boxů · revize '+(state.revision||'—');
+    const checkedAt=new Date().toLocaleTimeString();
+    const serverUpdated=latestState.updated_at?new Date(latestState.updated_at).toLocaleTimeString():'čas není dostupný';
+    if(safeResult.warning&&safeResult.preserved>0){
+     $('boxPickMobileStatus').textContent='⚠ Server nemá publikované boxy pro '+modeLabel+'. Ponechán poslední platný seznam: '+visibleCount+' boxů. V hlavním seznamu je '+safeResult.unpublished+' odpovídajících boxů; ověřte publikaci na PC. Revize '+newRevision+'.';
+     $('boxPickDetailStatus').textContent='⚠ Poslední platný seznam zachován · serverová revize '+newRevision+'.';
+    }else if(safeResult.warning){
+     $('boxPickMobileStatus').textContent='⚠ '+modeLabel+' zatím není publikováno do telefonu. V hlavním seznamu je '+safeResult.unpublished+' odpovídajících boxů. Publikujte patro na PC. Revize '+newRevision+'.';
+     $('boxPickDetailStatus').textContent='⚠ Pro tento režim není publikovaný seznam. Revize '+newRevision+'.';
+    }else{
+     $('boxPickMobileStatus').textContent='✓ Synchronizováno · '+modeLabel+' · '+visibleCount+' boxů · revize '+newRevision+' · server aktualizován '+serverUpdated+' · kontrola '+checkedAt+'.';
+     $('boxPickDetailStatus').textContent='✓ Synchronizace dokončena · '+visibleCount+' boxů · revize '+newRevision+' · '+checkedAt;
+    }
    }
   }catch(e){
-   const msg='Chyba synchronizace: '+e.message;
-   $('boxPickDetailStatus').textContent=msg;
-   $('boxPickMobileStatus').textContent=msg+' Aktuální zobrazený seznam nebyl záměrně vymazán.';
+   const msg='Synchronizace se nezdařila: '+String(e&&e.message||e);
+   $('boxPickDetailStatus').textContent=msg+' Zobrazený seznam nebyl změněn.';
+   $('boxPickMobileStatus').textContent='✕ '+msg+' Dosavadní seznam zůstal zachován.';
   }finally{
    if(manual){
     button.disabled=false;
@@ -535,7 +552,7 @@ document.querySelectorAll('[data-box-dc]').forEach(b=>b.onclick=()=>{warehouse=b
 document.querySelectorAll('[data-mobile-box-level]').forEach(b=>b.onclick=()=>{const level=b.dataset.mobileBoxLevel;if(level==='01'&&warehouse!=='DC3')return;boxPickLevel=level;activeTask=null;show('boxPickingHome');renderStreets()});
 $('boxPickBackButton').onclick=()=>{show('boxPickingHome');renderStreets()};$('boxPickDirectionToggle').addEventListener('click',toggleDirection);$('boxPickDirectionToggleDetail').addEventListener('click',toggleDirection);$('boxPickRefreshButton').addEventListener('click',()=>load(true));
 $('boxPickSyncHomeButton').addEventListener('click',async()=>{const button=$('boxPickSyncHomeButton');if(button.disabled)return;await load(true)});
-let boxTouchX=0,boxTouchY=0,boxPointerX=0,boxPointerY=0,lastBoxSwipeAt=0;const boxDetailScreen=$('boxPickingDetail');boxDetailScreen.style.touchAction='pan-y';function handleBoxSwipe(dx,dy){if(Math.abs(dx)<45||Math.abs(dx)<=Math.abs(dy)*1.2)return;const now=Date.now();if(now-lastBoxSwipeAt<350)return;lastBoxSwipeAt=now;navigateBox(dx<0?1:-1)}boxDetailScreen.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'){boxPointerX=e.clientX;boxPointerY=e.clientY}},{passive:true});boxDetailScreen.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'||$('boxPickingDetail').style.display==='none')return;handleBoxSwipe(e.clientX-boxPointerX,e.clientY-boxPointerY)},{passive:true});boxDetailScreen.addEventListener('touchstart',e=>{if(e.changedTouches.length){boxTouchX=e.changedTouches[0].clientX;boxTouchY=e.changedTouches[0].clientY}},{passive:true});boxDetailScreen.addEventListener('touchend',e=>{if(!e.changedTouches.length||$('boxPickingDetail').style.display==='none')return;handleBoxSwipe(e.changedTouches[0].clientX-boxTouchX,e.changedTouches[0].clientY-boxTouchY)},{passive:true});window.addEventListener('online',()=>load(false));setInterval(()=>{if(!document.hidden&&navigator.onLine&&($('boxPickingHome').style.display!=='none'||$('boxPickingDetail').style.display!=='none'))load()},5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&($('boxPickingHome').style.display!=='none'||$('boxPickingDetail').style.display!=='none'))load()});
+let boxTouchX=0,boxTouchY=0,boxPointerX=0,boxPointerY=0,lastBoxSwipeAt=0;const boxDetailScreen=$('boxPickingDetail');boxDetailScreen.style.touchAction='pan-y';function handleBoxSwipe(dx,dy){if(Math.abs(dx)<45||Math.abs(dx)<=Math.abs(dy)*1.2)return;const now=Date.now();if(now-lastBoxSwipeAt<350)return;lastBoxSwipeAt=now;navigateBox(dx<0?1:-1)}boxDetailScreen.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'){boxPointerX=e.clientX;boxPointerY=e.clientY}},{passive:true});boxDetailScreen.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'||$('boxPickingDetail').style.display==='none')return;handleBoxSwipe(e.clientX-boxPointerX,e.clientY-boxPointerY)},{passive:true});boxDetailScreen.addEventListener('touchstart',e=>{if(e.changedTouches.length){boxTouchX=e.changedTouches[0].clientX;boxTouchY=e.changedTouches[0].clientY}},{passive:true});boxDetailScreen.addEventListener('touchend',e=>{if(!e.changedTouches.length||$('boxPickingDetail').style.display==='none')return;handleBoxSwipe(e.changedTouches[0].clientX-boxTouchX,e.changedTouches[0].clientY-boxTouchY)},{passive:true});window.addEventListener('online',()=>load(false));setInterval(()=>{if(!document.hidden&&navigator.onLine&&($('boxPickingHome').style.display!=='none'||$('boxPickingDetail').style.display!=='none'))load()},10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&navigator.onLine&&($('boxPickingHome').style.display!=='none'||$('boxPickingDetail').style.display!=='none'))load()});
 })();
 </script>
 </body>
