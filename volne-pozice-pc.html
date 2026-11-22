@@ -158,14 +158,14 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
 </style>
 <section class="panel hidden" id="boxPickingView"><h2>Vyskladnění boxu</h2><div id="boxPickUnifiedControls" style="margin:14px 0">
  <section id="boxPickWarehouseStep">
-  <div class="box-pick-step-title">KROK 1 · VYBERTE SKLAD</div>
+  <div class="box-pick-step-title">VYBERTE SKLAD</div>
   <div class="row" id="boxPickUnifiedWarehouses">
    <button class="btn warehouse-choice" type="button" data-ui-warehouse="DC2"><strong>DC2</strong><small>Vybrat sklad DC2</small></button>
    <button class="btn warehouse-choice" type="button" data-ui-warehouse="DC3"><strong>DC3</strong><small>Vybrat sklad DC3</small></button>
   </div>
  </section>
  <section id="boxPickUnifiedModes" style="display:none;margin-top:14px">
-  <div class="box-pick-step-title">KROK 2 · VYBERTE TYP VYSKLADNĚNÍ</div>
+  <div class="box-pick-step-title">VYBERTE TYP VYSKLADNĚNÍ</div>
   <div class="box-pick-selected-warehouse">
    <span>VYBRANÝ SKLAD</span><strong id="boxPickUnifiedWarehouseLabel">DC2</strong>
    <button class="btn" type="button" data-ui-back-warehouse>Změnit sklad</button>
@@ -177,13 +177,7 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
   </div>
   <div class="status" id="boxPickUnifiedModeError" style="display:none;margin-top:10px"></div>
  </section>
- <section id="boxPickUnifiedSelected" style="display:none;margin-top:14px">
-  <div class="box-pick-selected-summary">
-   <div><span>VYBRANÝ SKLAD A REŽIM</span><strong id="boxPickUnifiedStatus">DC2 · 00 POZICE</strong></div>
-   <button class="btn" type="button" data-ui-back-mode>Změnit typ</button>
-   <button class="btn" type="button" data-ui-back-warehouse>Změnit sklad</button>
-  </div>
- </section>
+>
  <div hidden aria-hidden="true">
   <button type="button" data-box-floor-mode="standard"></button>
   <button type="button" data-box-floor-mode="floors"></button>
@@ -912,7 +906,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=104',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=105',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -934,11 +928,8 @@ window.addEventListener('load',()=>{
  }
  function render(){
   const warehouseStep=!activeWarehouse;
-  const modeStep=!!activeWarehouse&&!activeMode;
-  const selectedStep=!!activeWarehouse&&!!activeMode;
   $('boxPickWarehouseStep').style.display=warehouseStep?'block':'none';
-  $('boxPickUnifiedModes').style.display=modeStep?'block':'none';
-  $('boxPickUnifiedSelected').style.display=selectedStep?'block':'none';
+  $('boxPickUnifiedModes').style.display=warehouseStep?'none':'block';
   document.querySelectorAll('[data-ui-warehouse]').forEach(button=>{
    button.classList.toggle('primary',button.dataset.uiWarehouse===activeWarehouse);
   });
@@ -948,8 +939,8 @@ window.addEventListener('load',()=>{
    const mode=button.dataset.uiMode;
    button.hidden=mode==='01'&&activeWarehouse!=='DC3';
    button.classList.toggle('primary',mode===activeMode);
+   button.setAttribute('aria-pressed',mode===activeMode?'true':'false');
   });
-  $('boxPickUnifiedStatus').textContent=activeWarehouse+' · '+currentModeLabel();
  }
  function chooseWarehouse(warehouse){
   if(!['DC2','DC3'].includes(warehouse))return;
@@ -976,6 +967,9 @@ window.addEventListener('load',()=>{
    $('floorBoxPickMode').style.display=mode==='FLOORS'?'block':'none';
    $('boxPickUnifiedModeError').style.display='none';
    render();
+   const target=mode==='FLOORS'?'floorBoxPickMode':'legacyBoxPickMode';
+   const panel=$(target);
+   if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(error){
    activeMode=null;
    hideWorkPanels();
@@ -998,16 +992,10 @@ window.addEventListener('load',()=>{
    render();
   });
  });
- document.querySelectorAll('[data-ui-back-mode]').forEach(button=>{
-  button.addEventListener('click',()=>{
-   activeMode=null;
-   hideWorkPanels();
-   render();
-  });
- });
  hideWorkPanels();
  render();
 })();
+</script>;
 </script>;
 </script>
 <style id="qr-position-gta-unified-ui">
@@ -1077,6 +1065,53 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
  #boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{grid-column:auto}
  .box-pick-selected-warehouse{flex-wrap:wrap}
  .box-pick-selected-warehouse>strong{margin-right:0}
+}
+
+/* One-screen warehouse + mode selector. Work panels appear directly below it. */
+#boxPickUnifiedControls{margin-bottom:15px!important}
+#boxPickUnifiedModes{
+ display:block;margin-top:12px!important;padding:14px;
+ border:1px solid rgba(190,205,245,.24);border-top:3px solid var(--ui-pink);
+ border-radius:13px 22px 13px 22px;
+ background:linear-gradient(145deg,rgba(13,20,37,.96),rgba(25,18,42,.96));
+ box-shadow:0 10px 22px rgba(0,0,0,.27);
+}
+#boxPickUnifiedModes .box-pick-step-title{margin-bottom:10px}
+#boxPickUnifiedModes .box-pick-selected-warehouse{margin-bottom:12px}
+#boxPickUnifiedModeButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+#boxPickUnifiedModeButtons .mode-choice{
+ min-height:91px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+ gap:6px;padding:14px 16px!important;text-align:left;
+ border:1px solid rgba(255,255,255,.27)!important;
+ border-bottom:4px solid var(--ui-blue)!important;
+ border-radius:11px 18px 11px 18px!important;
+ background:linear-gradient(145deg,rgba(34,57,90,.97),rgba(14,22,39,.98))!important;
+ box-shadow:0 7px 15px rgba(0,0,0,.25)!important;
+}
+#boxPickUnifiedModeButtons .mode-choice:nth-child(2){border-bottom-color:var(--ui-purple)!important}
+#boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{border-bottom-color:var(--ui-pink)!important;grid-column:1/-1;min-height:76px}
+#boxPickUnifiedModeButtons .mode-choice.primary{
+ border-color:rgba(255,255,255,.55)!important;
+ background:linear-gradient(105deg,#147fdc,#4d5de0 58%,#813be2)!important;
+ box-shadow:0 0 0 2px rgba(240,44,131,.22),0 8px 18px rgba(0,0,0,.32)!important;
+}
+#boxPickUnifiedModeButtons .mode-choice[hidden]{display:none!important}
+#legacyBoxPickMode,#floorBoxPickMode{scroll-margin-top:18px}
+#legacyBoxPickMode #boxPickWarehouses,
+#legacyBoxPickMode #boxPickLevels{display:none!important}
+#legacyBoxPickMode,#floorBoxPickMode{
+ margin-top:14px;padding:16px;
+ border:1px solid rgba(190,205,245,.24);border-top:3px solid var(--ui-blue);
+ border-radius:13px 22px 13px 22px;
+ background:linear-gradient(145deg,rgba(13,19,34,.97),rgba(17,16,32,.96));
+ box-shadow:0 10px 24px rgba(0,0,0,.28);
+}
+#legacyBoxPickMode h3,#floorBoxPickMode h3,
+#legacyBoxPickMode>strong,#floorBoxPickMode>strong{color:#ffe0a0}
+#boxPickUnifiedModeError{color:#ffd2d2}
+@media(min-width:900px){
+ #boxPickUnifiedModeButtons{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{grid-column:auto;min-height:91px}
 }
 #boxPickUnifiedModes .warehouse{gap:10px}#boxPickUnifiedModeButtons .btn{min-height:78px}#boxPickUnifiedModeButtons .btn strong{font-family:var(--ui-display)!important;font-size:19px;font-weight:400}#boxPickUnifiedModeButtons .btn small{font-family:var(--ui-font)!important}
 #boxPickUnifiedStatus{padding:9px 12px;border-left:3px solid var(--ui-gold);background:rgba(255,196,92,.08);border-radius:0 9px 9px 0}
