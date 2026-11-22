@@ -906,7 +906,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=105',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=106',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -967,9 +967,7 @@ window.addEventListener('load',()=>{
    $('floorBoxPickMode').style.display=mode==='FLOORS'?'block':'none';
    $('boxPickUnifiedModeError').style.display='none';
    render();
-   const target=mode==='FLOORS'?'floorBoxPickMode':'legacyBoxPickMode';
-   const panel=$(target);
-   if(panel)panel.scrollIntoView({behavior:'smooth',block:'start'});
+   // Keep the warehouse and mode choices visible at the top; work content remains below.
   }catch(error){
    activeMode=null;
    hideWorkPanels();
