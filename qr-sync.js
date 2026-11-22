@@ -121,13 +121,18 @@ async function clearAllLists(expectedMapRevision,expectedBoxRevision){
   body:JSON.stringify({p_expected_map_revision:mapRevision,p_expected_box_revision:boxRevision})
  });
  const nextMapRevision=Number(result&&result.map_revision),nextBoxRevision=Number(result&&result.box_revision);
- if(!result||result.ok!==true||result.cleared!==true||nextMapRevision<=mapRevision||nextBoxRevision<=boxRevision||
-    Number(result.deleted_map_rows)<0||Number(result.deleted_working_aisles)<0||
-    Number(result.deleted_published_tasks)<0||Number(result.deleted_master_tasks)<0){
-  throw new Error('Server nepotvrdil úplné smazání všech seznamů.');
+ const nextDataRevision=Number(result&&result.map_data_revision);
+ const deletionCounts=['deleted_map_rows','deleted_working_aisles','deleted_published_tasks','deleted_master_tasks']
+  .map(key=>Number(result&&result[key]));
+ if(!result||typeof result!=='object'||result.ok!==true||result.cleared!==true||
+    !Number.isSafeInteger(nextMapRevision)||nextMapRevision<=mapRevision||
+    !Number.isSafeInteger(nextBoxRevision)||nextBoxRevision<=boxRevision||
+    !Number.isSafeInteger(nextDataRevision)||nextDataRevision<1||
+    deletionCounts.some(count=>!Number.isSafeInteger(count)||count<0)){
+  throw new Error('Server nepotvrdil úplné smazání všech seznamů nebo vrátil neplatné počty.');
  }
  listRevision=nextMapRevision;
- dataRevision=Number(result.map_data_revision||dataRevision||1);
+ dataRevision=nextDataRevision;
  try{localStorage.setItem('qr-map-revision-cache-v1',String(listRevision))}catch(_){}
  // The map clear also removes the shared working-aisle table. Drop this
  // device's optimistic and queued copies so they cannot mask the empty state.
