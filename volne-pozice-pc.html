@@ -148,7 +148,7 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
  </div>
  <div id="boxFloorPreview" class="street-list"><div class="empty">Nahrajte Excel soubor для выбранного этажа.</div></div>
 </div></section></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=53"></script><script src="./qr-box-sync.js?v=29"></script><script src="./qr-working-guard.js?v=16"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=54"></script><script src="./qr-box-sync.js?v=30"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -817,7 +817,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=98',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=99',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -935,27 +935,53 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
 (function(){
  const $=id=>document.getElementById(id);
  const button=$('clearAllLists'),status=$('globalClearStatus');
- if(!button||button.dataset.bound==='1')return;
+ if(!button||!status||button.dataset.bound==='1')return;
  button.dataset.bound='1';
- let busy=false;
- let reloadAfterClear=false;
+ let busy=false,reloadAfterClear=false;
  const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ const isCount=value=>Number.isSafeInteger(Number(value))&&Number(value)>=0;
  function setStatus(message,kind){
   status.textContent=message;
   status.classList.toggle('is-error',kind==='error');
   status.classList.toggle('is-success',kind==='success');
  }
+ function validateBefore(state){
+  if(!state||!state.map||!state.boxes||!Array.isArray(state.map.rows)||!Array.isArray(state.map.freeRows)||
+     !Array.isArray(state.workingAisles)||!Array.isArray(state.boxes.tasks)||!Array.isArray(state.boxes.masterTasks)){
+   throw new Error('Server nevrátil úplná data všech tří částí. Mazání nebylo spuštěno.');
+  }
+  if(!Number.isSafeInteger(Number(state.map.map_revision))||Number(state.map.map_revision)<1||
+     !Number.isSafeInteger(Number(state.boxes.revision))||Number(state.boxes.revision)<1){
+   throw new Error('Server nevrátil platné revize mapy a seznamu boxů. Mazání nebylo spuštěno.');
+  }
+ }
  async function readBoth(){
   const pair=await Promise.all([
    window.QRPositionSync.getSnapshot(),
-   window.QRBoxPickingSync.get()
+   window.QRBoxPickingSync.get(),
+   window.QRPositionSync.getWorkingAislesSnapshot()
   ]);
-  return {map:pair[0],boxes:pair[1]};
+  const state={map:pair[0],boxes:pair[1],workingAisles:pair[2]};
+  validateBefore(state);
+  return state;
+ }
+ async function readBothWithRetry(attempts=3){
+  let lastError=null;
+  for(let attempt=0;attempt<attempts;attempt++){
+   try{return await readBoth()}
+   catch(error){
+    lastError=error;
+    if(attempt<attempts-1)await pause(250*Math.pow(2,attempt));
+   }
+  }
+  throw lastError||new Error('Nepodařilo se načíst stav serveru.');
  }
  function isCompletelyCleared(state){
-  return !!state&&
+  return !!state&&state.map&&state.boxes&&
    Array.isArray(state.map.rows)&&state.map.rows.length===0&&
    Array.isArray(state.map.freeRows)&&state.map.freeRows.length===0&&
+   state.map.map_exists===false&&
+   Array.isArray(state.workingAisles)&&state.workingAisles.length===0&&
    Array.isArray(state.boxes.tasks)&&state.boxes.tasks.length===0&&
    Array.isArray(state.boxes.masterTasks)&&state.boxes.masterTasks.length===0&&
    state.boxes.cleared===true;
@@ -970,6 +996,10 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    setStatus('Nejprve dokončete probíhající import nebo mazání.','error');
    return;
   }
+  if(typeof pcWorkingToggleBusy!=='undefined'&&pcWorkingToggleBusy&&pcWorkingToggleBusy.size>0){
+   setStatus('Právě se mění pracovní ulička. Počkejte na dokončení.','error');
+   return;
+  }
   const busyIds=['file','boxPickFile','boxFloorFile','publishBoxPick','deleteBoxPick','boxFloorPublish','boxFloorDelete'];
   if(busyIds.some(id=>{const el=$(id);return el&&el.disabled})){
    setStatus('Některý import nebo operace právě probíhá. Počkejte na její dokončení.','error');
@@ -979,19 +1009,20 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
   button.disabled=true;
   const originalLabel='⚠ VYMAZAT VŠECHNY SEZNAMY';
   button.textContent='OVĚŘUJI SEZNAMY…';
-  setStatus('Načítám počty záznamů ze serveru…');
+  setStatus('Načítám počty všech seznamů ze serveru…');
   let controls=[],savedDisabled=[];
   try{
-   const before=await readBoth();
-   const published=Array.isArray(before.boxes.tasks)?before.boxes.tasks.length:0;
-   const master=Array.isArray(before.boxes.masterTasks)?before.boxes.masterTasks.length:0;
+   const before=await readBothWithRetry(3);
+   const published=before.boxes.tasks.length;
+   const master=before.boxes.masterTasks.length;
    const mapCount=before.map.rows.length;
+   const workingCount=before.workingAisles.length;
    const message=
     'Opravdu chcete vymazat VŠECHNY seznamy QR Position na serveru?\n\n'+
     'Mapa volných pozic: '+mapCount+' záznamů\n'+
+    'Pracovní uličky: '+workingCount+' záznamů\n'+
     'Boxy publikované do telefonu: '+published+'\n'+
-    'Boxy v hlavním seznamu: '+master+'\n'+
-    'Značení pracovních uliček bude také vymazáno.\n\n'+
+    'Boxy v hlavním seznamu: '+master+'\n\n'+
     'Dotkne se to PC i mobilní verze, DC2 i DC3, standardních pozic, Nadrozměrů i všech pater.\n'+
     'Po smazání bude nutné nahrát nové Excel soubory.';
    if(!window.confirm(message)){
@@ -1009,48 +1040,61 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    try{
     rpcResult=await window.QRPositionSync.clearAllLists(before.map.map_revision,before.boxes.revision);
    }catch(writeError){
-    // A lost HTTP response does not prove that the database transaction failed.
-    // Read both datasets before deciding whether to report an error.
+    // A lost HTTP response does not prove failure. Re-read all three sources.
     let observed=null;
-    try{observed=await readBoth()}catch(_){}
+    try{observed=await readBothWithRetry(3)}catch(_){}
     if(!isCompletelyCleared(observed)||
-       Number(observed.map.map_revision)<Number(before.map.map_revision)||
-       Number(observed.boxes.revision)<Number(before.boxes.revision)){
+       Number(observed.map.map_revision)<=Number(before.map.map_revision)||
+       Number(observed.boxes.revision)<=Number(before.boxes.revision)){
      throw writeError;
     }
+    // The atomic RPC committed, but its response was lost.
     rpcResult={
      ok:true,cleared:true,
      map_revision:observed.map.map_revision,
      box_revision:observed.boxes.revision,
      deleted_map_rows:mapCount,
-     deleted_working_aisles:0,
+     deleted_working_aisles:workingCount,
      deleted_published_tasks:published,
-     deleted_master_tasks:master
+     deleted_master_tasks:master,
+     response_recovered_by_verification:true
     };
    }
-   let verified=null;
-   for(let attempt=0;attempt<8;attempt++){
-    verified=await readBoth();
-    if(isCompletelyCleared(verified)&&
-       Number(verified.map.map_revision)>=Number(rpcResult.map_revision)&&
-       Number(verified.boxes.revision)>=Number(rpcResult.box_revision))break;
-    if(attempt<7)await pause(350);
+   if(!rpcResult||rpcResult.ok!==true||rpcResult.cleared!==true||
+      !Number.isSafeInteger(Number(rpcResult.map_revision))||
+      !Number.isSafeInteger(Number(rpcResult.box_revision))||
+      !['deleted_map_rows','deleted_working_aisles','deleted_published_tasks','deleted_master_tasks'].every(k=>isCount(rpcResult[k]))){
+    throw new Error('Server vrátil neúplné potvrzení hromadného mazání.');
    }
-   if(!isCompletelyCleared(verified)||
-      Number(verified.map.map_revision)<Number(rpcResult.map_revision)||
-      Number(verified.boxes.revision)<Number(rpcResult.box_revision)){
-    throw new Error('Server nepotvrdil prázdné seznamy ve všech modulech. Výsledek nebyl označen jako úspěšný.');
+   let verified=null,lastVerificationError=null,verificationPassed=false;
+   for(let attempt=0;attempt<8;attempt++){
+    try{
+     verified=await readBoth();
+     lastVerificationError=null;
+     verificationPassed=isCompletelyCleared(verified)&&
+      Number(verified.map.map_revision)>=Number(rpcResult.map_revision)&&
+      Number(verified.boxes.revision)>=Number(rpcResult.box_revision);
+     if(verificationPassed)break;
+    }catch(error){lastVerificationError=error}
+    if(attempt<7)await pause(300+attempt*150);
+   }
+   if(!verificationPassed){
+    const detail=lastVerificationError?String(lastVerificationError.message||lastVerificationError):'Server stále vrací neprázdný nebo neaktuální seznam.';
+    throw new Error('Mazání bylo odesláno, ale úplný výsledek se nepodařilo ověřit ve všech modulech. Neopakujte mazání bez kontroly serveru. '+detail);
    }
 
-   // Clear only local copies of uploaded/operational data; keep device identity
-   // and user preferences such as the selected picking direction.
+   // Clear local copies only after the server state has been verified.
    lists={DC2:[],DC3:[]};
    if(typeof skipped!=='undefined'&&skipped&&typeof skipped.clear==='function')skipped.clear();
    if(typeof working!=='undefined'&&working&&typeof working.clear==='function')working.clear();
    if(typeof sharedWorking!=='undefined')sharedWorking=[];
+   if(typeof tasks!=='undefined')tasks=[];
+   if(typeof publishedTasks!=='undefined')publishedTasks=[];
    if(typeof dc!=='undefined')dc=null;
    if(typeof activeStreet!=='undefined')activeStreet=null;
    if(typeof positionIndex!=='undefined')positionIndex=0;
+   if(typeof pcServerMapRevision!=='undefined')pcServerMapRevision=Number(verified.map.map_revision);
+   if(typeof pcServerDataRevision!=='undefined')pcServerDataRevision=Number(verified.map.data_revision);
    try{
     localStorage.removeItem('volnePozicePcLists');
     localStorage.removeItem('volnePozicePcSkipped');
@@ -1066,13 +1110,13 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    if($('importStatus'))$('importStatus').textContent='✓ Všechny seznamy jsou prázdné. Nahrajte novou mapu skladu.';
    if($('lastUploadStatus'))$('lastUploadStatus').textContent='Poslední nahrání souboru: zatím není zaznamenáno.';
    if(typeof setSyncBadge==='function')setSyncBadge('VŠECHNY SEZNAMY VYMAZÁNY');
-   // Reload after all controls are re-enabled so every module starts from the verified empty server state.
    reloadAfterClear=true;
    setStatus(
-    '✓ Potvrzeno: mapa '+Number(rpcResult.deleted_map_rows||0)+
-    ', publikované boxy '+Number(rpcResult.deleted_published_tasks||0)+
-    ', hlavní boxy '+Number(rpcResult.deleted_master_tasks||0)+
-    '. Všechny moduly jsou prázdné.',
+    '✓ Ověřeno na serveru: mapa '+Number(rpcResult.deleted_map_rows)+
+    ', pracovní uličky '+Number(rpcResult.deleted_working_aisles)+
+    ', publikované boxy '+Number(rpcResult.deleted_published_tasks)+
+    ', hlavní boxy '+Number(rpcResult.deleted_master_tasks)+
+    '. Všechny seznamy jsou prázdné.',
     'success'
    );
   }catch(error){
