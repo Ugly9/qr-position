@@ -91,6 +91,20 @@ async function syncPendingWork(){
  })();
  try{await workingSyncPromise}finally{workingSyncPromise=null}
 }
+async function getWorkingAislesSnapshot(){
+ const rows=await req('qr_working_aisles?select=warehouse,aisle,worker_id,updated_at&order=warehouse,aisle');
+ if(!Array.isArray(rows))throw new Error('Server nevrátil platný seznam pracovních uliček.');
+ const clean=rows.map(row=>({
+  warehouse:String(row&&row.warehouse||''),
+  aisle:Number(row&&row.aisle),
+  worker_id:String(row&&row.worker_id||''),
+  updated_at:row&&row.updated_at||null
+ }));
+ if(clean.some(row=>!['DC2','DC3'].includes(row.warehouse)||!Number.isSafeInteger(row.aisle)||row.aisle<1||!row.worker_id)){
+  throw new Error('Server vrátil neplatný záznam pracovních uliček.');
+ }
+ return clean;
+}
 async function getWorkingAisles(){await syncPendingWork();const version=workingStateVersion;let rows=readJSON('qr-working-cache-v1',[]);if(!(typeof navigator!=='undefined'&&navigator.onLine===false)){try{const fresh=await req('qr_working_aisles?select=warehouse,aisle,worker_id,updated_at&order=warehouse,aisle');if(version===workingStateVersion){rows=fresh||[];saveWorkingCache(rows)}else rows=readJSON('qr-working-cache-v1',rows)}catch(e){}}return applyWorkingOps(rows,pendingWork())}
 async function markWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'add',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,worker_id:op.worker_id,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
 async function clearWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'remove',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
@@ -122,5 +136,5 @@ async function clearAllLists(expectedMapRevision,expectedBoxRevision){
  return result;
 }
 async function hasList(){return (await allRows()).length>0}
-window.QRPositionSync={init,refresh,allOccupied,markOccupied,replaceAll,clearAll,clearAllLists,getListRevision:readListRevision,getDataRevision:readDataRevision,getVersion:readVersion,getSnapshot, getMapRevision:readListRevision,getWorkingAisles,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll,allPositions:stableRecords};
+window.QRPositionSync={init,refresh,allOccupied,markOccupied,replaceAll,clearAll,clearAllLists,getListRevision:readListRevision,getDataRevision:readDataRevision,getVersion:readVersion,getSnapshot, getMapRevision:readListRevision,getWorkingAisles,getWorkingAislesSnapshot,markWorkingAisle,clearWorkingAisle,getWorkerId:workerId,hasList,countAll,allPositions:stableRecords};
 })();
