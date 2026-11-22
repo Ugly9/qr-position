@@ -52,11 +52,47 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
 #globalClearStatus.is-error{color:#ff9aa9}
 #globalClearStatus.is-success{color:#9de8bd}
 @media(max-width:680px){#globalClearTools{align-items:stretch!important;flex-direction:column}#globalClearStatus{text-align:left!important}#clearAllLists{width:100%}}
+
+/* Persistent hard-refresh instruction for the PC warehouse view. */
+#hardRefreshNotice{
+ position:sticky;top:8px;z-index:50;
+ display:flex;align-items:center;justify-content:center;gap:11px;flex-wrap:wrap;
+ margin:0 0 18px;padding:13px 18px;
+ border:2px solid rgba(255,196,92,.95);border-left:7px solid #ed3c91;
+ border-radius:14px;
+ background:linear-gradient(105deg,rgba(72,39,25,.98),rgba(48,24,60,.98));
+ color:#fff;text-align:center;
+ box-shadow:0 8px 24px rgba(0,0,0,.48),0 0 0 2px rgba(237,60,145,.14);
+ text-shadow:0 2px 5px rgba(0,0,0,.55);
+}
+#hardRefreshNotice .refresh-icon{font-size:29px;line-height:1;color:#ffd27c;font-weight:900}
+#hardRefreshNotice .refresh-copy{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+#hardRefreshNotice .refresh-copy strong{font-size:clamp(14px,1.2vw,17px);letter-spacing:.055em;color:#fff}
+#hardRefreshNotice .refresh-sub{font-size:12px;color:#ffe1b0;letter-spacing:.04em}
+#hardRefreshNotice kbd{
+ min-width:46px;padding:7px 11px;border-radius:8px;
+ border:1px solid rgba(255,255,255,.52);
+ background:linear-gradient(180deg,#fff,#d7dfef);color:#172238;
+ box-shadow:0 3px 0 rgba(0,0,0,.34);
+ font:900 14px/1.1 var(--ui-font,system-ui,sans-serif);letter-spacing:.08em;
+}
+#hardRefreshNotice .refresh-plus{color:#ffd27c;font-size:18px;font-weight:900}
+@media(max-width:680px){
+ #hardRefreshNotice{justify-content:flex-start;gap:8px;padding:11px 12px}
+ #hardRefreshNotice .refresh-copy{flex:1 1 100%;align-items:flex-start}
+ #hardRefreshNotice .refresh-copy strong{font-size:13px}
+}
 </style>
 
 
 </head><body><main>
 <header class="head"><div><div class="eyebrow">WAREHOUSE TOOL · VOLNÉ POZICE</div><h1>QR Position — Volné pozice</h1><div class="muted">Společný seznam volných míst pro PC i mobilní verzi</div></div><div class="badge" id="syncBadge">NAČÍTÁM SPOLEČNÝ SEZNAM…</div></header>
+
+<div id="hardRefreshNotice" role="note" aria-label="Důležité upozornění k aktualizaci seznamu">
+ <span class="refresh-icon" aria-hidden="true">↻</span>
+ <span class="refresh-copy"><strong>PO NAHRÁNÍ NOVÉHO SEZNAMU VŽDY STISKNĚTE</strong><span class="refresh-sub">pro načtení aktuálních dat</span></span>
+ <kbd>CTRL</kbd><span class="refresh-plus">+</span><kbd>F5</kbd>
+</div>
 <nav class="row" style="margin:0 0 18px"><button class="btn primary" id="tabFree">Volné pozice</button><button class="btn" id="tabPicking">Vyskladnění boxu</button></nav>
 <div class="row" id="globalClearTools" style="justify-content:flex-end;align-items:center;margin:0 0 18px">
  <span class="status" id="globalClearStatus" role="status" aria-live="polite" style="flex:1;min-width:180px;text-align:right"></span>
@@ -817,7 +853,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=101',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=102',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
