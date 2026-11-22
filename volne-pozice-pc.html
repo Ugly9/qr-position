@@ -148,7 +148,7 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
  </div>
  <div id="boxFloorPreview" class="street-list"><div class="empty">Nahrajte Excel soubor для выбранного этажа.</div></div>
 </div></section></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=55"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=56"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -817,7 +817,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=100',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=101',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -1029,15 +1029,6 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
     setStatus('Mazání zrušeno. Žádná data nebyla změněna.');
     return;
    }
-   const adminKey=window.prompt('Zadejte administrátorský klíč QR Position pro hromadné mazání:');
-   if(adminKey===null||!String(adminKey).trim()){
-    setStatus('Mazání zrušeno. Administrátorský klíč nebyl zadán.');
-    return;
-   }
-   if(String(adminKey).trim().length<24){
-    setStatus('Administrátorský klíč musí mít alespoň 24 znaků. Seznamy nebyly změněny.','error');
-    return;
-   }
    controls=Array.from(document.querySelectorAll('button,input,select,textarea'));
    savedDisabled=controls.map(el=>el.disabled);
    controls.forEach(el=>{if(el!==button)el.disabled=true});
@@ -1047,7 +1038,7 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
    if(typeof pcListRevision!=='undefined')pcListRevision++;
    let rpcResult=null;
    try{
-    rpcResult=await window.QRPositionSync.clearAllLists(before.map.map_revision,before.boxes.revision,String(adminKey).trim());
+    rpcResult=await window.QRPositionSync.clearAllLists(before.map.map_revision,before.boxes.revision);
    }catch(writeError){
     // A lost HTTP response does not prove failure. Re-read all three sources.
     let observed=null;
