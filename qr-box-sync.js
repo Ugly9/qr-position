@@ -6,18 +6,57 @@ async function request(path,options={}){
  const method=String(options.method||'GET').toUpperCase();
  const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',...(options.headers||{})};
  if(method==='GET'){headers['Cache-Control']='no-cache, no-store';headers.Pragma='no-cache'}
- const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
- try{
-  const r=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:'no-store',signal:controller.signal});
-  if(!r.ok)throw new Error('Supabase '+r.status+': '+(await r.text()).slice(0,250));
-  return r.status===204?null:r.json().catch(()=>null);
- }catch(error){
-  if(error&&error.name==='AbortError')throw new Error('Supabase neodpověděl do 20 sekund. Zkontrolujte připojení; výsledek zápisu bude před opakováním ověřen na serveru.');
-  throw error;
- }finally{clearTimeout(timeout)}
+ const maxAttempts=method==='GET'?3:1;
+ let lastError=null;
+ for(let attempt=0;attempt<maxAttempts;attempt++){
+  const controller=new AbortController();
+  const timeoutMs=method==='GET'?15000:20000;
+  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+   const response=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:'no-store',signal:controller.signal});
+   if(!response.ok){
+    const error=new Error('Supabase '+response.status+': '+(await response.text()).slice(0,250));
+    error.status=response.status;
+    throw error;
+   }
+   return response.status===204?null:await response.json().catch(()=>null);
+  }catch(error){
+   lastError=error;
+   const status=Number(error&&error.status||0);
+   const retryable=method==='GET'&&(
+    (error&&error.name==='AbortError')||
+    (error&&error.name==='TypeError')||
+    [408,425,429,500,502,503,504,520].includes(status)
+   );
+   if(!retryable||attempt>=maxAttempts-1){
+    if(error&&error.name==='AbortError')throw new Error('Supabase neodpověděl do '+Math.round(timeoutMs/1000)+' sekund ani po opakovaném pokusu. Aktuální seznam zůstal beze změny.');
+    throw error;
+   }
+  }finally{clearTimeout(timeout)}
+  await new Promise(resolve=>setTimeout(resolve,350*Math.pow(2,attempt)));
+ }
+ throw lastError||new Error('Synchronizace se nezdařila.');
 }
 const defaults={tasks:[],masterTasks:[],categories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},categoriesByWarehouse:{DC2:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},DC3:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true}},coldSubtypeSettings:{DC2:{'1':true,'2':true,fastpick:true},DC3:{'1':true,'2':true,fastpick:true}},oversizeCategories:{HOT:true,COLD:true,FastPick:true,DC:true,MANUAL:true},oversizeColdSubtypeSettings:{'1':true,'2':true,fastpick:true},oversizeDestinationSettings:{RO:true,IT:true,PL:true},updated_at:null};
-async function get(){const rows=await request('qr_box_picking_state?select=payload,revision,updated_at&singleton=eq.true&limit=1');if(!rows||!rows[0])return {...defaults,revision:1};const payload=rows[0].payload||{};const tasks=Array.isArray(payload.tasks)?payload.tasks:[];return {...defaults,...payload,tasks,masterTasks:Array.isArray(payload.masterTasks)?payload.masterTasks:tasks,revision:Number(rows[0].revision),updated_at:rows[0].updated_at}}
+async function getRevision(){
+ const rows=await request('qr_box_picking_state?select=revision,updated_at&singleton=eq.true&limit=1');
+ if(!Array.isArray(rows)||rows.length!==1)throw new Error('Server nevrátil právě jeden záznam QR Box Picking. Seznam nebyl změněn.');
+ const revision=Number(rows[0].revision);
+ if(!Number.isSafeInteger(revision)||revision<1)throw new Error('Server vrátil neplatnou revizi seznamu.');
+ return {revision,updated_at:rows[0].updated_at||null};
+}
+async function get(){
+ const rows=await request('qr_box_picking_state?select=payload,revision,updated_at&singleton=eq.true&limit=1');
+ if(!Array.isArray(rows)||rows.length!==1)throw new Error('Server nevrátil právě jeden záznam QR Box Picking. Dosavadní seznam zůstal zachován.');
+ const row=rows[0],revision=Number(row.revision),payload=row.payload;
+ if(!Number.isSafeInteger(revision)||revision<1)throw new Error('Server vrátil neplatnou revizi seznamu.');
+ if(!payload||typeof payload!=='object'||Array.isArray(payload))throw new Error('Server vrátil neplatný obsah seznamu.');
+ if(!Array.isArray(payload.tasks))throw new Error('Server nevrátil platné pole publikovaných boxů. Dosavadní seznam zůstal zachován.');
+ if(payload.masterTasks!==undefined&&!Array.isArray(payload.masterTasks))throw new Error('Server nevrátil platný hlavní seznam boxů. Dosavadní seznam zůstal zachován.');
+ const tasks=payload.tasks;
+ const masterTasks=Array.isArray(payload.masterTasks)?payload.masterTasks:tasks;
+ return {...defaults,...payload,tasks,masterTasks,revision,updated_at:row.updated_at||null,server_read_at:new Date().toISOString()};
+}
 async function saveNow(payload){
  const current=await get();
  const expected=Number(payload&&payload.expectedRevision);
@@ -109,5 +148,5 @@ function enqueueWrite(work){
 }
 function save(payload){return enqueueWrite(()=>saveNow(payload))}
 function saveWarehouse(warehouse,payload={}){return enqueueWrite(()=>saveWarehouseNow(warehouse,payload))}
-window.QRBoxPickingSync={get,save,saveWarehouse};
+window.QRBoxPickingSync={get,getRevision,save,saveWarehouse};
 })();
