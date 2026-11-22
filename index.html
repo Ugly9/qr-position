@@ -422,14 +422,13 @@ function mobileTaskPassesServerFilters(task,serverState,selectedWarehouse,select
  const oversize=selectedWarehouse==='DC3'&&selectedLevel==='01';
  const categories=oversize?(serverState.oversizeCategories||{}):
   ((serverState.categoriesByWarehouse&&serverState.categoriesByWarehouse[selectedWarehouse])||serverState.categories||{});
- if(categories[task.category]===false)return false;
  const cold=oversize?(serverState.oversizeColdSubtypeSettings||{}):
   ((serverState.coldSubtypeSettings&&serverState.coldSubtypeSettings[selectedWarehouse])||{});
  const priority=Number(task.priority);
  if(priority===201||priority===202)return categories.COLD!==false&&cold['1']!==false;
  if(priority===203||priority===204)return categories.COLD!==false&&cold['2']!==false;
  if(priority===205)return categories.COLD!==false&&cold.fastpick!==false;
- return true;
+ return categories[task.category]!==false;
 }
 function protectLastVisibleModeOnUnexpectedEmpty(previousState,latestState,selectedWarehouse,selectedLevel){
  const result={state:latestState,preserved:0,unpublished:0,warning:false};
