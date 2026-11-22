@@ -110,21 +110,16 @@ async function markWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision
 async function clearWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'remove',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
 async function replaceAll(rows,expectedRevision){if(!Array.isArray(rows))throw new Error('Nový seznam nemá správný formát');expectedRevision=Number(expectedRevision);if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1)throw new Error('Chybí platná verze seznamu při zahájení operace. Obnovte stránku a zkuste znovu.');const clean=rows.map(x=>({warehouse:String(x.warehouse),aisle:Number(x.aisle),position:Number(x.position)}));if(clean.some(x=>!['DC2','DC3'].includes(x.warehouse)||!Number.isInteger(x.aisle)||!Number.isInteger(x.position)||(x.warehouse==='DC2'&&(x.aisle<12||x.aisle>123||x.position<1||x.position>168))||(x.warehouse==='DC3'&&(x.aisle<1||x.aisle>41||x.position<1||x.position>148))))throw new Error('Nový seznam obsahuje neplatné pozice');const seen=new Set();for(const x of clean){const k=x.warehouse+'|'+x.aisle+'|'+x.position;if(seen.has(k))throw new Error('Nový seznam obsahuje duplicitní pozici: '+k);seen.add(k)}const result=await req('rpc/replace_qr_free_positions_v2',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_rows:clean,p_expected_revision:expectedRevision})});const count=Number(result&&result.count),revision=Number(result&&result.revision);if(!Number.isInteger(count)||count!==clean.length||!Number.isSafeInteger(revision)||revision<expectedRevision)throw new Error('Server nepotvrdil úplnou náhradu seznamu. Očekáváno '+clean.length+' pozic, potvrzenо '+(Number.isFinite(count)?count:'neznámý počet')+'.');listRevision=revision;try{localStorage.setItem('qr-map-revision-cache-v1',String(revision))}catch(_){}return clean.map(x=>({...x,occupied:false}))}
 async function clearAll(expectedRevision){const revision=Number.isSafeInteger(Number(expectedRevision))?Number(expectedRevision):await readListRevision();if(!Number.isSafeInteger(revision)||revision<1)throw new Error('Chybí platná verze seznamu pro smazání. Obnovte stránku a zkuste znovu.');const result=await req('rpc/clear_qr_free_positions_v1',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_expected_revision:revision})});if(!result||Number(result.count)!==0||Number(result.revision)<=revision)throw new Error('Server nepotvrdil smazání seznamu.');listRevision=Number(result.revision);dataRevision=Number(result.data_revision||dataRevision||1);try{localStorage.setItem('qr-map-revision-cache-v1',String(listRevision))}catch(_){}return result}
-async function clearAllLists(expectedMapRevision,expectedBoxRevision,adminKey){
+async function clearAllLists(expectedMapRevision,expectedBoxRevision){
  const mapRevision=Number(expectedMapRevision),boxRevision=Number(expectedBoxRevision);
  if(!Number.isSafeInteger(mapRevision)||mapRevision<1||!Number.isSafeInteger(boxRevision)||boxRevision<1){
   throw new Error('Chybí platná verze mapy nebo seznamu boxů. Obnovte stránku a zkuste znovu.');
  }
- const key=String(adminKey||'').trim();
- if(key.length<24)throw new Error('Administrátorský klíč musí mít alespoň 24 znaků.');
  const result=await req('rpc/clear_qr_all_lists_v1',{
   method:'POST',
   headers:{Prefer:'return=representation'},
-  body:JSON.stringify({p_expected_map_revision:mapRevision,p_expected_box_revision:boxRevision,p_admin_key:key})
+  body:JSON.stringify({p_expected_map_revision:mapRevision,p_expected_box_revision:boxRevision})
  });
- if(result&&result.ok===false){
-  throw new Error(String(result.message||'Administrátorský klíč nebyl přijat.'));
- }
  const nextMapRevision=Number(result&&result.map_revision),nextBoxRevision=Number(result&&result.box_revision);
  const nextDataRevision=Number(result&&result.map_data_revision);
  const deletionCounts=['deleted_map_rows','deleted_working_aisles','deleted_published_tasks','deleted_master_tasks']
