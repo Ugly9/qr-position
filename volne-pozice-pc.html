@@ -1040,7 +1040,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=109',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=110',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -1241,6 +1241,10 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
 #legacyBoxPickMode h3,#floorBoxPickMode h3,
 #legacyBoxPickMode>strong,#floorBoxPickMode>strong{color:#ffe0a0}
 #boxPickUnifiedModeError{color:#ffd2d2}
+@media(min-width:900px){
+ #boxPickUnifiedModeButtons{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #boxPickUnifiedModeButtons .mode-choice[data-ui-mode="01"]{grid-column:auto;min-height:91px}
+}
 
 #boxPickUnifiedModes .warehouse{gap:10px}#boxPickUnifiedModeButtons .btn{min-height:78px}#boxPickUnifiedModeButtons .btn strong{font-family:var(--ui-display)!important;font-size:19px;font-weight:400}#boxPickUnifiedModeButtons .btn small{font-family:var(--ui-font)!important}
 #boxPickUnifiedStatus{padding:9px 12px;border-left:3px solid var(--ui-gold);background:rgba(255,196,92,.08);border-radius:0 9px 9px 0}
