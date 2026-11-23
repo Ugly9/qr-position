@@ -177,7 +177,6 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
   </div>
   <div class="status" id="boxPickUnifiedModeError" style="display:none;margin-top:10px"></div>
  </section>
->
  <div hidden aria-hidden="true">
   <button type="button" data-box-floor-mode="standard"></button>
   <button type="button" data-box-floor-mode="floors"></button>
@@ -1040,7 +1039,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=110',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=111',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -1127,8 +1126,6 @@ window.addEventListener('load',()=>{
  hideWorkPanels();
  render();
 })();
-</script>;
-</script>;
 </script>
 <style id="qr-position-gta-unified-ui">
 /* QR POSITION UNIFIED GTA UI — consistent PC interface styling */
@@ -1240,6 +1237,21 @@ details>summary{font-family:var(--ui-font)!important;font-weight:700!important;l
 }
 #legacyBoxPickMode h3,#floorBoxPickMode h3,
 #legacyBoxPickMode>strong,#floorBoxPickMode>strong{color:#ffe0a0}
+
+/* Final one-screen composition: persistent mode cards above the chosen work area. */
+#boxPickUnifiedControls{position:relative;display:block;width:100%}
+#boxPickWarehouseStep{margin-bottom:14px}
+#boxPickUnifiedModes{position:relative;clear:both}
+#boxPickUnifiedModes:after{
+ content:"";display:block;height:1px;margin:15px 0 0;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+}
+#legacyBoxPickMode,#floorBoxPickMode{
+ position:relative;clear:both;width:100%;margin:16px 0 0!important;
+}
+#legacyBoxPickMode[style*="display: block"],
+#floorBoxPickMode[style*="display: block"]{animation:boxPickStepIn .18s ease-out}
+#legacyBoxPickMode #boxPickWarehouseStatus{margin-top:8px}
 #boxPickUnifiedModeError{color:#ffd2d2}
 @media(min-width:900px){
  #boxPickUnifiedModeButtons{grid-template-columns:repeat(3,minmax(0,1fr))}
