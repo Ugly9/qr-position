@@ -293,12 +293,12 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
   sameImportedRows(actual,expected){
    if(!Array.isArray(actual)||!Array.isArray(expected)||actual.length!==expected.length)return false;
    const signature=task=>JSON.stringify([
-    String(task&&task.id??''),String(task&&task.warehouse??''),
+    String((task&&task.id)??''),String((task&&task.warehouse)??''),
     Number(task&&task.aisle),Number(task&&task.slot),
-    String(task&&task.position??''),String(task&&task.box??''),
-    String(task&&task.category??''),Number(task&&task.priority),
-    String(task&&task.destination??''),!!(task&&task.done),
-    String(task&&task.done_at??''),Number(task&&task.order)
+    String((task&&task.position)??''),String((task&&task.box)??''),
+    String((task&&task.category)??''),Number(task&&task.priority),
+    String((task&&task.destination)??''),!!(task&&task.done),
+    String((task&&task.done_at)??''),Number(task&&task.order)
    ]);
    const left=actual.map(signature).sort(),right=expected.map(signature).sort();
    return left.every((value,index)=>value===right[index]);
@@ -876,7 +876,6 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    if(!saved)throw lastError||new Error('Server nepotvrdil import.');
    const savedMaster=saved.masterTasks||[],savedPublished=saved.tasks||[];
    if(savedMaster.filter(sameFloor).length!==next.length||savedPublished.filter(sameFloor).length!==next.length)throw new Error('Server nepotvrdil celý import.');
-   function sameFloor(t){return t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position)}
    tasks=savedMaster;publishedTasks=savedPublished;renderFloorList();
    const rejected=Object.entries(reject).filter(([,n])=>n).map(([k,n])=>k+': '+n).join(', ')||'žádné';
    $('boxFloorStatus').textContent='✓ Import potvrzen: '+next.length+' boxů. Opakované řádky: '+duplicates+'. Odmítnuto: '+rejected+'. Ostatní patra zůstala beze změny.';
