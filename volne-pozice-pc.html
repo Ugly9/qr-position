@@ -237,7 +237,75 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
  </div>
  <div id="boxFloorPreview" class="street-list"><div class="empty">Nahrajte Excel soubor для выбранного этажа.</div></div>
 </div></section></main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=56"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
+<script id="qr-xlsx-resilient-loader">
+(function(){
+ let loadingPromise=null;
+ const sources=[
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+ ];
+ window.ensureQRXLSX=function(){
+  if(window.XLSX&&typeof window.XLSX.read==='function'&&window.XLSX.utils)return Promise.resolve(window.XLSX);
+  if(loadingPromise)return loadingPromise;
+  loadingPromise=(async()=>{
+   const failures=[];
+   for(const src of sources){
+    try{
+     await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      let finished=false;
+      const timeout=setTimeout(()=>{
+       if(finished)return;
+       finished=true;
+       script.remove();
+       reject(new Error('Časový limit při načítání '+src));
+      },12000);
+      script.src=src;
+      script.async=true;
+      script.crossOrigin='anonymous';
+      script.onload=()=>{
+       if(finished)return;
+       finished=true;clearTimeout(timeout);
+       if(window.XLSX&&typeof window.XLSX.read==='function'&&window.XLSX.utils)resolve();
+       else{script.remove();reject(new Error('Zdroj neobsahuje platnou knihovnu XLSX.'))}
+      };
+      script.onerror=()=>{
+       if(finished)return;
+       finished=true;clearTimeout(timeout);script.remove();
+       reject(new Error('Zdroj Excel knihovny není dostupný: '+src));
+      };
+      document.head.appendChild(script);
+     });
+     return window.XLSX;
+    }catch(error){failures.push(String(error&&error.message||error))}
+   }
+   throw new Error('Knihovnu Excelu se nepodařilo načíst ze tří zdrojů. Zkontrolujte připojení a zkuste soubor znovu. '+failures.join(' | '));
+  })();
+  return loadingPromise.finally(()=>{loadingPromise=null});
+ };
+ window.qrBoxImportUtils={
+  isSafeRetryable(error){
+   const message=String(error&&error.message||error);
+   if(/zápis měl nejistou odpověď|neopakujte import|neopakujte bez kontroly/i.test(message))return false;
+   return /server nepotvrdil odpověď zápisu|failed to fetch|networkerror|load failed|network request failed|timed? ?out|supabase (408|425|429|500|502|503|504|520)/i.test(message);
+  },
+  sameImportedRows(actual,expected){
+   if(!Array.isArray(actual)||!Array.isArray(expected)||actual.length!==expected.length)return false;
+   const signature=task=>JSON.stringify([
+    String(task&&task.id??''),String(task&&task.warehouse??''),
+    Number(task&&task.aisle),Number(task&&task.slot),
+    String(task&&task.position??''),String(task&&task.box??''),
+    String(task&&task.category??''),Number(task&&task.priority),
+    String(task&&task.destination??''),!!(task&&task.done),
+    String(task&&task.done_at??''),Number(task&&task.order)
+   ]);
+   const left=actual.map(signature).sort(),right=expected.map(signature).sort();
+   return left.every((value,index)=>value===right[index]);
+  }
+ };
+})();
+</script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=56"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -380,7 +448,7 @@ $('delete').onclick=async()=>{
 };
 $('file').addEventListener('change',async e=>{
  const f=e.target.files&&e.target.files[0];if(!f)return;
- if(!window.XLSX){$('importStatus').textContent='Excel knihovna není načtena. Připojte se k internetu a obnovte stránku.';return}
+
 if(!window.QRPositionSync||typeof window.QRPositionSync.getListRevision!=='function'||typeof window.QRPositionSync.replaceAll!=='function'){
    $('importStatus').textContent='✕ Synchronizační skript není načten. Soubor nebyl nahrán; obnovte stránku a zkuste to znovu.';
    setSyncBadge('CHYBÍ SYNCHRONIZACE');
@@ -394,8 +462,10 @@ if(!window.QRPositionSync||typeof window.QRPositionSync.getListRevision!=='funct
  $('importStatus').textContent='Načítám, kontroluji a zapisují nový seznam…';
  setSyncBadge('NAHRÁVÁNÍ MAPY…');
  try{
-   const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
-   const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+   $('importStatus').textContent='Načítám knihovnu Excelu a čtu soubor…';
+   const XLSXLib=await window.ensureQRXLSX();
+   const wb=XLSXLib.read(await f.arrayBuffer(),{type:'array'});
+   const rows=XLSXLib.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
    const parsed=parseUpload(rows),result=parsed.result,ignored=parsed.ignored;
    const syncRows=[];
    Object.keys(result).forEach(d=>result[d].forEach(s=>s.positions.forEach(p=>syncRows.push({warehouse:d,aisle:s.street,position:p}))));
@@ -525,10 +595,11 @@ $('boxPickFile').onchange=async e=>{
  $('boxPickStatus').textContent='Načítám Excel pro '+(targetLevel==='01'?'Nadrozměry':'00 pozice')+' a důkladně kontroluji data…';
  $('boxPickFreshness').textContent='Předchozí seznam zůstane zachován, dokud server nepotvrdí celý nový import.';
  try{
-  if(!window.XLSX)throw Error('Knihovna pro čtení Excelu se nenačetla. Obnovte stránku a zkuste to znovu.');
-  const workbook=XLSX.read(await f.arrayBuffer(),{type:'array'}),firstSheet=workbook.Sheets[workbook.SheetNames[0]];
+  $('boxPickStatus').textContent='Načítám knihovnu Excelu a čtu soubor…';
+  const XLSXLib=await window.ensureQRXLSX();
+  const workbook=XLSXLib.read(await f.arrayBuffer(),{type:'array'}),firstSheet=workbook.Sheets[workbook.SheetNames[0]];
   if(!firstSheet)throw Error('V souboru chybí první list.');
-  const rows=XLSX.utils.sheet_to_json(firstSheet,{defval:'',raw:false});
+  const rows=XLSXLib.utils.sheet_to_json(firstSheet,{defval:'',raw:false});
   if(!rows.length)throw Error('Soubor neobsahuje žádné datové řádky.');
   const headers=Object.keys(rows[0]),normalizeHeader=value=>String(value??'').trim().toLocaleLowerCase('cs'),col=name=>headers.find(h=>normalizeHeader(h)===normalizeHeader(name)),destinationColumn=col('Cílový sklad')||headers[20];
   const required=['Sklad','Box','Pozice','Stav','Priorita'],missing=required.filter(name=>!col(name));
@@ -563,14 +634,32 @@ $('boxPickFile').onchange=async e=>{
   nextTasks.sort((a,b)=>a.warehouse.localeCompare(b.warehouse)||a.aisle-b.aisle||a.slot-b.slot||a.order-b.order);
   if(!nextTasks.length)throw Error('Po kontrole nezůstal žádný platný box. Starý seznam zůstal zachován. Zkontrolujte sklad, Stav 1/Nový, Prioritu, Box a Pozici na úrovni 00 nebo 01. Zóna nerozhoduje.');
   let saved=null,lastError=null;
+  const sameLevel=t=>t&&t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel;
+  const importMatches=list=>window.qrBoxImportUtils.sameImportedRows((Array.isArray(list)?list:[]).filter(sameLevel),nextTasks);
   for(let attempt=0;attempt<3&&!saved;attempt++){
+   let baseRevision=null;
    try{
     const current=await QRBoxPickingSync.get();
-    const sameLevel=t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel;
+    baseRevision=Number(current.revision);
     const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
     const mergedPublished=[...(current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
     saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
-   }catch(error){lastError=error;const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(error&&error.message||error));if(!conflict||attempt===2)throw error;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)))}
+   }catch(error){
+    lastError=error;
+    const message=String(error&&error.message||error);
+    const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(message);
+    const transient=window.qrBoxImportUtils.isSafeRetryable(error);
+    if(!conflict&&!transient||attempt===2)throw error;
+    // A response can be lost after commit. Recognize the exact saved list first.
+    const observed=await QRBoxPickingSync.get();
+    if(importMatches(observed.tasks)&&importMatches(observed.masterTasks)){saved=observed;break;}
+    // Retry a transport failure only if the server revision proves that the
+    // failed attempt did not change the server. Never overwrite an uncertain write.
+    if(transient&&!conflict&&Number(observed.revision)!==baseRevision){
+     throw new Error('Během importu se změnila revize serveru ('+baseRevision+' → '+observed.revision+'). Import se automaticky neopakoval, aby nepřepsal novější data. Aktualizujte seznam a zkuste to znovu.');
+    }
+    await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+   }
   }
   if(!saved)throw lastError||Error('Server nepotvrdil import nového seznamu.');
   const savedForWarehouse=saved.tasks.filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel),masterForWarehouse=saved.masterTasks.filter(t=>t.warehouse===targetWarehouse&&positionLevel(t.position)===targetLevel);
@@ -728,10 +817,11 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
   
   floorBusy=true;boxPickMutationVersion++;$('boxFloorFile').disabled=true;$('boxFloorStatus').textContent='Kontroluji Excel pro '+floorWarehouse+' / '+floorLabel()+'…';
   try{
-   if(!window.XLSX)throw new Error('Knihovna Excelu se nenačetla.');
-   const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),sheet=wb.Sheets[wb.SheetNames[0]];
+   $('boxFloorStatus').textContent='Načítám knihovnu Excelu a čtu soubor…';
+   const XLSXLib=await window.ensureQRXLSX();
+   const wb=XLSXLib.read(await file.arrayBuffer(),{type:'array'}),sheet=wb.Sheets[wb.SheetNames[0]];
    if(!sheet)throw new Error('V Excelu chybí první list.');
-   const rows=XLSX.utils.sheet_to_json(sheet,{defval:'',raw:false});
+   const rows=XLSXLib.utils.sheet_to_json(sheet,{defval:'',raw:false});
    if(!rows.length)throw new Error('Soubor neobsahuje žádné datové řádky.');
    const headers=Object.keys(rows[0]),norm=v=>String(v??'').trim().toLocaleLowerCase('cs'),col=n=>headers.find(h=>norm(h)===norm(n));
    const required=['Sklad','Box','Pozice','Stav','Priorita'],missing=required.filter(n=>!col(n));
@@ -759,13 +849,29 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
    next.sort((a,b)=>a.aisle-b.aisle||a.slot-b.slot||a.order-b.order);
    if(!next.length)throw new Error('Po kontrole nezůstal žádný box pro '+floorWarehouse+' / '+floorLabel()+'. Vyřazeno: '+JSON.stringify(reject));
    let saved=null,lastError=null;
+   const sameFloor=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
+   const importMatches=list=>window.qrBoxImportUtils.sameImportedRows((Array.isArray(list)?list:[]).filter(sameFloor),next);
    for(let attempt=0;attempt<3&&!saved;attempt++){
+    let baseRevision=null;
     try{
-     const current=await QRBoxPickingSync.get(),same=t=>t&&t.warehouse===floorWarehouse&&isFloorPosition(floorWarehouse,t.position);
-     const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!same(t)),...next];
-     const mergedPublished=[...(current.tasks||[]).filter(t=>!same(t)),...next];
+     const current=await QRBoxPickingSync.get();
+     baseRevision=Number(current.revision);
+     const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!sameFloor(t)),...next];
+     const mergedPublished=[...(current.tasks||[]).filter(t=>!sameFloor(t)),...next];
      saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
-    }catch(e){lastError=e;if(!/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(String(e&&e.message||e))||attempt===2)throw e;await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)))}
+    }catch(error){
+     lastError=error;
+     const message=String(error&&error.message||error);
+     const conflict=/konflikt|změnilo jiné zařízení|revize|stale_client/i.test(message);
+     const transient=window.qrBoxImportUtils.isSafeRetryable(error);
+     if(!conflict&&!transient||attempt===2)throw error;
+     const observed=await QRBoxPickingSync.get();
+     if(importMatches(observed.tasks)&&importMatches(observed.masterTasks)){saved=observed;break;}
+     if(transient&&!conflict&&Number(observed.revision)!==baseRevision){
+      throw new Error('Během importu se změnila revize serveru ('+baseRevision+' → '+observed.revision+'). Import pater se automaticky neopakoval, aby nepřepsal novější data. Aktualizujte seznam a zkuste to znovu.');
+     }
+     await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }
    }
    if(!saved)throw lastError||new Error('Server nepotvrdil import.');
    const savedMaster=saved.masterTasks||[],savedPublished=saved.tasks||[];
@@ -906,7 +1012,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=107',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=108',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
