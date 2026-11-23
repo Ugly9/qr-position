@@ -304,7 +304,7 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
   }
  };
 })();
-</script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=56"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
+</script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=57"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -1039,7 +1039,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=112',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=113',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
