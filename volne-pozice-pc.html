@@ -472,7 +472,36 @@ if(!window.QRPositionSync||typeof window.QRPositionSync.getListRevision!=='funct
    if(!syncRows.length)throw new Error('Po filtraci Prázdná = Ano a podlaží 00 nezůstaly žádné pozice.');
    // Read the version only after validation, immediately before replacement.
    const expectedServerRevision=await window.QRPositionSync.getListRevision();
-   await window.QRPositionSync.replaceAll(syncRows,expectedServerRevision);
+   let replaceConfirmed=false,lastReplaceError=null;
+   for(let attempt=0;attempt<3&&!replaceConfirmed;attempt++){
+    try{
+     await window.QRPositionSync.replaceAll(syncRows,expectedServerRevision);
+     replaceConfirmed=true;
+    }catch(replaceError){
+     lastReplaceError=replaceError;
+     $('importStatus').textContent='Ověřuji, zda server soubor uložil…';
+     // A network error may happen after the server committed the replacement.
+     // Compare the complete server snapshot before retrying or reporting failure.
+     const observed=await window.QRPositionSync.getSnapshot();
+     const expectedKeys=new Set(syncRows.map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
+     const actualKeys=new Set((observed.rows||[]).map(x=>x.warehouse+'|'+Number(x.aisle)+'|'+Number(x.position)));
+     const exact=Array.isArray(observed.rows)&&observed.rows.length===syncRows.length&&actualKeys.size===syncRows.length&&
+      [...expectedKeys].every(key=>actualKeys.has(key))&&(observed.rows||[]).every(row=>!row.occupied);
+     if(exact&&Number(observed.map_revision)>expectedServerRevision){
+      try{localStorage.setItem('qr-map-revision-cache-v1',String(observed.map_revision))}catch(_){}
+      replaceConfirmed=true;
+      break;
+     }
+     if(Number(observed.map_revision)!==expectedServerRevision){
+      throw new Error('Během importu se změnila revize serveru ('+expectedServerRevision+' → '+observed.map_revision+'). Nový soubor nebyl bezpečně potvrzen; obnovte seznam a zkontrolujte jinou otevřenou kartu.');
+     }
+     const message=String(replaceError&&replaceError.message||replaceError);
+     const retryable=/failed to fetch|networkerror|load failed|network request failed|timed? ?out|supabase (408|425|429|500|502|503|504|520)/i.test(message);
+     if(!retryable||attempt===2)throw replaceError;
+     await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }
+   }
+   if(!replaceConfirmed)throw lastReplaceError||new Error('Server nepotvrdil nahrání mapy.');
    const uploadRecord={at:new Date().toISOString(),file:f.name};try{localStorage.setItem('qr-free-positions-last-upload-v1',JSON.stringify(uploadRecord))}catch(e){}renderLastUpload();
    const replacedRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0);
    const snapshot=await window.QRPositionSync.getSnapshot();
@@ -655,7 +684,7 @@ $('boxPickFile').onchange=async e=>{
     if(importMatches(observed.tasks)&&importMatches(observed.masterTasks)){saved=observed;break;}
     // Retry a transport failure only if the server revision proves that the
     // failed attempt did not change the server. Never overwrite an uncertain write.
-    if(transient&&!conflict&&Number(observed.revision)!==baseRevision){
+    if(transient&&!conflict&&baseRevision!==null&&Number(observed.revision)!==baseRevision){
      throw new Error('Během importu se změnila revize serveru ('+baseRevision+' → '+observed.revision+'). Import se automaticky neopakoval, aby nepřepsal novější data. Aktualizujte seznam a zkuste to znovu.');
     }
     await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
@@ -867,7 +896,7 @@ syncCategoryChecks();render();$('publishBoxPick').onclick=async()=>{
      if(!conflict&&!transient||attempt===2)throw error;
      const observed=await QRBoxPickingSync.get();
      if(importMatches(observed.tasks)&&importMatches(observed.masterTasks)){saved=observed;break;}
-     if(transient&&!conflict&&Number(observed.revision)!==baseRevision){
+     if(transient&&!conflict&&baseRevision!==null&&Number(observed.revision)!==baseRevision){
       throw new Error('Během importu se změnila revize serveru ('+baseRevision+' → '+observed.revision+'). Import pater se automaticky neopakoval, aby nepřepsal novější data. Aktualizujte seznam a zkuste to znovu.');
      }
      await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
@@ -1011,7 +1040,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=108',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=109',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
