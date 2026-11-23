@@ -2,7 +2,45 @@
 const URL='https://hsrznmfeqajffrleeyly.supabase.co';
 const KEY='sb_publishable_lQBoAETsI3XjQV21G4mpIQ_2xBzbsBT';
 const AUTH='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzcnpubWZlcWFqZmZybGVleWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4OTc3MzcsImV4cCI6MjEwNDQ3MzczN30.sW3f1zi83QOJ9xlDIy6bbVNhDtcv8KtkrtDrNV5Ajvc';
-async function req(path,options={}){const method=String(options.method||'GET').toUpperCase();const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})};if(method==='GET'){headers['Cache-Control']='no-cache, no-store, max-age=0';headers.Pragma='no-cache'}const r=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:method==='GET'?'no-store':(options.cache||'default')});if(!r.ok){const detail=(await r.text()).slice(0,300);throw new Error('Supabase '+r.status+' ('+path+'): '+detail)}return r.status===204?null:r.json().catch(()=>null)}
+async function req(path,options={}){
+ const method=String(options.method||'GET').toUpperCase();
+ const readOnly=method==='GET'||(method==='POST'&&/^rpc\\/get_qr_free_positions_(version|snapshot)$/.test(path));
+ const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})};
+ if(readOnly){headers['Cache-Control']='no-cache, no-store, max-age=0';headers.Pragma='no-cache'}
+ const maxAttempts=readOnly?3:1,timeoutMs=readOnly?15000:25000;
+ let lastError=null;
+ for(let attempt=0;attempt<maxAttempts;attempt++){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+   const response=await fetch(URL+'/rest/v1/'+path,{...options,method,headers,cache:readOnly?'no-store':(options.cache||'no-store'),signal:controller.signal});
+   if(!response.ok){
+    const detail=(await response.text()).slice(0,500);
+    const error=new Error('Supabase '+response.status+' ('+path+'): '+detail);
+    error.status=response.status;
+    throw error;
+   }
+   return response.status===204?null:response.json().catch(()=>null);
+  }catch(error){
+   lastError=error;
+   const status=Number(error&&error.status||0);
+   const retryable=readOnly&&(
+    error&&error.name==='AbortError'||
+    error&&error.name==='TypeError'||
+    [408,425,429,500,502,503,504,520].includes(status)
+   );
+   if(!retryable||attempt===maxAttempts-1){
+    if(error&&error.name==='AbortError'){
+     if(readOnly)throw new Error('Supabase neodpověděl do '+Math.round(timeoutMs/1000)+' sekund ani po opakování. Aktuální seznam zůstal beze změny.');
+     throw new Error('Vypršel čas zápisu do Supabase. Výsledek zápisu je nutné ověřit načtením aktuálního snímku ze serveru; zápis se automaticky neopakuje.');
+    }
+    throw error;
+   }
+  }finally{clearTimeout(timeout)}
+  await new Promise(resolve=>setTimeout(resolve,350*Math.pow(2,attempt)));
+ }
+ throw lastError||new Error('Synchronizace se nezdařila.');
+}
 async function allRecords(){let out=[],offset=0;while(true){const part=await req('qr_free_positions?select=warehouse,aisle,position,occupied&order=warehouse,aisle,position&limit=1000&offset='+offset);out=out.concat(part||[]);if(!part||part.length<1000)break;offset+=1000}return out}
 async function allRows(){const r=await req('qr_free_positions?select=warehouse,aisle,position,occupied&limit=1');return r||[]}async function countAll(){return (await stableRecords()).length}
 let listRevision=null,dataRevision=null;
@@ -16,7 +54,15 @@ async function stableSnapshot(){
  if(!Number.isSafeInteger(mapRevision)||mapRevision<1||!Number.isSafeInteger(dataRev)||dataRev<1)throw new Error('Nepodařilo se ověřit konzistentní verzi mapy na serveru.');
  if(!snapshot||!Array.isArray(snapshot.rows))throw new Error('Server nevrátil úplný snímek seznamu volných pozic.');
  const rows=snapshot.rows.map(r=>({warehouse:String(r.warehouse),aisle:Number(r.aisle),position:Number(r.position),occupied:!!r.occupied}));
- if(rows.some(r=>!['DC2','DC3'].includes(r.warehouse)||!Number.isSafeInteger(r.aisle)||!Number.isSafeInteger(r.position)))throw new Error('Server vrátil neplatná data seznamu volných pozic.');
+ const seen=new Set();
+ for(const r of rows){
+  if(!['DC2','DC3'].includes(r.warehouse)||!Number.isSafeInteger(r.aisle)||!Number.isSafeInteger(r.position)||
+    (r.warehouse==='DC2'&&(r.aisle<12||r.aisle>123||r.position<1||r.position>168))||
+    (r.warehouse==='DC3'&&(r.aisle<1||r.aisle>41||r.position<1||r.position>148)))throw new Error('Server vrátil neplatná data seznamu volných pozic.');
+  const key=r.warehouse+'|'+r.aisle+'|'+r.position;
+  if(seen.has(key))throw new Error('Server vrátil duplicitní pozici: '+key);
+  seen.add(key);
+ }
  listRevision=mapRevision;dataRevision=dataRev;
  return {rows,map_revision:mapRevision,data_revision:dataRev};
 }
@@ -108,7 +154,7 @@ async function getWorkingAislesSnapshot(){
 async function getWorkingAisles(){await syncPendingWork();const version=workingStateVersion;let rows=readJSON('qr-working-cache-v1',[]);if(!(typeof navigator!=='undefined'&&navigator.onLine===false)){try{const fresh=await req('qr_working_aisles?select=warehouse,aisle,worker_id,updated_at&order=warehouse,aisle');if(version===workingStateVersion){rows=fresh||[];saveWorkingCache(rows)}else rows=readJSON('qr-working-cache-v1',rows)}catch(e){}}return applyWorkingOps(rows,pendingWork())}
 async function markWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'add',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,worker_id:op.worker_id,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
 async function clearWorkingAisle(warehouse,aisle){let mapRevision;try{mapRevision=await readListRevision()}catch(_){mapRevision=Number(localStorage.getItem('qr-map-revision-cache-v1')||0)}const op={action:'remove',warehouse,aisle:Number(aisle),map_revision:mapRevision,worker_id:workerId(),updated_at:new Date().toISOString(),op_id:'op-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))};queueWorkingOp(op);await syncPendingWork();const pending=pendingWork().some(x=>sameOp(x,op));return {ok:true,local:pending,error:pending?'Очікує повторної синхронізації':undefined}}
-async function replaceAll(rows,expectedRevision){if(!Array.isArray(rows))throw new Error('Nový seznam nemá správný formát');expectedRevision=Number(expectedRevision);if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1)throw new Error('Chybí platná verze seznamu při zahájení operace. Obnovte stránku a zkuste znovu.');const clean=rows.map(x=>({warehouse:String(x.warehouse),aisle:Number(x.aisle),position:Number(x.position)}));if(clean.some(x=>!['DC2','DC3'].includes(x.warehouse)||!Number.isInteger(x.aisle)||!Number.isInteger(x.position)||(x.warehouse==='DC2'&&(x.aisle<12||x.aisle>123||x.position<1||x.position>168))||(x.warehouse==='DC3'&&(x.aisle<1||x.aisle>41||x.position<1||x.position>148))))throw new Error('Nový seznam obsahuje neplatné pozice');const seen=new Set();for(const x of clean){const k=x.warehouse+'|'+x.aisle+'|'+x.position;if(seen.has(k))throw new Error('Nový seznam obsahuje duplicitní pozici: '+k);seen.add(k)}const result=await req('rpc/replace_qr_free_positions_v2',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_rows:clean,p_expected_revision:expectedRevision})});const count=Number(result&&result.count),revision=Number(result&&result.revision);if(!Number.isInteger(count)||count!==clean.length||!Number.isSafeInteger(revision)||revision<expectedRevision)throw new Error('Server nepotvrdil úplnou náhradu seznamu. Očekáváno '+clean.length+' pozic, potvrzenо '+(Number.isFinite(count)?count:'neznámý počet')+'.');listRevision=revision;try{localStorage.setItem('qr-map-revision-cache-v1',String(revision))}catch(_){}return clean.map(x=>({...x,occupied:false}))}
+async function replaceAll(rows,expectedRevision){if(!Array.isArray(rows))throw new Error('Nový seznam nemá správný formát');expectedRevision=Number(expectedRevision);if(!Number.isSafeInteger(expectedRevision)||expectedRevision<1)throw new Error('Chybí platná verze seznamu při zahájení operace. Obnovte stránku a zkuste znovu.');const clean=rows.map(x=>({warehouse:String(x.warehouse),aisle:Number(x.aisle),position:Number(x.position)}));if(clean.some(x=>!['DC2','DC3'].includes(x.warehouse)||!Number.isInteger(x.aisle)||!Number.isInteger(x.position)||(x.warehouse==='DC2'&&(x.aisle<12||x.aisle>123||x.position<1||x.position>168))||(x.warehouse==='DC3'&&(x.aisle<1||x.aisle>41||x.position<1||x.position>148))))throw new Error('Nový seznam obsahuje neplatné pozice');const seen=new Set();for(const x of clean){const k=x.warehouse+'|'+x.aisle+'|'+x.position;if(seen.has(k))throw new Error('Nový seznam obsahuje duplicitní pozici: '+k);seen.add(k)}const result=await req('rpc/replace_qr_free_positions_v2',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_rows:clean,p_expected_revision:expectedRevision})});const count=Number(result&&result.count),revision=Number(result&&result.revision);if(!Number.isInteger(count)||count!==clean.length||!Number.isSafeInteger(revision)||revision<=expectedRevision)throw new Error('Server nepotvrdil úplnou náhradu seznamu. Očekáváno '+clean.length+' pozic, potvrzenо '+(Number.isFinite(count)?count:'neznámý počet')+'.');listRevision=revision;try{localStorage.setItem('qr-map-revision-cache-v1',String(revision))}catch(_){}return clean.map(x=>({...x,occupied:false}))}
 async function clearAll(expectedRevision){const revision=Number.isSafeInteger(Number(expectedRevision))?Number(expectedRevision):await readListRevision();if(!Number.isSafeInteger(revision)||revision<1)throw new Error('Chybí platná verze seznamu pro smazání. Obnovte stránku a zkuste znovu.');const result=await req('rpc/clear_qr_free_positions_v1',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({p_expected_revision:revision})});if(!result||Number(result.count)!==0||Number(result.revision)<=revision)throw new Error('Server nepotvrdil smazání seznamu.');listRevision=Number(result.revision);dataRevision=Number(result.data_revision||dataRevision||1);try{localStorage.setItem('qr-map-revision-cache-v1',String(listRevision))}catch(_){}return result}
 async function clearAllLists(expectedMapRevision,expectedBoxRevision){
  const mapRevision=Number(expectedMapRevision),boxRevision=Number(expectedBoxRevision);
