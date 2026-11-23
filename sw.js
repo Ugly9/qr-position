@@ -1,4 +1,4 @@
-const CACHE="qr-position-v135";
+const CACHE="qr-position-v136";
 const CORE=["./","./index.html","./gta-notino-bg.webp","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js","./qr-box-sync.js","./qr-working-guard.js","./volne-pozice-pc.html"];
 
 self.addEventListener("install",event=>{
