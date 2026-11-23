@@ -360,7 +360,7 @@ function renderLastUpload(){
  let saved=null;try{saved=JSON.parse(localStorage.getItem('qr-free-positions-last-upload-v1')||'null')}catch(e){}
  if(saved&&saved.at){
   const date=new Date(saved.at),when=Number.isNaN(date.getTime())?'datum není platné':date.toLocaleString('cs-CZ',{dateStyle:'short',timeStyle:'medium'});
-  el.textContent='Poslední potvrzený import mapy: '+when+'\\nSoubor: '+(saved.file||'—')+'\\nDC2: '+Number(saved.dc2||0)+' · DC3: '+Number(saved.dc3||0)+' · celkem '+Number(saved.positions||0)+' pozic · '+Number(saved.aisles||0)+' uliček · duplicity '+Number(saved.duplicates||0)+' · ignorované '+Number(saved.ignored||0);
+  el.textContent='Poslední potvrzený import mapy: '+when+'\nSoubor: '+(saved.file||'—')+'\nDC2: '+Number(saved.dc2||0)+' · DC3: '+Number(saved.dc3||0)+' · celkem '+Number(saved.positions||0)+' pozic · '+Number(saved.aisles||0)+' uliček · duplicity '+Number(saved.duplicates||0)+' · ignorované '+Number(saved.ignored||0);
  }else el.textContent='Poslední nahrání souboru: zatím není zaznamenáno.';
 }
 function renderStats(){$('total').textContent=totalFor('DC2')+totalFor('DC3');$('dc2Total').textContent=totalFor('DC2');$('dc3Total').textContent=totalFor('DC3')}
@@ -566,7 +566,7 @@ if(!window.QRPositionSync||typeof window.QRPositionSync.getListRevision!=='funct
      setSyncBadge('POZOR: '+actual.length+' POZIC');
    }else{
      $('importStatus').style.whiteSpace='pre-line';
-     $('importStatus').textContent='✓ EXCEL SOUBOR NAHRÁN A OVĚŘEN NA SERVERU\\nSoubor: '+f.name+'\\nŘádky v Excelu: '+rows.length+' · Uloženo pozic: '+actualAll.length+'\\nDC2: '+serverDC2+' pozic · DC3: '+serverDC3+' pozic · Uličky: '+serverAisles+'\\nDuplicitní pozice přeskočeny: '+duplicateRows+' · Ignorované řádky: '+ignored+'\\nRevize serveru: '+snapshot.map_revision+'.';
+     $('importStatus').textContent='✓ EXCEL SOUBOR NAHRÁN A OVĚŘEN NA SERVERU\nSoubor: '+f.name+'\nŘádky v Excelu: '+rows.length+' · Uloženo pozic: '+actualAll.length+'\nDC2: '+serverDC2+' pozic · DC3: '+serverDC3+' pozic · Uličky: '+serverAisles+'\nDuplicitní pozice přeskočeny: '+duplicateRows+' · Ignorované řádky: '+ignored+'\nRevize serveru: '+snapshot.map_revision+'.';
      setSyncBadge('SYNCHRONIZOVÁNO · '+actual.length+' POZIC');
    }
  }catch(err){
@@ -774,12 +774,12 @@ $('boxPickFile').onchange=async e=>{
   const rejectedLine='Vyřazeno jedinečných řádků: '+rejectedRows+' · opakované pozice přeskočeny: '+duplicateRows;
   const reasonLine=rejectedRows?'Důvody vyřazení (jeden řádek může mít více důvodů): '+rejectedReasons:'Důvody vyřazení: žádné';
   $('boxPickStatus').style.whiteSpace='pre-line';
-  $('boxPickStatus').textContent='✓ EXCEL POTVRZEN SERVEREM\\n'+
-   'Soubor: '+f.name+'\\n'+
-   'Řádky v Excelu: '+rows.length+' · Importováno: '+nextTasks.length+' boxů · Uličky: '+aisleCount+'\\n'+
-   'Kategorie: '+categorySummary+'\\n'+
-   rejectedLine+'\\n'+reasonLine+'\\n'+
-   'Ověření serveru — hlavní seznam: '+masterForWarehouse.length+' · telefon: '+savedForWarehouse.length+' · '+targetWarehouse+' celkem: '+report.masterWarehouseTotal+' · '+otherWarehouse+': '+report.otherWarehouseMaster+'\\n'+
+  $('boxPickStatus').textContent='✓ EXCEL POTVRZEN SERVEREM\n'+
+   'Soubor: '+f.name+'\n'+
+   'Řádky v Excelu: '+rows.length+' · Importováno: '+nextTasks.length+' boxů · Uličky: '+aisleCount+'\n'+
+   'Kategorie: '+categorySummary+'\n'+
+   rejectedLine+'\n'+reasonLine+'\n'+
+   'Ověření serveru — hlavní seznam: '+masterForWarehouse.length+' · telefon: '+savedForWarehouse.length+' · '+targetWarehouse+' celkem: '+report.masterWarehouseTotal+' · '+otherWarehouse+': '+report.otherWarehouseMaster+'\n'+
    'Revize: '+saved.revision;
   $('boxPickFreshness').textContent='✓ Server potvrdil hlavní i telefonní seznam · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas není dostupný');
  }catch(error){$('boxPickStatus').textContent='✕ Import/nahrazení se nezdařilo: '+String(error&&error.message||error)+'. Předchozí serverový seznam zůstal zachován.'}
@@ -792,7 +792,7 @@ function renderBoxPickLastUpload(){
  if(!report||!report.at){el.textContent='Poslední potvrzený Excel: zatím není zaznamenán.';return;}
  const date=new Date(report.at),when=Number.isNaN(date.getTime())?'čas nedostupný':date.toLocaleString('cs-CZ');
  const categories=Object.entries(report.categoryCounts||{}).filter(([,n])=>Number(n)>0).map(([name,n])=>name+' '+n).join(' · ')||'—';
- el.textContent='Poslední potvrzený Excel: '+when+'\\n'+(report.file||'Excel')+' · '+report.warehouse+' / '+(report.level==='01'?'Nadrozměry':'00 pozice')+'\\n'+report.imported+' boxů · '+report.aisles+' uliček · kategorie '+categories+'\\nHlavní seznam '+report.masterCount+' · telefon '+report.publishedCount+' · revize '+report.revision;
+ el.textContent='Poslední potvrzený Excel: '+when+'\n'+(report.file||'Excel')+' · '+report.warehouse+' / '+(report.level==='01'?'Nadrozměry':'00 pozice')+'\n'+report.imported+' boxů · '+report.aisles+' uliček · kategorie '+categories+'\nHlavní seznam '+report.masterCount+' · telefon '+report.publishedCount+' · revize '+report.revision;
 }
 function syncCategoryChecks(){const isOversize=selectedWarehouse==='DC3'&&selectedPickLevel==='01',categories=isOversize?oversizeCategorySettings:categorySettings[selectedWarehouse],cold=isOversize?oversizeColdSubtypeSettings:coldSubtypeSettings[selectedWarehouse];$('oversizeDestinationFilters').style.display=isOversize?'flex':'none';document.querySelectorAll('[data-oversize-destination]').forEach(x=>x.checked=oversizeDestinationSettings[x.dataset.oversizeDestination]!==false);document.querySelectorAll('[data-oversize-destination]').forEach(x=>x.onchange=()=>{oversizeDestinationSettings[x.dataset.oversizeDestination]=x.checked;saveFilterSettings();scheduleBoxSettingsSave();render()});document.querySelectorAll('#boxPickCategories input').forEach(x=>x.checked=categories[x.dataset.category]!==false);document.querySelectorAll('#coldSubtypeFilters input').forEach(x=>x.checked=cold[x.dataset.coldSubtype]!==false)}
 function activeCategorySettings(){return selectedWarehouse==='DC3'&&selectedPickLevel==='01'?oversizeCategorySettings:categorySettings[selectedWarehouse]}
@@ -923,7 +923,7 @@ syncCategoryChecks();render();renderBoxPickLastUpload();$('publishBoxPick').oncl
   if(!report||!report.at){el.textContent='Poslední potvrzený import pater: zatím není zaznamenán.';return}
   const date=new Date(report.at),when=Number.isNaN(date.getTime())?'čas nedostupný':date.toLocaleString('cs-CZ');
   const categories=Object.entries(report.categoryCounts||{}).filter(([,count])=>Number(count)>0).map(([name,count])=>name+' '+count).join(' · ')||'—';
-  el.textContent='Poslední potvrzený import pater: '+when+'\\n'+(report.file||'Excel')+' · '+report.warehouse+'\\n'+report.imported+' boxů · '+report.aisles+' uliček · '+categories+'\\nHlavní '+report.masterCount+' · telefon '+report.publishedCount+' · duplicity '+report.duplicates+' · revize '+report.revision;
+  el.textContent='Poslední potvrzený import pater: '+when+'\n'+(report.file||'Excel')+' · '+report.warehouse+'\n'+report.imported+' boxů · '+report.aisles+' uliček · '+categories+'\nHlavní '+report.masterCount+' · telefon '+report.publishedCount+' · duplicity '+report.duplicates+' · revize '+report.revision;
  }
  async function refreshFloorState(){
   renderFloorLastUpload();
@@ -1047,7 +1047,7 @@ syncCategoryChecks();render();renderBoxPickLastUpload();$('publishBoxPick').oncl
    try{localStorage.setItem('qr-box-floor-last-upload-v1',JSON.stringify(report))}catch(e){}
    renderFloorLastUpload();
    $('boxFloorStatus').style.whiteSpace='pre-line';
-   $('boxFloorStatus').textContent='✓ EXCEL POTVRZEN SERVEREM\\nSoubor: '+file.name+'\\nŘádky v Excelu: '+rows.length+' · Importováno: '+next.length+' boxů · Uličky: '+aisleCount+'\\nKategorie: '+categorySummary+'\\nDuplicitní pozice přeskočeny: '+duplicates+' · Vyřazeno řádků: '+rejectedRows+'\\nHlavní seznam pater: '+savedMaster.length+' · Telefon: '+savedPublished.length+' · Revize: '+saved.revision+'\\nDůvody vyřazení: '+rejectedSummary;
+   $('boxFloorStatus').textContent='✓ EXCEL POTVRZEN SERVEREM\nSoubor: '+file.name+'\nŘádky v Excelu: '+rows.length+' · Importováno: '+next.length+' boxů · Uličky: '+aisleCount+'\nKategorie: '+categorySummary+'\nDuplicitní pozice přeskočeny: '+duplicates+' · Vyřazeno řádků: '+rejectedRows+'\nHlavní seznam pater: '+savedMaster.length+' · Telefon: '+savedPublished.length+' · Revize: '+saved.revision+'\nDůvody vyřazení: '+rejectedSummary;
    $('boxFloorFreshness').textContent='✓ Server potvrdil oba seznamy pater · revize '+saved.revision+' · '+(saved.updated_at?new Date(saved.updated_at).toLocaleString():'čas nedostupný');
   }catch(error){
    $('boxFloorStatus').textContent='✕ Import pater se nezdařil: '+String(error&&error.message||error)+'. Předchozí serverový seznam zůstal zachován.';
@@ -1186,7 +1186,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=116',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=117',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
