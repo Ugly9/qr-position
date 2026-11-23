@@ -121,7 +121,13 @@ async function saveNow(payload){
 }
 async function saveWarehouseNow(warehouse,payload={}){
  if(warehouse!=='DC2'&&warehouse!=='DC3')throw new Error('Neplatný sklad.');
- const current=await get(),other=warehouse==='DC2'?'DC3':'DC2';
+ const current=await get();
+ if(payload.expectedRevision!==undefined&&payload.expectedRevision!==null){
+  const expected=Number(payload.expectedRevision);
+  if(!Number.isSafeInteger(expected)||expected<1)throw new Error('Import nemá platnou počáteční revizi serveru.');
+  if(expected!==Number(current.revision))throw new Error('Konflikt synchronizace: server změnil revizi z '+expected+' na '+current.revision+' ještě před sloučením seznamu. Data nebyla zapsána; aktualizujte seznam a opakujte import.');
+ }
+ const other=warehouse==='DC2'?'DC3':'DC2';
  const mergeList=(field)=>{
   const base=Array.isArray(current[field])?current[field]:[];
   if(!Array.isArray(payload[field]))return base;
