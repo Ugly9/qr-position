@@ -305,7 +305,7 @@ body::before{filter:saturate(1.12) contrast(1.12)!important;background-image:lin
   }
  };
 })();
-</script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=57"></script><script src="./qr-box-sync.js?v=31"></script><script src="./qr-working-guard.js?v=16"></script><script>
+</script><script src="./qrcode.min.js"></script><script src="./volne-data.js"></script><script src="./qr-sync.js?v=57"></script><script src="./qr-box-sync.js?v=32"></script><script src="./qr-working-guard.js?v=16"></script><script>
 (function(){
  const sync=window.QRBoxPickingSync;
  if(!sync||sync.__level00SaveGuard)return;
@@ -722,7 +722,7 @@ $('boxPickFile').onchange=async e=>{
     }
     const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
     const mergedPublished=[...(current.tasks||[]).filter(t=>!sameLevel(t)),...nextTasks];
-    saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
+    saved=await QRBoxPickingSync.saveWarehouse(targetWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,expectedRevision:current.revision,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
    }catch(error){
     lastError=error;
     const message=String(error&&error.message||error);
@@ -1011,7 +1011,7 @@ syncCategoryChecks();render();renderBoxPickLastUpload();$('publishBoxPick').oncl
      }
      const mergedMaster=[...(current.masterTasks||current.tasks||[]).filter(task=>!sameFloor(task)),...next];
      const mergedPublished=[...(current.tasks||[]).filter(task=>!sameFloor(task)),...next];
-     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
+     saved=await QRBoxPickingSync.saveWarehouse(floorWarehouse,{tasks:mergedPublished,masterTasks:mergedMaster,expectedRevision:current.revision,restoreToken:'EXPLICIT_EXCEL_IMPORT_V1'});
     }catch(error){
      lastError=error;
      const message=String(error&&error.message||error);
@@ -1186,7 +1186,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=114',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=115',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
