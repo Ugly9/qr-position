@@ -4,7 +4,7 @@ const KEY='sb_publishable_lQBoAETsI3XjQV21G4mpIQ_2xBzbsBT';
 const AUTH='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzcnpubWZlcWFqZmZybGVleWx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4OTc3MzcsImV4cCI6MjEwNDQ3MzczN30.sW3f1zi83QOJ9xlDIy6bbVNhDtcv8KtkrtDrNV5Ajvc';
 async function req(path,options={}){
  const method=String(options.method||'GET').toUpperCase();
- const readOnly=method==='GET'||(method==='POST'&&/^rpc\\/get_qr_free_positions_(version|snapshot)$/.test(path));
+ const readOnly=method==='GET'||(method==='POST'&&(path==='rpc/get_qr_free_positions_version'||path==='rpc/get_qr_free_positions_snapshot'));
  const headers={apikey:KEY,Authorization:'Bearer '+AUTH,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})};
  if(readOnly){headers['Cache-Control']='no-cache, no-store, max-age=0';headers.Pragma='no-cache'}
  const maxAttempts=readOnly?3:1,timeoutMs=readOnly?15000:25000;
