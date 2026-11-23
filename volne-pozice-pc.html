@@ -1039,7 +1039,7 @@ window.addEventListener('load',()=>{
   window.__qrPositionReloading=true;
   window.location.reload();
  });
- navigator.serviceWorker.register('./sw.js?v=111',{updateViaCache:'none'}).then(reg=>{
+ navigator.serviceWorker.register('./sw.js?v=112',{updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
   window.addEventListener('focus',()=>reg.update().catch(()=>{}));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
@@ -1082,6 +1082,9 @@ window.addEventListener('load',()=>{
   hideWorkPanels();
   $('boxPickUnifiedModeError').style.display='none';
   render();
+  // Open the standard 00 work panel immediately after choosing a warehouse.
+  // The mode cards stay visible, so Patra / Nadrozměry remain one-tap switches.
+  chooseMode('00');
  }
  function chooseMode(mode){
   if(!activeWarehouse)return;
