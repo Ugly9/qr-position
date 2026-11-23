@@ -395,7 +395,7 @@ let occupiedRows=[];
 async function renderOccupied(){const root=$('occupiedList');if(!root)return;root.innerHTML='<div class="empty">Načítám označené pozice…</div>';try{occupiedRows=await window.QRPositionSync.allOccupied();const rows=occupiedRows.filter(x=>x.warehouse===dc).sort((a,b)=>a.aisle-b.aisle||a.position-b.position);if(!rows.length){root.innerHTML='<div class="empty">V '+dc+' zatím není žádná označená pozice, kde už byl box.</div>';return}const groups=new Map();rows.forEach(r=>{if(!groups.has(Number(r.aisle)))groups.set(Number(r.aisle),[]);groups.get(Number(r.aisle)).push(Number(r.position))});root.innerHTML='';const summary=document.createElement('div');summary.className='status';summary.textContent='Označených pozic: '+rows.length+' · Uliček: '+groups.size;root.append(summary);groups.forEach((positions,aisle)=>{const card=document.createElement('div');card.className='occupied-aisle';const head=document.createElement('div');head.className='occupied-head';const name=document.createElement('span');name.textContent='Ulička '+aisle;const count=document.createElement('span');count.textContent=positions.length+' pozic';head.append(name,count);card.append(head);const pills=document.createElement('div');pills.className='occupied-positions';positions.sort((a,b)=>a-b).forEach(pos=>{const pill=document.createElement('span');pill.className='occupied-position';pill.textContent=String(aisle).padStart(2,'0')+'-'+String(pos).padStart(2,'0')+'-00';pills.append(pill)});card.append(pills);root.append(card)})}catch(e){root.innerHTML='<div class="empty">Označené pozice se nepodařilo načíst. Zkontrolujte připojení a zkuste Aktualizovat.</div>'}}
 function parseUpload(rows){
  if(!Array.isArray(rows)||!rows.length)throw Error('Soubor nemá žádné datové řádky.');
- const norm=value=>String(value??'').replace(/^\\uFEFF/,'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();
+ const norm=value=>String(value??'').replace(/^\uFEFF/,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
  const keys=Object.keys(rows[0]),key=name=>keys.find(k=>norm(k)===norm(name));
  const kp=key('Pozice'),kf=key('Prázdná'),kw=key('Sklad');
  if(!kp||!kf||!kw)throw Error('Chybí povinné sloupce Pozice, Prázdná nebo Sklad.');
@@ -404,7 +404,7 @@ function parseUpload(rows){
  let ignored=0,duplicateRows=0;
  rows.forEach(row=>{
   if(String(row[kf]??'').trim().toLowerCase()!=='ano'){ignored++;ignoredByReason.prázdnáNeAno++;return;}
-  const match=String(row[kp]??'').trim().match(/^(\\d{1,3})-(\\d{1,3})-(\\d{2})$/);
+  const match=String(row[kp]??'').trim().match(/^(\d{1,3})-(\d{1,3})-(\d{2})$/);
   if(!match){ignored++;ignoredByReason.neplatnáPozice++;return;}
   const street=Number(match[1]),position=Number(match[2]),floor=match[3],warehouseRaw=String(row[kw]??'').trim();
   const warehouse=warehouseRaw==='3'?'DC2':warehouseRaw==='6'?'DC3':null;
@@ -962,7 +962,7 @@ syncCategoryChecks();render();renderBoxPickLastUpload();$('publishBoxPick').oncl
    if(!Array.isArray(workbook.SheetNames)||!workbook.SheetNames.length||!workbook.Sheets[workbook.SheetNames[0]])throw new Error('V Excelu chybí první list.');
    const rows=XLSXLib.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{defval:'',raw:false});
    if(!rows.length)throw new Error('Soubor neobsahuje žádné datové řádky.');
-   const normalizeHeader=value=>String(value??'').replace(/^\\uFEFF/,'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();
+   const normalizeHeader=value=>String(value??'').replace(/^\uFEFF/,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
    const headers=Object.keys(rows[0]),col=name=>headers.find(header=>normalizeHeader(header)===normalizeHeader(name));
    const required=['Sklad','Box','Pozice','Stav','Priorita'],missing=required.filter(name=>!col(name));
    if(missing.length)throw new Error('Chybí povinné sloupce: '+missing.join(', ')+'. Import nebyl proveden.');
@@ -971,12 +971,12 @@ syncCategoryChecks();render();renderBoxPickLastUpload();$('publishBoxPick').oncl
    for(let i=0;i<rows.length;i++){
     const row=rows[i],warehouseRaw=String(row[col('Sklad')]??'').trim().toUpperCase(),
      box=String(row[col('Box')]??'').trim(),position=String(row[col('Pozice')]??'').trim();
-    const status=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    const status=String(row[col('Stav')]??'').trim().toLocaleLowerCase('cs').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const statusOk=status==='1'||status==='novy';
     const priorityRaw=String(row[col('Priorita')]??'').trim().replace(',','.');
     const priority=priorityRaw===''?NaN:Number(priorityRaw);
     const category=Number.isInteger(priority)?priorityCategories[priority]:undefined;
-    const match=position.match(/^\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{1,3})\\s*[-–]\\s*0*(\\d{2})\\s*$/);
+    const match=position.match(/^\s*0*(\d{1,3})\s*[-–]\s*0*(\d{1,3})\s*[-–]\s*0*(\d{2})\s*$/);
     let valid=true;
     if(warehouseRaw!=='CZSYR2'&&warehouseRaw!=='CZSYR3'){reject.warehouse++;valid=false}
     if(!statusOk){reject.status++;valid=false}
