@@ -51,6 +51,15 @@ body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),tra
 @media(max-width:430px){.heroActions{flex-direction:column}.heroActions button{width:100%}.heroStamp{display:none}.warehouseName{font-size:25px}.metricCard{padding:13px}.metricCard>b{font-size:24px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}@media print{.bottom,.top{display:none!important}.screen{margin:0!important}}
 
+
+/* Dashboard deduplication and spacing corrections */
+.dashboardGrid{grid-template-columns:minmax(0,1fr)!important}
+.warehouseCard{display:flex;flex-direction:column;align-items:flex-start}
+.warehouseCard small{display:block;margin-top:5px;padding-right:4px}
+.warehouseCard b{position:static;align-self:flex-end;margin-top:8px}
+.heroActions{max-width:300px}
+@media(max-width:850px){.heroActions{max-width:none}.heroStamp{display:none!important}}
+
 </style>
 </head>
 <body><main id="app" class="app"><div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen"><div class="empty">Načítám aplikaci…</div></div></main><div id="toast" class="toast"></div>
@@ -72,7 +81,7 @@ let reports=[];let db=null;let st={dc:null,sec:null,photo:null,act:null,comment:
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const js=s=>String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2200)}
-function nav(a){return `<div class="bottom"><div class="sideBrand">NOTINO<span>LAYOUT TASK</span></div><button class="nav ${a==='home'?'active':''}" onclick="home()"><b>⌂</b>Domů</button><button class="nav" onclick="chooseDC()"><b>＋</b>Nový report</button><button class="nav ${a==='history'?'active':''}" onclick="historyScreen()"><b>◷</b>Historie</button><button class="nav" onclick="galleryScreen()"><b>▧</b>Fotogalerie</button><button class="nav ${a==='stats'?'active':''}" onclick="statsScreen()"><b>▥</b>Statistiky</button><div class="sideDivider"></div><button class="nav ${a==='settings'?'active':''}" onclick="settings()"><b>⚙</b>Nastavení</button><div class="sideStatus"><span>●</span> Lokální data</div></div>`}
+function nav(a){return `<div class="bottom"><div class="sideBrand">NOTINO<span>LAYOUT TASK</span></div><button class="nav ${a==='home'?'active':''}" onclick="home()"><b>⌂</b>Domů</button><button class="nav ${a==='history'?'active':''}" onclick="historyScreen()"><b>◷</b>Historie</button><button class="nav" onclick="galleryScreen()"><b>▧</b>Fotogalerie</button><button class="nav ${a==='stats'?'active':''}" onclick="statsScreen()"><b>▥</b>Statistiky</button><div class="sideDivider"></div><button class="nav ${a==='settings'?'active':''}" onclick="settings()"><b>⚙</b>Nastavení</button><div class="sideStatus"><span>●</span> Lokální data</div></div>`}
 function shell(title,body,active,backFn='home()'){return `<div class="top">NOTINO <span>&nbsp;LayoutTask</span></div><div class="screen">${title?`<button class="back" onclick="${backFn}">‹ Zpět</button><h2 class="heading">${esc(title)}</h2>`:''}${body}</div>${active!==null?nav(active):''}`}
 function render(x,readonly=false){const a=document.getElementById('app');a.innerHTML=x;a.classList.toggle('readonly',readonly);window.scrollTo(0,0)}
 function resetDraft(){st={dc:null,sec:null,photo:null,act:null,comment:'',items:[],edit:-1,report:null}}
@@ -90,11 +99,11 @@ window.home=function(){
  const dc2=reports.filter(r=>r.dc==='DC2').length,dc3=reports.filter(r=>r.dc==='DC3').length;
  render(`<div class="top"><span class="brand">NOTINO</span><span class="brandSub">LAYOUT TASK</span><span class="topTag">WAREHOUSE WORKSPACE</span></div>
  <div class="screen dashboard">
-  <section class="heroPanel"><div class="heroCopy"><div class="eyebrow">WAREHOUSE OPERATIONS · NOTINO</div><h1>Layout<span>Task</span></h1><p>Evidence layoutových úkolů ve skladu Notino.</p><div class="heroActions"><button class="primary" onclick="chooseDC()">＋ Nový report</button><button class="secondary" onclick="reportsScreen()">▤ Zobrazit reporty</button></div></div><div class="heroStamp"><span>DC2</span><span>DC3</span><b>COMIC<br>EDITION</b></div></section>
+  <section class="heroPanel"><div class="heroCopy"><div class="eyebrow">WAREHOUSE OPERATIONS · NOTINO</div><h1>Layout<span>Task</span></h1><p>Evidence layoutových úkolů ve skladu Notino.</p><div class="heroActions"><button class="primary" onclick="chooseDC()">＋ Nový report</button></div></div></section>
   <div class="warehouseGrid"><button class="warehouseCard dc2" onclick="chooseSection('DC2')"><span class="warehouseIcon">▣</span><span class="warehouseName">DC2</span><small>${dc2} reportů v lokální historii</small><b>Otevřít sklad <i>›</i></b></button><button class="warehouseCard dc3" onclick="chooseSection('DC3')"><span class="warehouseIcon">▣</span><span class="warehouseName">DC3</span><small>${dc3} reportů v lokální historii</small><b>Otevřít sklad <i>›</i></b></button></div>
   <div class="metricGrid"><div class="metricCard pink"><span>▤</span><b>${total}</b><small>Reportů</small></div><div class="metricCard blue"><span>▧</span><b>${photos}</b><small>Fotografií</small></div><div class="metricCard green"><span>◷</span><b>${dc2}</b><small>Reportů DC2</small></div><div class="metricCard orange"><span>◈</span><b>${dc3}</b><small>Reportů DC3</small></div></div>
-  <div class="dashboardGrid"><section class="panel"><div class="panelHead"><h2>Poslední reporty</h2><button class="linkBtn" onclick="reportsScreen()">Zobrazit vše →</button></div>${rs.map(reportRow).join('')||'<div class="empty">Zatím žádný report. Vytvoř první report tlačítkem Nový report.</div>'}</section>
-   <section class="panel quickPanel"><div class="panelHead"><h2>Rychlé akce</h2></div><button class="quickAction" onclick="chooseDC()"><span class="qaIcon pinkText">＋</span><span><b>Nový report</b><small>Vyfotit a popsat úkol</small></span><i>›</i></button><button class="quickAction" onclick="galleryScreen()"><span class="qaIcon purpleText">▧</span><span><b>Fotogalerie</b><small>Fotografie z reportů</small></span><i>›</i></button><button class="quickAction" onclick="statsScreen()"><span class="qaIcon greenText">▥</span><span><b>Statistiky</b><small>Přehled lokální historie</small></span><i>›</i></button><button class="quickAction" onclick="settings()"><span class="qaIcon orangeText">⚙</span><span><b>Nastavení</b><small>Akce a sekce skladu</small></span><i>›</i></button></section></div>
+  <div class="dashboardGrid"><section class="panel"><div class="panelHead"><h2>Poslední reporty</h2></div>${rs.map(reportRow).join('')||'<div class="empty">Zatím žádný report. Vytvoř první report tlačítkem Nový report.</div>'}</section>
+</div>
   <div class="localNotice">ⓘ Přehled vychází z reportů uložených v tomto zařízení. Nezobrazuje potvrzený stav serverové synchronizace.</div>
  </div>${nav('home')}`);
 };
