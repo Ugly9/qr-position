@@ -14,7 +14,7 @@
 /* NOTINO LayoutTask — Comic Warehouse visual refresh */
 :root{color-scheme:dark}html,body{background:#080d18!important;color:#f7f8fc}
 body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),transparent 26%),radial-gradient(circle at 20% 85%,rgba(36,132,255,.12),transparent 30%)!important}
-.app{max-width:none!important;width:100%;min-height:100dvh!important;margin:0!important;padding:0 0 24px!important;background:linear-gradient(110deg,rgba(8,12,22,.95),rgba(8,12,22,.78)),url('./assets/comic-warehouse.svg') center/cover fixed!important}
+.app{max-width:none!important;width:100%;min-height:100dvh!important;margin:0!important;padding:0 0 24px!important;background:linear-gradient(110deg,rgba(8,12,22,.95),rgba(8,12,22,.78)),url('/qr-position/layouttask/assets/dc3-warehouse.webp') center/cover fixed!important}
 .top{height:72px!important;padding:15px 34px!important;margin-left:252px;border-bottom:1px solid #ffffff18;background:rgba(8,13,24,.84);backdrop-filter:blur(14px);font-size:20px!important;gap:12px}
 .top .brand{font-weight:1000;letter-spacing:1px;color:#fff}.top .brandSub{font-weight:950;color:#ff2993;letter-spacing:1.5px}.top .topTag{margin-left:auto;font-size:10px;color:#91a2b9;letter-spacing:1.6px}
 .screen{margin-left:252px!important;padding:26px 34px 42px!important;max-width:1500px}
@@ -25,7 +25,7 @@ body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),tra
 .nav b{display:inline-grid!important;place-items:center;width:24px!important;font-size:21px!important}.nav.active{background:linear-gradient(90deg,#f20d7a,#b50d64)!important;color:#fff!important;box-shadow:0 8px 22px #f20d7a44}
 .fab{width:100%!important;height:48px!important;min-height:48px!important;border-radius:12px!important;font-size:16px!important}
 .sideStatus{margin-top:auto;padding:13px;border:1px solid #1ccf9a66;background:#0b322b88;border-radius:12px;color:#9debd2;font-size:12px}.sideStatus span{color:#18d69d;margin-right:6px}
-.heroPanel{position:relative;overflow:hidden;min-height:250px;padding:32px 34px;border:1px solid #ffffff24;border-radius:24px;background:linear-gradient(105deg,rgba(13,20,36,.97),rgba(20,24,42,.72)),url('./assets/comic-warehouse.svg') center 48%/cover;box-shadow:0 20px 50px #0006}
+.heroPanel{position:relative;overflow:hidden;min-height:250px;padding:32px 34px;border:1px solid #ffffff24;border-radius:24px;background:linear-gradient(105deg,rgba(13,20,36,.97),rgba(20,24,42,.72)),url('/qr-position/layouttask/assets/dc3-warehouse.webp') center 48%/cover;box-shadow:0 20px 50px #0006}
 .heroPanel:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 85% 10%,#ff168833,transparent 32%),repeating-linear-gradient(130deg,transparent 0 28px,#ffffff08 29px 30px)}
 .heroCopy{position:relative;z-index:1;max-width:650px}.heroPanel .eyebrow{color:#ff75b8;letter-spacing:2px}
 .heroPanel h1{font-size:clamp(46px,6vw,76px);line-height:.95;margin:14px 0 12px;font-weight:1000;letter-spacing:-3px;text-shadow:0 6px 24px #0008}.heroPanel h1 span{color:#ff2993}.heroPanel p{color:#c0c9d8;font-size:16px}
@@ -64,7 +64,7 @@ body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),tra
 
 
 /* Section chooser — DC3 card sizing and artwork correction */
-.sectionChooser{position:relative;isolation:isolate;min-height:calc(100dvh - 230px);margin:12px 0 0;padding:18px 16px 30px;overflow:hidden;border:1px solid #a44d9a80;border-radius:22px;background:linear-gradient(180deg,rgba(5,10,21,.22),rgba(5,10,21,.62)),url('/qr-position/layouttask/assets/section-comic-warehouse.svg') center/cover no-repeat!important;box-shadow:0 18px 48px #0008}
+.sectionChooser{position:relative;isolation:isolate;min-height:calc(100dvh - 230px);margin:12px 0 0;padding:18px 16px 30px;overflow:hidden;border:1px solid #a44d9a80;border-radius:22px;background:linear-gradient(180deg,rgba(5,10,21,.22),rgba(5,10,21,.62)),url('/qr-position/layouttask/assets/dc3-warehouse.webp') center/cover no-repeat!important;box-shadow:0 18px 48px #0008}
 .sectionChooser.dc3Chooser{background-image:linear-gradient(180deg,rgba(5,10,21,.16),rgba(5,10,21,.48)),url('/qr-position/layouttask/assets/dc3-warehouse.webp')!important;background-position:center center!important;background-size:cover!important}
 .sectionChooser:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(5,9,18,.04),rgba(5,9,18,.28)),radial-gradient(circle at 10% 5%,rgba(255,24,139,.16),transparent 35%)}
 .sectionIntro{display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 13px;margin-bottom:17px;border:0;border-bottom:2px solid #ff1688;border-radius:0;background:linear-gradient(90deg,rgba(8,15,29,.92),rgba(8,15,29,.55));box-shadow:none}
@@ -99,6 +99,30 @@ body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),tra
 @media(max-width:360px){.sectionGrid:not(.count-2){grid-template-columns:repeat(2,minmax(0,1fr))}.sectionChooser.dc3Chooser .section{min-height:190px}}
 @media(min-width:691px){.sectionChooser{padding:24px}.sectionGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.sectionChooser .section{aspect-ratio:1/0.82;max-height:210px}.sectionBody b{font-size:64px!important}.sectionChooser.dc3Chooser .section{min-height:270px;max-height:330px}.sectionChooser.dc3Chooser .sectionNumber{font-size:76px!important}}
 @media(prefers-reduced-motion:reduce){.sectionChooser .section{transition:none!important}}
+
+
+/* DC chooser — same comic warehouse art as the approved DC3 reference */
+.dcSelectionScreen{position:relative;isolation:isolate;min-height:calc(100dvh - 255px);margin:13px 0 0;padding:18px 14px 30px;overflow:hidden;border:1px solid rgba(255,74,165,.32);border-radius:22px;background:linear-gradient(180deg,rgba(5,10,21,.16),rgba(5,10,21,.55)),url('/qr-position/layouttask/assets/dc3-warehouse.webp') center/cover no-repeat!important;box-shadow:0 18px 48px #0009}
+.dcSelectionScreen:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(5,9,18,.04),rgba(5,9,18,.34)),radial-gradient(circle at 10% 5%,rgba(255,24,139,.13),transparent 35%)}
+.dcSelectionIntro{position:relative;display:flex;flex-direction:column;gap:5px;padding:8px 8px 14px;margin-bottom:15px;border-bottom:2px solid #ff1688;background:linear-gradient(90deg,rgba(8,15,29,.84),rgba(8,15,29,.3))}
+.dcSelectionKicker{font-size:10px;font-weight:950;letter-spacing:1.8px;color:#ff83c4}
+.dcSelectionIntro p{margin:0;color:#f4f6fc;font-size:15px;font-weight:800}
+.dcSelectionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.dcSelectionCard{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;min-width:0;min-height:182px;padding:16px 14px 18px;overflow:hidden;border:1.5px solid #8ba6d7;border-bottom:4px solid #ff1688;border-radius:19px;background:linear-gradient(145deg,rgba(23,41,68,.97),rgba(5,13,27,.96) 75%);color:#fff;text-align:left;box-shadow:0 0 0 1px #ff168833,0 0 16px #ff16884d,0 8px 0 #070d1a,0 14px 24px #0009,inset 0 1px 0 #ffffff30;transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+.dcSelectionCard:before{content:"";position:absolute;z-index:-1;top:-34px;right:-38px;width:135px;height:135px;border:20px solid rgba(255,255,255,.08);border-radius:50%}
+.dcSelectionCard:after{content:"";position:absolute;z-index:-1;top:-27px;left:-37px;width:110px;height:55px;transform:rotate(-35deg);background:linear-gradient(90deg,#ff1688,#ff70b8);opacity:.95}
+.dcSelectionCard.dc2{border-color:#7198ce;border-bottom-color:#ff1688}
+.dcSelectionCard.dc3{border-color:#f07aba;border-bottom-color:#ff1688;box-shadow:0 0 0 1px #ff168855,0 0 20px #ff168866,0 8px 0 #070d1a,0 14px 24px #0009,inset 0 1px 0 #ffffff30}
+.dcSelectionIcon{display:grid;place-items:center;width:40px;height:40px;border:1px solid #ff70b8;border-radius:12px;background:linear-gradient(145deg,#ff1688,#a9005c);color:white;font-size:22px;box-shadow:0 4px 0 #610536,0 0 14px #ff168866}
+.dcSelectionTag{align-self:flex-end;margin-top:-31px;padding:6px 8px;border:1px solid #ff5daa7c;border-radius:8px;background:#120f24a8;color:#ffc3df;font-size:9px;font-weight:950;letter-spacing:1px}
+.dcSelectionCard b{display:block;margin-top:auto;font-size:clamp(35px,10vw,49px);line-height:1;font-weight:1000;letter-spacing:-1.5px;text-shadow:0 3px 0 #506887,0 0 16px #ffffff30}
+.dcSelectionCard small{color:#d6e0f0;font-size:11px;font-weight:750;letter-spacing:.4px}
+.dcSelectionArrow{position:absolute;right:0;bottom:0;display:grid;place-items:center;width:39px;height:39px;border-radius:14px 0 0 0;background:linear-gradient(145deg,#ff2997,#d60070);color:#fff;font-size:30px;font-weight:950;line-height:1;box-shadow:0 0 16px #ff168888}
+.dcSelectionCard:hover{transform:translateY(-3px);filter:brightness(1.1);box-shadow:0 0 22px #ff168888,0 10px 0 #070d1a,0 18px 28px #000a}
+.dcSelectionCard:active{transform:translateY(4px) scale(.98);box-shadow:0 2px 0 #070d1a,0 5px 10px #0009}
+.dcSelectionCard:focus-visible{outline:3px solid #ff69b4;outline-offset:3px}
+@media(max-width:690px){.dcSelectionScreen{min-height:calc(100dvh - 265px);margin-top:10px;padding:13px 11px 24px;background-position:center center!important}.dcSelectionGrid{gap:11px}.dcSelectionCard{min-height:170px;padding:13px 11px 16px;border-radius:16px}.dcSelectionIcon{width:36px;height:36px;font-size:20px}.dcSelectionTag{font-size:8px;letter-spacing:.6px}.dcSelectionCard b{font-size:clamp(34px,10vw,44px)}.dcSelectionArrow{width:34px;height:34px;font-size:26px}}
+@media(max-width:350px){.dcSelectionGrid{grid-template-columns:1fr}.dcSelectionCard{min-height:138px}}
 
 </style>
 </head>
@@ -147,7 +171,16 @@ window.home=function(){
   <div class="localNotice">ⓘ Přehled vychází z reportů uložených v tomto zařízení. Nezobrazuje potvrzený stav serverové synchronizace.</div>
  </div>${nav('home')}`);
 };
-window.chooseDC=function(){resetDraft();render(shell('Nový Report',`<p class="muted">Vyber DC.</p><div class="grid"><button class="dc" onclick="chooseSection('DC2')"><span class="iconbig">▣</span><b>DC2</b></button><button class="dc purple" onclick="chooseSection('DC3')"><span class="iconbig">▣</span><b>DC3</b></button></div>`,null))};
+window.chooseDC=function(){
+ resetDraft();
+ render(shell('Nový report',`<div class="dcSelectionScreen">
+  <div class="dcSelectionIntro"><span class="dcSelectionKicker">NOTINO · WAREHOUSE</span><p>Vyber sklad pro nový report</p></div>
+  <div class="dcSelectionGrid">
+   <button class="dcSelectionCard dc2" onclick="chooseSection('DC2')"><span class="dcSelectionIcon">▤</span><span class="dcSelectionTag">SKLAD · 01</span><b>DC2</b><small>Vybrat sklad</small><span class="dcSelectionArrow">›</span></button>
+   <button class="dcSelectionCard dc3" onclick="chooseSection('DC3')"><span class="dcSelectionIcon">▤</span><span class="dcSelectionTag">SKLAD · 02</span><b>DC3</b><small>Vybrat sklad</small><span class="dcSelectionArrow">›</span></button>
+  </div>
+ </div>`,null));
+};
 window.chooseSection=function(dc){
  st.dc=dc;const list=sections[dc]||[];const isDC3=dc==='DC3';
  render(shell('Vyber sekci',`<div class="sectionChooser ${isDC3?'dc3Chooser':''}">
