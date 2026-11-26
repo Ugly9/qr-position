@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1000" fill="none">
+<defs>
+ <linearGradient id="bg" x1="720" y1="0" x2="720" y2="1000" gradientUnits="userSpaceOnUse"><stop stop-color="#17243b"/><stop offset=".55" stop-color="#0b1425"/><stop offset="1" stop-color="#070c17"/></linearGradient>
+ <linearGradient id="floor" x1="720" y1="560" x2="720" y2="1000" gradientUnits="userSpaceOnUse"><stop stop-color="#25324a"/><stop offset="1" stop-color="#0b1220"/></linearGradient>
+ <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff1688"/><stop offset="1" stop-color="#9d0d5b"/></linearGradient>
+ <linearGradient id="box" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5a36c"/><stop offset="1" stop-color="#8e563c"/></linearGradient>
+ <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.6" fill="#ff4ca6" opacity=".55"/></pattern>
+ <pattern id="blueDots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.3" fill="#58b9ff" opacity=".4"/></pattern>
+ <filter id="blur"><feGaussianBlur stdDeviation="22"/></filter>
+</defs>
+<rect width="1440" height="1000" fill="url(#bg)"/>
+<path d="M0 0H380L630 1000H0Z" fill="url(#dots)" opacity=".55"/>
+<path d="M1060 0H1440V1000H820Z" fill="url(#blueDots)" opacity=".5"/>
+<path d="M0 0L460 0L720 600L0 390Z" fill="#ff1688" opacity=".08"/>
+<ellipse cx="720" cy="520" rx="480" ry="210" fill="#168cff" opacity=".08" filter="url(#blur)"/>
+<!-- roof trusses -->
+<g stroke="#6d829f" stroke-width="10" opacity=".34"><path d="M110 0L720 270L1330 0M250 0L720 210L1190 0M390 0L720 150L1050 0"/><path d="M110 0V320M1330 0V320M250 0V270M1190 0V270"/></g>
+<!-- left pallet racks -->
+<g stroke="#111a2a" stroke-width="18" stroke-linejoin="round">
+ <path d="M35 70V680M360 70V680M35 150H360M35 340H360M35 530H360" stroke="#13243c" stroke-width="26"/>
+ <path d="M35 150H360M35 340H360M35 530H360" stroke="url(#pink)" stroke-width="24"/>
+ <path d="M110 70V680M270 70V680M35 250H360M35 440H360M35 630H360" stroke="#4a6383" stroke-width="9" opacity=".7"/>
+</g>
+<!-- right pallet racks -->
+<g stroke="#111a2a" stroke-width="18" stroke-linejoin="round">
+ <path d="M1080 70V680M1405 70V680M1080 150H1405M1080 340H1405M1080 530H1405" stroke="#13243c" stroke-width="26"/>
+ <path d="M1080 150H1405M1080 340H1405M1080 530H1405" stroke="url(#pink)" stroke-width="24"/>
+ <path d="M1160 70V680M1320 70V680M1080 250H1405M1080 440H1405M1080 630H1405" stroke="#4a6383" stroke-width="9" opacity=".7"/>
+</g>
+<!-- cartons, left perspective -->
+<g stroke="#1a2332" stroke-width="7">
+ <g fill="url(#box)"><path d="M55 80L140 80L140 143L55 143Z"/><path d="M165 82L245 82L245 144L165 144Z"/><path d="M55 270L145 270L145 332L55 332Z"/><path d="M165 264L250 264L250 333L165 333Z"/><path d="M55 460L145 460L145 522L55 522Z"/><path d="M165 455L255 455L255 524L165 524Z"/><path d="M55 565L145 565L145 625L55 625Z"/></g>
+ <g stroke="#f6c08b" stroke-width="5" opacity=".65"><path d="M96 80V143M204 82V144M100 270V332M207 264V333M100 460V522M210 455V524"/></g>
+ <g fill="#d99a63"><path d="M1100 80H1185V143H1100Z"/><path d="M1210 82H1295V144H1210Z"/><path d="M1100 270H1187V332H1100Z"/><path d="M1210 264H1296V333H1210Z"/><path d="M1100 460H1188V522H1100Z"/><path d="M1210 455H1300V524H1210Z"/><path d="M1100 565H1188V625H1100Z"/></g>
+ <g stroke="#f4c18c" stroke-width="5" opacity=".65"><path d="M1142 80V143M1252 82V144M1144 270V332M1253 264V333M1144 460V522M1255 455V524"/></g>
+</g>
+<!-- depth aisle -->
+<path d="M330 530L1110 530L1440 1000H0Z" fill="url(#floor)" opacity=".92"/>
+<path d="M330 530L720 1000M1110 530L720 1000" stroke="#ff1688" stroke-width="8" opacity=".42"/>
+<path d="M450 640L990 640M350 790L1090 790" stroke="#8fa2bd" stroke-width="4" opacity=".16"/>
+<path d="M620 1000L690 550M820 1000L750 550" stroke="#f8c63d" stroke-width="11" stroke-dasharray="34 24" opacity=".5"/>
+<!-- pallet jack silhouette -->
+<g transform="translate(640 630)" stroke="#ffca48" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" opacity=".72">
+ <path d="M-50 5L-85 180L120 180L165 148"/><path d="M-48 5L-102 -32"/><path d="M-18 55H95V135H-35Z" fill="#cf8c2b" stroke="#cf8c2b"/><circle cx="-58" cy="196" r="22" fill="#111a2a"/><circle cx="121" cy="196" r="22" fill="#111a2a"/>
+</g>
+<!-- comic rays -->
+<g stroke="#f8f7fb" stroke-width="6" opacity=".12"><path d="M0 205L330 120M0 260L270 185M1440 185L1110 100M1440 260L1170 180M0 900L380 790M1440 900L1060 790"/></g>
+<path d="M1210 30L1250 95L1330 70L1290 145L1365 190L1275 205L1260 290L1200 220L1120 265L1145 180L1065 145L1155 120Z" fill="#ff1688" opacity=".18"/>
+</svg>
