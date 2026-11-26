@@ -61,28 +61,44 @@ body{background-image:radial-gradient(circle at 80% 10%,rgba(255,20,132,.18),tra
 @media(max-width:850px){.heroActions{max-width:none}.heroStamp{display:none!important}}
 
 
-/* Comic warehouse section selector — scoped to the section chooser only */
-.sectionChooser{position:relative;isolation:isolate;min-height:calc(100dvh - 245px);margin-top:14px;padding:18px 16px 28px;border:1px solid rgba(255,255,255,.16);border-radius:24px;overflow:hidden;background:linear-gradient(180deg,rgba(7,12,23,.65),rgba(7,12,23,.91)),url('./assets/section-comic-warehouse.svg') center center/cover no-repeat;box-shadow:0 20px 55px rgba(0,0,0,.36)}
-.sectionChooser:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 8% 8%,rgba(255,22,136,.18),transparent 32%),radial-gradient(circle at 90% 75%,rgba(43,153,255,.14),transparent 30%),repeating-linear-gradient(135deg,transparent 0 30px,rgba(255,255,255,.018) 31px 32px)}
-.sectionIntro{display:flex;align-items:center;gap:12px;min-height:76px;padding:13px 14px;margin-bottom:15px;border:1px solid rgba(255,255,255,.14);border-radius:17px;background:linear-gradient(120deg,rgba(17,27,45,.95),rgba(22,22,41,.87));box-shadow:0 8px 22px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.12)}
-.sectionIntroIcon{display:grid;place-items:center;flex:none;width:43px;height:43px;border-radius:13px;background:linear-gradient(145deg,#ff4ba4,#b50d66);color:#fff;font-size:23px;font-weight:950;box-shadow:0 5px 0 #67083d,0 8px 15px #f20d7a35}
-.sectionIntroCopy{flex:1;min-width:0}.sectionKicker{font-size:10px;font-weight:950;letter-spacing:1.7px;color:#ff78bc}.sectionIntroCopy p{margin:4px 0 0;color:#e5eaf3;font-size:14px;font-weight:750}
-.sectionCount{flex:none;padding:7px 9px;border-radius:9px;border:1px solid rgba(255,74,165,.42);background:rgba(242,13,122,.14);color:#ffc0df;font-size:10px;font-weight:950;letter-spacing:.6px}
-.sectionGrid{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.sectionChooser .section{position:relative;isolation:isolate;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:14px!important;min-width:0;min-height:112px;margin:0!important;padding:16px 17px!important;overflow:hidden;border:1px solid rgba(255,255,255,.88)!important;border-radius:17px!important;background:linear-gradient(145deg,#fff 0%,#eef2fa 53%,#d6dfed 100%)!important;color:#121c30!important;text-align:left;box-shadow:0 6px 0 #718097,0 12px 22px rgba(0,0,0,.4),inset 0 1px 0 #fff!important;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease}
-.sectionChooser .section:before{content:"";position:absolute;z-index:-1;right:-26px;top:-42px;width:115px;height:115px;border:17px solid rgba(35,65,105,.055);border-radius:50%}
-.sectionChooser .section:after{content:"";position:absolute;z-index:-1;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,#ff2993,#b50c62)}
-.sectionIndex{display:grid;place-items:center;flex:none;width:44px;height:48px;border-radius:12px;background:linear-gradient(150deg,#263c5d,#111c31);color:#fff;font-size:14px;font-weight:1000;letter-spacing:.5px;box-shadow:0 4px 0 #080e1a,0 6px 11px #17243b38,inset 0 1px #ffffff4a}
-.sectionBody{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.sectionBody b{font-size:25px;line-height:1.05;font-weight:1000;letter-spacing:-.3px;overflow-wrap:anywhere}.sectionBody small{font-size:9px;line-height:1.2;font-weight:950;letter-spacing:1.1px;color:#68758a}
-.sectionArrow{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#ff2993,#b10d64);color:#fff;font-size:25px;font-weight:900;line-height:1;box-shadow:0 3px 0 #68083b,0 5px 10px #f20d7a35}
-.sectionGloss{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.38) 47%,transparent 60%);opacity:.55}
-.sectionChooser .section:hover{transform:translateY(-3px);filter:brightness(1.025);box-shadow:0 9px 0 #718097,0 17px 26px rgba(0,0,0,.43),inset 0 1px 0 #fff!important}
-.sectionChooser .section:active{transform:translateY(4px) scale(.992);box-shadow:0 2px 0 #718097,0 5px 12px rgba(0,0,0,.38),inset 0 1px 0 #fff!important}
+
+/* Section selector — dark comic tiles matching approved visual */
+.sectionChooser{position:relative;isolation:isolate;min-height:calc(100dvh - 230px);margin:12px 0 0;padding:18px 16px 30px;overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(5,10,21,.22),rgba(5,10,21,.56)),url('./assets/section-comic-warehouse.svg') center/cover no-repeat!important;box-shadow:0 18px 48px #0008}
+.sectionChooser:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(5,9,18,.1),rgba(5,9,18,.32)),radial-gradient(circle at 10% 5%,rgba(255,24,139,.18),transparent 35%),radial-gradient(circle at 95% 90%,rgba(38,139,255,.15),transparent 34%)}
+.sectionIntro{display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 13px;margin-bottom:17px;border:0;border-bottom:2px solid #ff1688;border-radius:0;background:linear-gradient(90deg,rgba(8,15,29,.92),rgba(8,15,29,.55));box-shadow:none}
+.sectionIntroIcon{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,#ff1688,#a9005c);color:#fff;font-size:25px;font-weight:950;box-shadow:0 5px 0 #610536,0 0 18px #ff168866}
+.sectionIntroCopy{flex:1;min-width:0}.sectionKicker{font-size:10px;font-weight:950;letter-spacing:1.8px;color:#ff72b8}.sectionIntroCopy p{margin:4px 0 0;color:#f2f5fc;font-size:14px;font-weight:800}
+.sectionCount{flex:none;padding:7px 9px;border:1px solid #ff3a9b80;border-radius:8px;background:#ed0d771f;color:#ffc4e1;font-size:10px;font-weight:950;letter-spacing:.6px}
+.sectionGrid{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.sectionChooser .section{position:relative!important;isolation:isolate;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:space-between!important;gap:5px!important;aspect-ratio:1/1.08;min-width:0!important;min-height:0!important;margin:0!important;padding:11px 8px 9px!important;overflow:hidden!important;border:1.5px solid #8ba6d7!important;border-bottom:4px solid #ff1688!important;border-radius:19px!important;background:linear-gradient(145deg,rgba(28,43,68,.98),rgba(7,14,28,.98) 72%)!important;color:#fff!important;text-align:center!important;box-shadow:0 0 0 1px #ff168833,0 0 15px #ff16884d,0 8px 0 #070d1a,0 14px 24px #0009,inset 0 1px 0 #ffffff30!important;transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+.sectionChooser .section:before{content:"";position:absolute;z-index:-1;inset:0;background:radial-gradient(circle at 8% 0%,#ff168833,transparent 42%),linear-gradient(135deg,transparent 0 72%,#ff16881c 72% 100%);pointer-events:none}
+.sectionChooser .section:after{content:"";position:absolute;z-index:-1;top:-28px;left:-38px;width:100px;height:54px;transform:rotate(-35deg);background:linear-gradient(90deg,#ff1688,#ff70b8);opacity:.9}
+.sectionIndex{display:none!important}
+.sectionBody{display:flex!important;flex:1!important;width:100%;align-items:center;justify-content:center;min-width:0;gap:0!important}
+.sectionBody b{display:block;font-size:clamp(40px,11vw,66px)!important;line-height:1!important;font-weight:1000!important;letter-spacing:-2px!important;color:#fff!important;text-shadow:0 3px 0 #657b9f,0 0 18px #ffffff30;overflow-wrap:anywhere}
+.sectionBody small{display:none!important}
+.sectionArrow{position:absolute!important;right:0!important;bottom:0!important;display:grid!important;place-items:center!important;width:35px!important;height:35px!important;border-radius:13px 0 0 0!important;background:linear-gradient(145deg,#ff2997,#d60070)!important;color:#fff!important;font-size:27px!important;font-weight:950!important;line-height:1!important;box-shadow:0 0 18px #ff168888!important}
+.sectionPallet{display:block!important;position:absolute;left:9px;bottom:8px;color:#a9c5f5;font-size:19px;opacity:.9;text-shadow:0 0 8px #5b9bff55}
+.sectionGloss{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.13) 45%,transparent 59%);opacity:.65}
+.sectionChooser .section:hover{transform:translateY(-3px);filter:brightness(1.12);box-shadow:0 0 0 1px #ff1688,0 0 23px #ff1688a6,0 10px 0 #070d1a,0 18px 28px #000a,inset 0 1px 0 #ffffff40!important}
+.sectionChooser .section:active{transform:translateY(4px) scale(.97);box-shadow:0 0 12px #ff168888,0 2px 0 #070d1a,0 5px 10px #0009!important}
 .sectionChooser .section:focus-visible{outline:3px solid #ff69b4;outline-offset:3px}
-.screen:has(.sectionChooser)>.back{border-color:#ff3999;background:linear-gradient(145deg,#1a2940,#0d1727);box-shadow:0 4px 0 #050912,0 8px 18px #0006}
-.screen:has(.sectionChooser)>.heading{font-size:clamp(25px,4vw,34px);font-weight:950;letter-spacing:-.6px}
-@media(max-width:690px){.sectionChooser{min-height:calc(100dvh - 245px);margin:12px 0 0;padding:13px 12px 24px;border-radius:20px;background-position:center top}.sectionGrid{grid-template-columns:1fr;gap:12px}.sectionIntro{min-height:70px;padding:11px 12px;margin-bottom:13px}.sectionChooser .section{min-height:94px;padding:13px 15px!important;border-radius:15px!important}.sectionBody b{font-size:24px}.sectionIndex{width:42px;height:44px}}
-@media(min-width:691px){.sectionChooser{padding:22px}.sectionChooser .section{min-height:132px;padding:20px!important}.sectionBody b{font-size:30px}}
+.screen:has(.sectionChooser)>.back{position:relative;z-index:2;border:1px solid #61799e!important;background:linear-gradient(145deg,#1c2c47,#0b1425)!important;box-shadow:0 4px 0 #050912,0 8px 18px #0008}
+.screen:has(.sectionChooser)>.heading{position:relative;z-index:2;margin-top:12px;font-size:clamp(26px,6vw,36px);font-weight:1000;letter-spacing:-.8px;color:#fff;text-shadow:0 3px 16px #000}
+@media(max-width:690px){
+ .sectionChooser{min-height:calc(100dvh - 265px);margin-top:10px;padding:12px 10px 24px;border-radius:18px;background-position:center top!important}
+ .sectionGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ .sectionIntro{min-height:64px;padding:8px 9px;margin-bottom:13px}
+ .sectionIntroIcon{width:39px;height:39px;font-size:21px}
+ .sectionIntroCopy p{font-size:12px}
+ .sectionCount{font-size:9px;padding:6px 7px}
+ .sectionChooser .section{aspect-ratio:1/1.08;padding:8px 5px 7px!important;border-radius:15px!important}
+ .sectionBody b{font-size:clamp(35px,11vw,50px)!important}
+ .sectionArrow{width:29px!important;height:29px!important;font-size:23px!important}
+ .sectionPallet{font-size:16px;left:6px;bottom:6px}
+}
+@media(max-width:360px){.sectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sectionChooser .section{aspect-ratio:1/0.9}.sectionBody b{font-size:48px!important}}
+@media(min-width:691px){.sectionChooser{padding:24px}.sectionGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.sectionChooser .section{aspect-ratio:1/0.82;max-height:210px}.sectionBody b{font-size:64px!important}}
 @media(prefers-reduced-motion:reduce){.sectionChooser .section{transition:none!important}}
 
 </style>
@@ -137,7 +153,7 @@ window.chooseSection=function(dc){
  st.dc=dc;const list=sections[dc]||[];
  render(shell('Vyber sekci',`<div class="sectionChooser">
   <div class="sectionIntro"><div class="sectionIntroIcon">▣</div><div class="sectionIntroCopy"><span class="sectionKicker">WAREHOUSE · ${esc(dc)}</span><p>Vyber konkrétní sekci skladu</p></div><span class="sectionCount">${String(list.length).padStart(2,'0')} SEKCÍ</span></div>
-  <div class="sectionGrid">${list.map((s,i)=>`<button class="section" onclick="start('${js(s)}')"><span class="sectionIndex">${String(i+1).padStart(2,'0')}</span><span class="sectionBody"><b>${esc(s)}</b><small>SKLADOVÁ SEKCE</small></span><span class="sectionArrow">›</span><span class="sectionGloss"></span></button>`).join('')||'<div class="empty">Pro tento sklad zatím nejsou nastavené žádné sekce.</div>'}</div>
+  <div class="sectionGrid">${list.map((s,i)=>`<button class="section" onclick="start('${js(s)}')"><span class="sectionIndex">${String(i+1).padStart(2,'0')}</span><span class="sectionBody"><b>${esc(s)}</b><small>SKLADOVÁ SEKCE</small></span><span class="sectionPallet">▤</span><span class="sectionArrow">›</span><span class="sectionGloss"></span></button>`).join('')||'<div class="empty">Pro tento sklad zatím nejsou nastavené žádné sekce.</div>'}</div>
  </div>`,null,'chooseDC()'));
 };
 window.start=function(sec){st.sec=sec;st.items=[];st.edit=-1;camera()};
