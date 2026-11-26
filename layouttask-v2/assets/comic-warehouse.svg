@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#101421"/><stop offset=".55" stop-color="#182236"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
+ <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff1688"/><stop offset="1" stop-color="#a60058"/></linearGradient>
+ <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#ff4caa" opacity=".48"/></pattern>
+ <pattern id="blueDots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="#54bfff" opacity=".35"/></pattern>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1600" height="1000" fill="url(#bg)"/>
+<path d="M0 0H650L310 1000H0Z" fill="url(#dots)" opacity=".7"/>
+<path d="M1160 0H1600V1000H1370Z" fill="url(#blueDots)" opacity=".65"/>
+<path d="M0 740L420 0H570L150 1000H0Z" fill="#ff1688" opacity=".08"/>
+<path d="M1230 0H1370L1000 1000H860Z" fill="#19a7ff" opacity=".08"/>
+<!-- comic speed lines -->
+<g stroke="#f8f7fb" stroke-width="5" opacity=".13"><path d="M0 150L360 70M0 205L300 145M1240 110L1600 30M1300 170L1600 115M0 850L420 760M1200 900L1600 790"/></g>
+<!-- warehouse silhouette -->
+<g stroke="#e7edf8" stroke-width="8" stroke-linejoin="round" opacity=".2">
+ <path d="M430 470V235L790 90L1160 235V470"/><path d="M390 470H1200M480 470V260H1110V470"/>
+ <path d="M500 300H1090M500 370H1090M500 440H1090"/>
+ <path d="M610 260V470M760 260V470M910 260V470M1060 260V470"/>
+</g>
+<!-- pink warehouse stripe -->
+<path d="M420 250L790 100L1170 250" stroke="url(#pink)" stroke-width="22" opacity=".75"/>
+<!-- racks and boxes -->
+<g stroke="#101421" stroke-width="7" stroke-linejoin="round">
+ <g fill="#f6f4f8"><rect x="525" y="278" width="72" height="72" rx="5"/><rect x="625" y="278" width="72" height="72" rx="5"/><rect x="775" y="278" width="72" height="72" rx="5"/><rect x="875" y="278" width="72" height="72" rx="5"/><rect x="1025" y="278" width="72" height="72" rx="5"/></g>
+ <g fill="#ff4caa"><rect x="550" y="380" width="92" height="62" rx="5"/><rect x="720" y="380" width="92" height="62" rx="5"/><rect x="890" y="380" width="92" height="62" rx="5"/></g>
+ <g fill="#49b8ff"><rect x="650" y="380" width="52" height="62" rx="5"/><rect x="990" y="380" width="52" height="62" rx="5"/></g>
+</g>
+<!-- foreground floor -->
+<path d="M0 650L1600 590V1000H0Z" fill="#080d18" opacity=".65"/>
+<path d="M0 760L1600 700M0 880L1600 820" stroke="#ff1688" stroke-width="5" opacity=".28"/>
+<path d="M230 1000L560 630M410 1000L690 630M1280 1000L1050 630M1460 1000L1150 630" stroke="#f8f7fb" stroke-width="4" stroke-dasharray="20 20" opacity=".12"/>
+<!-- stylized pallet jack -->
+<g transform="translate(180 640)" stroke="#f8f7fb" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".38">
+ <path d="M70 0L30 170L210 170L260 145"/><path d="M65 0L25 -30"/><circle cx="55" cy="185" r="22" fill="#ff1688"/><circle cx="210" cy="185" r="22" fill="#ff1688"/>
+ <path d="M85 70H205V135H65Z" fill="#ff1688" stroke="#ff1688"/>
+</g>
+<!-- comic burst -->
+<path d="M1320 260L1360 330L1445 305L1400 380L1480 430L1385 440L1370 530L1310 455L1240 510L1265 420L1180 385L1270 360Z" fill="#ff1688" opacity=".12"/>
+<path d="M1330 290L1360 350L1420 330L1385 390L1440 425L1370 430L1350 490L1310 435L1260 470L1280 410L1215 385L1290 370Z" stroke="#ff58b1" stroke-width="5" opacity=".38"/>
+</svg>
