@@ -1,4 +1,4 @@
-const CACHE="qr-position-v146";
+const CACHE="qr-position-v147";
 const CORE=["./","./index.html","./gta-notino-bg.webp","./manifest.webmanifest","./icon.svg","./qrcode.min.js","./volne-data.js","./qr-sync.js","./qr-box-sync.js","./qr-working-guard.js","./volne-pozice-pc.html"];
 
 self.addEventListener("install",event=>{
@@ -18,7 +18,7 @@ self.addEventListener("activate",event=>{
 });
 
 function isLayoutTask(url){
-  return url.pathname.includes("/layouttask/");
+  return url.pathname.split("/").some(part=>part.toLowerCase()==="layouttask");
 }
 
 self.addEventListener("fetch",event=>{
