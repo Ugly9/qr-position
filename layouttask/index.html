@@ -135,8 +135,8 @@ window.home=function(){
 window.chooseDC=function(){resetDraft();render(shell('Nový Report',`<p class="muted">Vyber DC.</p><div class="grid"><button class="dc" onclick="chooseSection('DC2')"><span class="iconbig">▣</span><b>DC2</b></button><button class="dc purple" onclick="chooseSection('DC3')"><span class="iconbig">▣</span><b>DC3</b></button></div>`,null))};
 window.chooseSection=function(dc){
  st.dc=dc;const list=sections[dc]||[];
- render(shell('Vyber Section',`<div class="sectionChooser">
-  <div class="sectionIntro"><div class="sectionIntroIcon">▣</div><div class="sectionIntroCopy"><span class="sectionKicker">WAREHOUSE · ${esc(dc)}</span><p>Vyber konkrétní sekci skladu</p></div><span class="sectionCount">${String(list.length).padStart(2,'0')} SEKCI</span></div>
+ render(shell('Vyber sekci',`<div class="sectionChooser">
+  <div class="sectionIntro"><div class="sectionIntroIcon">▣</div><div class="sectionIntroCopy"><span class="sectionKicker">WAREHOUSE · ${esc(dc)}</span><p>Vyber konkrétní sekci skladu</p></div><span class="sectionCount">${String(list.length).padStart(2,'0')} SEKCÍ</span></div>
   <div class="sectionGrid">${list.map((s,i)=>`<button class="section" onclick="start('${js(s)}')"><span class="sectionIndex">${String(i+1).padStart(2,'0')}</span><span class="sectionBody"><b>${esc(s)}</b><small>SKLADOVÁ SEKCE</small></span><span class="sectionArrow">›</span><span class="sectionGloss"></span></button>`).join('')||'<div class="empty">Pro tento sklad zatím nejsou nastavené žádné sekce.</div>'}</div>
  </div>`,null,'chooseDC()'));
 };
